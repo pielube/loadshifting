@@ -18,8 +18,8 @@
 "dwelling_type": "Terraced",
 "Tthermostatsetpoint": 19.0, 
 "ThermostatDeadband": 2.0,   
-"Tem_target": 50.0,          
-"Temittersetpoint": 50.0,    
+"Tem_target": 40.0,          
+"Temittersetpoint": 40.0,    
 "EmitterDeadband": 5.0,      
 "HeatPumpThermalPower": 5000.0, 
 
