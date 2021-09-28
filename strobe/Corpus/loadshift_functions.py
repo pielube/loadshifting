@@ -60,7 +60,7 @@ def simulate_scenarios(n_scen,inputs):
     nminutes = ndays * 1440 + 1
     ntenm = ndays * 144 + 1
     
-    family = Household("ex",inputs=inputs)
+    family = Household(**inputs)
 
     # define arrays storing the scenarios:
     elec = np.zeros((n_scen, nminutes))
@@ -80,7 +80,7 @@ def simulate_scenarios(n_scen,inputs):
 
     textoutput = []
     for i in range(n_scen):
-        print("Generate scenario {}".format(i))
+        print("Generating scenario {}".format(i))
         family.simulate(year, ndays)
 
         # aggregate scenarios:
@@ -99,6 +99,8 @@ def simulate_scenarios(n_scen,inputs):
         
         occupancy[i, :] = convert_occupancy(family.occ)
         
+        textoutput += ['']
+        textoutput += ["Generating scenario {}".format(i)]
         textoutput += family.textoutput
         
     res_el  = {'pstatic':pstatic[0,:], 'ptd':ptd[0,:], 'pdw':pdw[0,:], 'pwm':pwm[0,:]}

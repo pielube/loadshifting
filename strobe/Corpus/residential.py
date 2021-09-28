@@ -41,7 +41,18 @@ def CustomAppOwnership(inputs,dict_appliances):
     This function does not return any value, but modifies the dict_appliances 
     variable directly
     '''
+
+    #changes for new cold-appliance fix #######################################
+    # Based on 10000 runs, these new values combined with rule-based fix below
+    # lead to the same overall ownership as the original values.
+    # We change it here so that the original remain in the Appliances file.
+    dict_appliances['Refrigerator']['owner']=0.27     # original:  0.430
+    dict_appliances['FridgeFreezer']['owner']=0.40    # original:  0.651
+    dict_appliances['ChestFreezer']['owner']=0.19     # original:  0.163
+    dict_appliances['UprightFreezer']['owner']=0.31   # original:  0.291
     
+    if 'appliances' not in inputs:
+        return
     if "appliances" in inputs and inputs['appliances'] == None:
         return
 
@@ -62,14 +73,7 @@ def CustomAppOwnership(inputs,dict_appliances):
     else:
         dict_appliances["WashingMachine"]["owner"] = 0.0
         
-    #changes for new cold-appliance fix #######################################
-    # Based on 10000 runs, these new values combined with rule-based fix below
-    # lead to the same overall ownership as the original values.
-    # We change it here so that the original remain in the Appliances file.
-    dict_appliances['Refrigerator']['owner']=0.27     # original:  0.430
-    dict_appliances['FridgeFreezer']['owner']=0.40    # original:  0.651
-    dict_appliances['ChestFreezer']['owner']=0.19     # original:  0.163
-    dict_appliances['UprightFreezer']['owner']=0.31   # original:  0.291
+
 
 
 class Household(object):
@@ -83,24 +87,20 @@ class Household(object):
         - self.simulate(), which runs a simulation of occupancy, plug loads, lighting loads, hot water tappings and space heating settings for the specified year.
     '''
           
-    def __init__(self, name, **kwargs):
+    def __init__(self, **kwargs):
         '''
         Initiation of Household object.
         '''
         # input ###############################################################
         # check on correct parameter input for use of functions as name should
         # be a string.
-        try:
-            if not isinstance(name, str):
-                raise ValueError('Given name %d is not a string' % str(name))
-        except:
-            raise TypeError('give another name')
+        if 'name' in kwargs:
+            name = str(kwargs['name'])
+        else:
+            name = 'nameless'
             
         #Adding the inputs config variable:
-        if "inputs" in kwargs:
-            self.inputs = kwargs['inputs']
-        else:
-            self.inputs = {}            
+        self.inputs = kwargs       
 
         # first define the name of the household object
         self.creation = time.asctime()
@@ -108,8 +108,6 @@ class Household(object):
         self.textoutput = []  # list with descriptive output text
         self.parameterize(**kwargs)
         self.variables=dict() # dictionary with explanation of main outputs, filled in in submodules
-
-        
 
 
     def parameterize(self, **kwargs):
@@ -137,7 +135,7 @@ class Household(object):
             # And return the members as list fo strings
             return members
 
-        def appliances():
+        def appliances(**kwargs):
             '''
             Define the pressent household appliances based on average national
             statistics independent of household member composition.
@@ -146,7 +144,8 @@ class Household(object):
             # rate of ownership.
             
             # update appliances with user inputs:
-
+            CustomAppOwnership(kwargs,set_appliances)
+                
             app_n = []
             for app in set_appliances:
                 if set_appliances[app]['type'] == 'appliance':
@@ -192,14 +191,14 @@ class Household(object):
             return clustersList
         # and run all
         self.members = members(**kwargs)
-        self.apps = appliances()
+        self.apps = appliances(**kwargs)
         self.taps = tappings()
         self.clustersList = clusters(self.members)
         # and return
         print('Household-object created and parameterized.')
         self.textoutput.append('NEW HOUSEHOLD SIMULATION')
         print(' - Employment types are %s' % str(self.members))
-        self.textoutput.append(' - Employment types are %s' % str(self.members))
+        self.textoutput.append(' - Employment types: %s' % str(self.members))
         summary = [] #loop dics and remove doubles
         for member in self.clustersList:
             summary += member.values()
@@ -395,10 +394,9 @@ class Household(object):
         # and print statements
         presence = [to for to in self.occ_m[0] if to < 2]
         hours = len(presence)/6.
-        print(' - Total presence time is {0:.1f} out of {1} hours'.format(hours, self.nday*24))
-        print('\tbeing {:.1f} percent)'.format(hours*100/(self.nday*24)))
-        self.textoutput.append(' - Total presence time is {0:.1f} out of {1} hours'.format(hours, self.nday*24))
-        self.textoutput.append('\tbeing {:.1f} percent)'.format(hours*100/(self.nday*24)))
+        text = ' - Total presence time is {0:.1f} out of {1} h'.format(hours, self.nday*24) + ' ({:.1f}%)'.format(hours*100/(self.nday*24))
+        print(text)
+        self.textoutput.append(text)
         return None
 
     def __plugload__(self):
@@ -578,8 +576,8 @@ class Household(object):
 
         load = np.sum(result['mDHW'])
         loadpppd = int(load/self.nday/len(self.clustersList))
-        print(' - Draw-off is %s l/p.day' % str(loadpppd))
-        self.textoutput.append(' - Draw-off is %s l/p.day' % str(loadpppd))
+        print(' - Average domestic hot water demand: %s l/p.day' % str(loadpppd))
+        self.textoutput.append(' - Average domestic hot water demand: %s l/p.day' % str(loadpppd))
  
         return None
 
@@ -615,11 +613,8 @@ class Household(object):
         rnd = np.random.random()
         shtype = str(1 + get_probability(rnd, types['prob'], 'prob'))
         #define which rooms will be heated
-        if len(shr[shtype]) != 1: # if there are more possibilities, choose one randomly
-            nr = np.random.randint(np.shape(shr[shtype])[0])
-            shrooms = shr[shtype][nr]
-        else:
-            shrooms = shr[shtype][0]
+        nr = np.random.randint(len(shr[shtype]))
+        shrooms = shr[shtype][nr]
     
         #######################################################################
         # create a profile for the heated rooms
@@ -639,7 +634,7 @@ class Household(object):
                 sh_settings.update({room:shnon})
         # and store
         self.sh_settings = sh_settings
-        print(' - Average comfort setting is %s Celsius' % str(round(np.average(sh_settings['dayzone']),2)))
+        print(' - Average comfort setting is %s °C' % str(round(np.average(sh_settings['dayzone']),2)))
         
         self.variables.update({'sh_day': 'Space heating set-point temperature for day-zone in degrees Celsius.',
                                 'sh_bath': 'Space heating set-point temperature for bathroom in degrees Celsius.',

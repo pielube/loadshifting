@@ -43,7 +43,7 @@ class IDEAS_Feeder(object):
         # whereas the output is done later-on.
         cwd = os.getcwd()
         for i in range(self.nBui):
-            hou = Household(str(self.name)+'_'+str(i))
+            hou = Household(name=str(self.name)+'_'+str(i))
             hou.simulate()
             os.chdir(path)
             hou.pickle()
