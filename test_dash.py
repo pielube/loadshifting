@@ -9,7 +9,7 @@ import dash
 import dash_html_components as html
 import plotly.graph_objects as go
 import dash_core_components as dcc
-import plotly.express as px
+import dash_bootstrap_components as dbc    # for the css
 from dash.dependencies import Input, Output, State
 
 import os
@@ -18,6 +18,7 @@ import pandas as pd
 import datetime, calendar
 import strobe
 import json
+import pickle
 
 def simulate_load():
     
@@ -28,7 +29,7 @@ def simulate_load():
     temp, irr = strobe.ambientdata()
     
     # Strobe
-    res_el,res_DHW,Tbath,res_Qgains = strobe.simulate_scenarios(1,inputs)
+    res_el,res_DHW,Tbath,res_Qgains,textoutput = strobe.simulate_scenarios(1,inputs)
     
     # House heating model
     ressize = np.size(res_el['pstatic'])
@@ -44,7 +45,7 @@ def simulate_load():
     # Electric boiler and hot water tank
     phi_a = strobe.HotWaterTankModel(inputs,res_DHW['mDHW'],Tbath)
     
-    # Creating dataframe with the results
+    # Creating dataframe with the time-series results
     df = pd.DataFrame(data=res_el)
     df['elboiler'] = phi_a
     df['heatpump'] = phi_hp
@@ -52,12 +53,17 @@ def simulate_load():
     time = [datetime.datetime(2020,1,1) + datetime.timedelta(minutes=each) for each in time]
     df.index = time
     
-    return df
+    # Generating the dictionnary with the aggregated results
+    results = {}
+    results['thermal_load'] = thermal_load
+    results['textoutput'] = textoutput
+    results['timeseries'] = df
+    results['inputs'] = inputs
+    
+    return results
 
-
-app = dash.Dash()
-
-df = px.data.stocks()
+# List of bootstrap themes for dash: https://www.bootstrapcdn.com/bootswatch/
+app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
     
 app.layout = html.Div(id = 'parent', children = [
         html.H1(id = 'H1', children = 'Load generator display', style = {'textAlign':'center',\
@@ -126,15 +132,16 @@ app.layout = html.Div(id = 'parent', children = [
         html.Div(dcc.Input(id='textbox', type='text',value=2020)),
         html.Button('Submit', id='simulate', n_clicks=0),
         html.Div(id='text', children='Enter a value and press submit'),
-        dcc.Graph(id = 'plot')
+        dcc.Graph(id = 'plot'),
+        html.Div(id='outputtext', children='')
     ])    
     
 @app.callback(Output(component_id='plot', component_property= 'figure'),
               Output(component_id='text', component_property= "children"),
+              Output(component_id='outputtext', component_property= "children"),
               [Input(component_id='simulate', component_property= 'n_clicks'),
                Input(component_id='textbox', component_property= 'value')],
               [State(component_id='dropdown', component_property= 'value')])
-
 def simulate_button(N,textvalue,value):
     '''
     We need as many arguments to the function as there are inputs and states
@@ -142,16 +149,23 @@ def simulate_button(N,textvalue,value):
     States are used as parameters but do not trigger a callback
 
     '''
-    todisplay = 'Showing data for ' + value + ' (' + str(N) + ')'
-    n_month = list(calendar.month_name).index(value)
+    if value is None:
+        todisplay = 'Not showing any data'
+        n_month=0
+    else:
+        todisplay = 'Showing data for ' + value + ' (' + str(N) + ')'
+        n_month = list(calendar.month_name).index(value)
+    
 
     print(todisplay)
     
     if os.path.isfile('data.p'):
-        load = pd.read_pickle('data.p')           # temporary file to speed up things
+        #results = pd.read_pickle('data.p')           # temporary file to speed up things
+        results = pickle.load(open('data.p','rb'))
     else:
-        load = simulate_load()
-        load.to_pickle('data.p')
+        results = simulate_load()
+        pickle.dump(results,open(b"data.p","wb"))
+    load = results['timeseries']
     # fig = go.Figure([go.Scatter(x = load.index, y = load['{}'.format(value)],\
     #                   line = dict(color = 'firebrick', width = 4))
     #                   ])    
@@ -172,7 +186,13 @@ def simulate_button(N,textvalue,value):
                       xaxis_title = 'Dates',
                       yaxis_title = 'Load in W'
                       )
-    return fig,todisplay     # Number of returns must be equal to the number of outputs
+    totext = []
+    for x in results['textoutput']:
+        totext.append(x)
+        totext.append(html.Br())   
+#    totext = '<br>'.join(results['textoutput'])
+    
+    return fig,todisplay,totext     # Number of returns must be equal to the number of outputs
 
 if __name__ == '__main__': 
     app.run_server()

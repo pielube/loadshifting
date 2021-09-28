@@ -78,7 +78,7 @@ def simulate_scenarios(n_scen,inputs):
 
     occupancy = np.zeros((n_scen, ntenm))
 
-
+    textoutput = []
     for i in range(n_scen):
         print("Generate scenario {}".format(i))
         family.simulate(year, ndays)
@@ -99,6 +99,8 @@ def simulate_scenarios(n_scen,inputs):
         
         occupancy[i, :] = convert_occupancy(family.occ)
         
+        textoutput += family.textoutput
+        
     res_el  = {'pstatic':pstatic[0,:], 'ptd':ptd[0,:], 'pdw':pdw[0,:], 'pwm':pwm[0,:]}
     res_DHW = {'mDHW':mDHW[0,:]}
     Tbath = Tbath[0,:]
@@ -106,7 +108,7 @@ def simulate_scenarios(n_scen,inputs):
 
     # result={'elec':elec, 'pstatic':pstatic,'ptd':ptd, 'pdw':pdw, 'pwm':pwm, 'mDHW':mDHW, 'occupancy':occupancy}
 
-    return res_el,res_DHW,Tbath,res_Qgains
+    return res_el,res_DHW,Tbath,res_Qgains,textoutput
 
 
 

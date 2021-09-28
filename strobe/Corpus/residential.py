@@ -105,8 +105,10 @@ class Household(object):
         # first define the name of the household object
         self.creation = time.asctime()
         self.name = name
+        self.textoutput = []  # list with descriptive output text
         self.parameterize(**kwargs)
         self.variables=dict() # dictionary with explanation of main outputs, filled in in submodules
+
         
 
 
@@ -195,11 +197,14 @@ class Household(object):
         self.clustersList = clusters(self.members)
         # and return
         print('Household-object created and parameterized.')
+        self.textoutput.append('NEW HOUSEHOLD SIMULATION')
         print(' - Employment types are %s' % str(self.members))
+        self.textoutput.append(' - Employment types are %s' % str(self.members))
         summary = [] #loop dics and remove doubles
         for member in self.clustersList:
             summary += member.values()
         print(' - Set of clusters is %s' % str(list(set(summary))))
+        self.textoutput.append(' - Set of clusters is %s' % str(list(set(summary))))
 
         return None
 
@@ -392,6 +397,8 @@ class Household(object):
         hours = len(presence)/6.
         print(' - Total presence time is {0:.1f} out of {1} hours'.format(hours, self.nday*24))
         print('\tbeing {:.1f} percent)'.format(hours*100/(self.nday*24)))
+        self.textoutput.append(' - Total presence time is {0:.1f} out of {1} hours'.format(hours, self.nday*24))
+        self.textoutput.append('\tbeing {:.1f} percent)'.format(hours*100/(self.nday*24)))
         return None
 
     def __plugload__(self):
@@ -457,7 +464,7 @@ class Household(object):
             # only the power load is returned
             load = int(np.sum(result['P'])/60/1000)
             print(' - Receptacle load is %s kWh' % str(load))
-
+            self.textoutput.append(' - Receptacle load is %s kWh' % str(load))
             return None
 
         def lightingload(self):
@@ -529,6 +536,7 @@ class Household(object):
 
             load = int(np.sum(result['P'])/60/1000)
             print(' - Lighting load is %s kWh' % str(load))
+            self.textoutput.append(' - Lighting load is %s kWh' % str(load))
             
             return None
 
@@ -571,6 +579,7 @@ class Household(object):
         load = np.sum(result['mDHW'])
         loadpppd = int(load/self.nday/len(self.clustersList))
         print(' - Draw-off is %s l/p.day' % str(loadpppd))
+        self.textoutput.append(' - Draw-off is %s l/p.day' % str(loadpppd))
  
         return None
 

@@ -24,7 +24,7 @@ temp, irr = strobe.ambientdata()
 
 # Strobe
 #res_el,res_DHW,Tbath,res_Qgains = simulate_scenarios(1, year, nday) # members=['FTE', 'PTE', 'School']
-res_el,res_DHW,Tbath,res_Qgains = strobe.simulate_scenarios(1, inputs)
+res_el,res_DHW,Tbath,res_Qgains,textoutput = strobe.simulate_scenarios(1, inputs)
 
 # House heating model
 ressize = np.size(res_el['pstatic'])
