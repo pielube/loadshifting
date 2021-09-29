@@ -77,13 +77,16 @@ def simulate_scenarios(n_scen,inputs):
     Qrad = np.zeros((n_scen, nminutes))
     Qcon = np.zeros((n_scen, nminutes))
 
-    occupancy = np.zeros((n_scen, ntenm))   # occupance has a time resolution of 10 min!
+    occupancy = []   # occupance has a time resolution of 10 min!
     
     Qspace = np.zeros((n_scen, nminutes))
     Wdot_hp = np.zeros((n_scen, nminutes))
     Qeb= np.zeros((n_scen, nminutes))
 
     textoutput = []
+    
+    members = []
+    
     for i in range(n_scen):
         print("Generating scenario {}".format(i))
         family.simulate(year, ndays)
@@ -101,11 +104,13 @@ def simulate_scenarios(n_scen,inputs):
         Qrad[i,:] = family.QRad
         Qcon[i,:] = family.QCon
         
-        occupancy[i, :] = convert_occupancy(family.occ)
+        occupancy.append(family.occ)
         
         textoutput += ['']
         textoutput += ["Generating scenario {}".format(i)]
         textoutput += family.textoutput
+        
+        members += family.members
         
         # House heating model
         timersetting = HeatingTimer(inputs)
@@ -130,7 +135,8 @@ def simulate_scenarios(n_scen,inputs):
         'HeatPumpPower':Wdot_hp,
         'InternalGains':Qrad+Qcon,
         'mDHW':mDHW, 
-        'occupancy':occupancy}
+        'occupancy':occupancy,
+        'members':members}
 
     return result,textoutput
 
