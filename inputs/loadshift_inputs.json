@@ -8,13 +8,13 @@
 
 "appliances": ["WashingMachine","TumbleDryer","DishWasher"],
 
-"ElectricBoiler": true,
+"ElectricBoiler": false,
 "Ttarget": 53.0, 
 "Tcw": 10.0,     
 "Vcyl": 50.0,    
 "Hloss": 0.5,
 
-"HeatPump": true,
+"HeatPump": false,
 "dwelling_type": "Terraced",
 "Tthermostatsetpoint": 19.0, 
 "ThermostatDeadband": 2.0,   

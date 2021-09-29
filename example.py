@@ -8,7 +8,7 @@ from strobe import feeder as fee
 import strobe
 
 # Create and simulate a single household, with given type of members, and given year
-family = strobe.Household("Example household", members=['FTE', 'Unemployed'])
+family = strobe.Household(name="Example household", members=['FTE', 'Unemployed'])
 family.simulate(year=2013, ndays=365)
 
 family.__dict__ # list all elements of family for inspection

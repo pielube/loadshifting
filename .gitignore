@@ -1,3 +1,4 @@
 Simulations
 *.pyc
 *data.p
+cache/*

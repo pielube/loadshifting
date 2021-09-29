@@ -15,47 +15,42 @@ from dash.dependencies import Input, Output, State
 import os
 import numpy as np
 import pandas as pd
-import datetime, calendar
+import calendar
 import strobe
 import json
 import pickle
 
-def simulate_load():
+from typing import Dict, Any      # for the dictionnary hashing funciton
+import hashlib  # for the dictionnary hashing funciton
+
+def dict_hash(dictionary: Dict[str, Any]) -> str:
+    """MD5 hash of a dictionary."""
+    dhash = hashlib.md5()
+    # We need to sort arguments so {'a': 1, 'b': 2} is
+    # the same as {'b': 2, 'a': 1}
+    encoded = json.dumps(dictionary, sort_keys=True).encode()
+    dhash.update(encoded)
+    return dhash.hexdigest()
+
+
+def simulate_load(inputs):
     
-    # Reading JSON
-    with open('inputs/loadshift_inputs.json') as f:
-        inputs = json.load(f)
-    # Ambient data
-    temp, irr = strobe.ambientdata()
+    result,textoutput = strobe.simulate_scenarios(1, inputs)
     
-    # Strobe
-    res_el,res_DHW,Tbath,res_Qgains,textoutput = strobe.simulate_scenarios(1,inputs)
+    # Creating dataframe with the results (only for the first scenarioi)
+    n_scen = 0
+    n_steps = np.size(result['StaticLoad'][n_scen,:])
+    index = pd.date_range(start='2020-01-01 00:00', periods=n_steps, freq='1min')
+    df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','ElectricalBoiler','HeatPumpPower','EVCharging'])
     
-    # House heating model
-    ressize = np.size(res_el['pstatic'])
-    phi_c = res_Qgains['Qrad']+res_Qgains['Qcon']
-    timersetting = strobe.HeatingTimer(inputs)
-    phi_h_space,Tem_test = strobe.HouseThermalModel(inputs,ressize,temp,irr,phi_c,timersetting)
-    thermal_load = int(sum(phi_h_space)/1000./60.)
-    print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-    
-    # Heat pump electric load
-    phi_hp = strobe.ElLoadHP(temp,phi_h_space)
-    
-    # Electric boiler and hot water tank
-    phi_a = strobe.HotWaterTankModel(inputs,res_DHW['mDHW'],Tbath)
-    
-    # Creating dataframe with the time-series results
-    df = pd.DataFrame(data=res_el)
-    df['elboiler'] = phi_a
-    df['heatpump'] = phi_hp
-    time = list(range(0,np.size(res_el['pstatic'])))
-    time = [datetime.datetime(2020,1,1) + datetime.timedelta(minutes=each) for each in time]
-    df.index = time
+    for key in df.columns:
+        if key in result:
+            df[key] = result[key][n_scen,:]
+        else:
+            df[key] = 0
     
     # Generating the dictionnary with the aggregated results
     results = {}
-    results['thermal_load'] = thermal_load
     results['textoutput'] = textoutput
     results['timeseries'] = df
     results['inputs'] = inputs
@@ -63,7 +58,8 @@ def simulate_load():
     return results
 
 # List of bootstrap themes for dash: https://www.bootstrapcdn.com/bootswatch/
-app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
+#app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
+app = dash.Dash()
     
 app.layout = html.Div(id = 'parent', children = [
         html.H1(id = 'H1', children = 'Load generator display', style = {'textAlign':'center',\
@@ -72,15 +68,16 @@ app.layout = html.Div(id = 'parent', children = [
         html.H2(id='text1', children='Simulation parameters:'),
 
         dcc.Checklist(
+                        id = 'checklist_apps',
                         options=[
-                            {'label': 'Washing Machine', 'value': 'wp'},
+                            {'label': 'Washing Machine', 'value': 'wm'},
                             {'label': 'Tumble Dryer', 'value': 'td'},
                             {'label': 'Dish Washer', 'value': 'dw'},
                             {'label': 'Electric boiler', 'value': 'eb'},
                             {'label': 'Heat pump', 'value': 'hp'},
                             {'label': 'Electric Vehicle', 'value': 'ev'}
                         ],
-                        value=['wp', 'td','dw','eb','hp'],
+                        value=['wm', 'td','dw','eb','hp'],
                         labelStyle={'display': 'inline-block'}
                     ),
         html.H2(id='text_household_composition', children='Composition du ménage'),
@@ -111,14 +108,14 @@ app.layout = html.Div(id = 'parent', children = [
         
         html.H2(id = 'H2', children = 'Heat pump parameters', style = {'textAlign':'left'}),        
         html.Div(id='text_house_type', children='House type:'),
-        dcc.Dropdown( id = 'dropdown2',
+        dcc.Dropdown( id = 'dropdown_house',
                         options = [ {'label':'4 Façades', 'value': '4'}, 
                                    {'label':'3 Façades', 'value': '3'},
                                    {'label':'2 Façades', 'value': '2'},
                                    {'label':'Appartement', 'value': 'flat'}],
                         value = '4'),
         html.Div(id='text_hp_power', children='Heat pumpe thermal power (W):'),
-        html.Div(dcc.Input(id='input_hp_pwoer', type='text',value=5000)),
+        html.Div(dcc.Input(id='input_hp_power', type='text',value=5000)),
         
         html.H2(id = 'title_boiler', children = 'Electrical boiler paramters', style = {'textAlign':'left'}),        
         html.Div(id='text_volume', children='Volume (l):'),
@@ -127,8 +124,8 @@ app.layout = html.Div(id = 'parent', children = [
         html.Div(dcc.Input(id='input_boiler_temperature', type='text',value=53)),
 
         html.H2(id='text2', children='Time parameters:'),
-        dcc.Dropdown( id = 'dropdown',
-        options = [ {'label':calendar.month_name[x], 'value': calendar.month_name[x]} for x in range(1 ,13)]),
+        dcc.Dropdown( id = 'dropdown_month',
+                     options = [ {'label':calendar.month_name[x], 'value': calendar.month_name[x]} for x in range(1 ,13)]),
         html.Div(dcc.Input(id='textbox', type='text',value=2020)),
         html.Button('Submit', id='simulate', n_clicks=0),
         html.Div(id='text', children='Enter a value and press submit'),
@@ -141,30 +138,80 @@ app.layout = html.Div(id = 'parent', children = [
               Output(component_id='outputtext', component_property= "children"),
               [Input(component_id='simulate', component_property= 'n_clicks'),
                Input(component_id='textbox', component_property= 'value')],
-              [State(component_id='dropdown', component_property= 'value')])
-def simulate_button(N,textvalue,value):
+              [State(component_id='checklist_apps', component_property= 'value'),
+               State(component_id='dropdown_FTE', component_property= 'value'),
+               State(component_id='dropdown_Unemployed', component_property= 'value'),
+               State(component_id='dropdown_School', component_property= 'value'),
+               State(component_id='dropdown_Retired', component_property= 'value'),
+               State(component_id='dropdown_house', component_property= 'value'),
+               State(component_id='input_hp_power', component_property= 'value'),
+               State(component_id='input_boiler_volume', component_property= 'value'),
+               State(component_id='input_boiler_temperature', component_property= 'value'),               
+               State(component_id='dropdown_month', component_property= 'value')])
+def simulate_button(N,textvalue,checklist_apps,dropdown_FTE,dropdown_Unemployed,dropdown_School,dropdown_Retired,dropdown_house,input_hp_power,input_boiler_volume,input_boiler_temperature,month):
     '''
     We need as many arguments to the function as there are inputs and states
     Inputs trigger a callback 
     States are used as parameters but do not trigger a callback
 
     '''
-    if value is None:
+    if month is None:
         todisplay = 'Not showing any data'
         n_month=0
     else:
-        todisplay = 'Showing data for ' + value + ' (' + str(N) + ')'
-        n_month = list(calendar.month_name).index(value)
-    
-
+        todisplay = 'Showing data for ' + month + ' (' + str(N) + ')'
+        n_month = list(calendar.month_name).index(month)
     print(todisplay)
     
-    if os.path.isfile('data.p'):
-        #results = pd.read_pickle('data.p')           # temporary file to speed up things
-        results = pickle.load(open('data.p','rb'))
+    print(checklist_apps)
+    print(dropdown_School)
+    print(input_boiler_volume)
+    
+    # Reading JSON
+    with open('inputs/loadshift_inputs.json') as f:
+        inputs = json.load(f)
+
+    #update inputs with user-defined values
+    inputs['appliances'] = []
+    if 'wm' in checklist_apps:
+        inputs['appliances'].append("WashingMachine")
+    if 'td' in checklist_apps:
+        inputs['appliances'].append("TumbleDryer")        
+    if 'dw' in checklist_apps:
+        inputs['appliances'].append("DishWasher")    
+    if 'hp' in checklist_apps:
+        inputs['HeatPump'] = True
     else:
-        results = simulate_load()
-        pickle.dump(results,open(b"data.p","wb"))
+        inputs['HeatPump'] = False
+    if 'eb' in checklist_apps:
+        inputs['ElectricBoiler'] = True
+    else:
+        inputs['ElectricBoiler'] = False
+    if 'ev' in checklist_apps:
+        inputs['EV'] = True
+    else:
+        inputs['EV'] = False
+        
+    inputs['members'] = []
+    inputs['members'] += ['FTE' for i in range(dropdown_FTE)]
+    inputs['members'] += ['Retired' for i in range(dropdown_Retired)]
+    inputs['members'] += ['Unemployed' for i in range(dropdown_Unemployed)]
+    inputs['members'] += ['School' for i in range(dropdown_School)]
+    
+    inputs['HeatPumpThermalPower'] = input_hp_power
+    inputs['Vcyl'] = input_boiler_volume
+    inputs['Ttarget'] = input_boiler_temperature
+    
+    # generating hash for the current config:
+    filename = 'cache/' + dict_hash(inputs)
+    
+    if os.path.isfile(filename):
+        #results = pd.read_pickle('data.p')           # temporary file to speed up things
+        results = pickle.load(open(filename,'rb'))
+        print('Reading previous (cached) simulation data')
+    else:
+        results = simulate_load(inputs)
+        pickle.dump(results,open(filename,"wb"))
     load = results['timeseries']
     # fig = go.Figure([go.Scatter(x = load.index, y = load['{}'.format(value)],\
     #                   line = dict(color = 'firebrick', width = 4))

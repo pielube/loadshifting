@@ -60,6 +60,8 @@ def simulate_scenarios(n_scen,inputs):
     nminutes = ndays * 1440 + 1
     ntenm = ndays * 144 + 1
     
+    Tamb, irr = ambientdata()
+    
     family = Household(**inputs)
 
     # define arrays storing the scenarios:
@@ -71,12 +73,15 @@ def simulate_scenarios(n_scen,inputs):
     pwm     = np.zeros((n_scen, nminutes))
     
     mDHW  = np.zeros((n_scen, nminutes))
-    Tbath = np.zeros((n_scen, ntenm))
     
     Qrad = np.zeros((n_scen, nminutes))
     Qcon = np.zeros((n_scen, nminutes))
 
-    occupancy = np.zeros((n_scen, ntenm))
+    occupancy = np.zeros((n_scen, ntenm))   # occupance has a time resolution of 10 min!
+    
+    Qspace = np.zeros((n_scen, nminutes))
+    Wdot_hp = np.zeros((n_scen, nminutes))
+    Qeb= np.zeros((n_scen, nminutes))
 
     textoutput = []
     for i in range(n_scen):
@@ -92,7 +97,6 @@ def simulate_scenarios(n_scen,inputs):
         pwm[i, :]     = family.Pwm
         
         mDHW[i, :]  = family.mDHW
-        Tbath[i, :] = family.sh_day
         
         Qrad[i,:] = family.QRad
         Qcon[i,:] = family.QCon
@@ -103,14 +107,32 @@ def simulate_scenarios(n_scen,inputs):
         textoutput += ["Generating scenario {}".format(i)]
         textoutput += family.textoutput
         
-    res_el  = {'pstatic':pstatic[0,:], 'ptd':ptd[0,:], 'pdw':pdw[0,:], 'pwm':pwm[0,:]}
-    res_DHW = {'mDHW':mDHW[0,:]}
-    Tbath = Tbath[0,:]
-    res_Qgains = {'Qrad':Qrad[0,:],'Qcon':Qcon[0,:]}
+        # House heating model
+        timersetting = HeatingTimer(inputs)
+        Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting)
+        thermal_load = int(sum(Qspace[i,:])/1000./60.)
+        print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+        textoutput += [' - Thermal demand for space heating is ',thermal_load,' kWh']
+        
+        # Heat pump electric load
+        Wdot_hp[i,:] = ElLoadHP(Tamb,Qspace[i,:])
+        
+        # Electric boiler and hot water tank
+        Qeb[i,:] = HotWaterTankModel(inputs,family.mDHW,family.sh_day)
 
-    # result={'elec':elec, 'pstatic':pstatic,'ptd':ptd, 'pdw':pdw, 'pwm':pwm, 'mDHW':mDHW, 'occupancy':occupancy}
+    result={
+        'StaticLoad':pstatic,
+        'TumbleDryer':ptd, 
+        'DishWasher':pdw, 
+        'WashingMachine':pwm, 
+        'ElectricalBoiler':Qeb,
+        'SpaceHeating':Qspace,
+        'HeatPumpPower':Wdot_hp,
+        'InternalGains':Qrad+Qcon,
+        'mDHW':mDHW, 
+        'occupancy':occupancy}
 
-    return res_el,res_DHW,Tbath,res_Qgains,textoutput
+    return result,textoutput
 
 
 
@@ -122,7 +144,7 @@ def HotWaterTankModel(inputs,mDHW,Tbath):
     In:
     inputs    dictionary with input data from JSON
     mDHW      tap water required l/min [every min]
-    Tbath     temperature if the room where the boiler is stored [every 10 min]
+    Tbath     temperature in the room where the boiler is stored [every 10 min]
     
     Out: 
     power consumption [every min]
