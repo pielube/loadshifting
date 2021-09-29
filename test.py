@@ -25,7 +25,7 @@ result,textoutput = strobe.simulate_scenarios(1, inputs)
 n_scen = 0
 n_steps = np.size(result['StaticLoad'][n_scen,:])
 index = pd.date_range(start='2020-01-01 00:00', periods=n_steps, freq='1min')
-df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','ElectricalBoiler','HeatPumpPower','EVCharging'])
+df = pd.DataFrame(index=index,columns=['ElectricalLoad','StaticLoad','TumbleDryer','DishWasher','WashingMachine','ElectricalBoiler','HeatPumpPower','EVCharging'])
 
 for key in df.columns:
     if key in result:

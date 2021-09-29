@@ -116,8 +116,23 @@ def simulate_scenarios(n_scen,inputs):
         
         # Annual load from appliances
         E_app = int(np.sum(family.P)/60/1000)
-        print(' - Receptacle load is %s kWh' % str(E_app))
-        textoutput.append(' - Receptacle (plug) load is %s kWh' % str(E_app))
+        print(' - Receptacle load (including lighting) is %s kWh' % str(E_app))
+        textoutput.append(' - Receptacle (plugs + lighting) load is %s kWh' % str(E_app))
+        
+        # Annual load from dryer
+        E_td = int(np.sum(family.Ptd)/60/1000)
+        print(' - Load from tumble dryer is %s kWh' % str(E_td))
+        textoutput.append(' - Load from tumble dryer is %s kWh' % str(E_td))
+        
+        # Annual load from washing machine
+        E_wm = int(np.sum(family.Pwm)/60/1000)
+        print(' - Load from washing machine is %s kWh' % str(E_wm))
+        textoutput.append(' - Load from washing machine is %s kWh' % str(E_wm))
+        
+        # Annual load from dish washer
+        E_dw = int(np.sum(family.Pdw)/60/1000)
+        print(' - Load from dish washer is %s kWh' % str(E_dw))
+        textoutput.append(' - Load from dish washer is %s kWh' % str(E_dw))
         
         # Heat pump electric load
         if inputs['HeatPump']:
@@ -139,12 +154,13 @@ def simulate_scenarios(n_scen,inputs):
             Qeb[i,:] = 0
             E_eb = 0
         
-        E_total = E_app + E_hp + E_eb
+        E_total = E_app + E_td + E_wm + E_dw + E_hp + E_eb
         print(' - Total annual load: ',E_total,' kWh')
         textoutput.append(' - Total annual load: ' + str(E_total) + ' kWh')   
         
 
     result={
+        'ElectricalLoad':elec,
         'StaticLoad':pstatic,
         'TumbleDryer':ptd, 
         'DishWasher':pdw, 

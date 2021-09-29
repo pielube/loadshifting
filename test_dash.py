@@ -196,6 +196,14 @@ def simulate_button(N,checklist_apps,dropdown_FTE,dropdown_Unemployed,dropdown_S
     inputs['Vcyl'] = input_boiler_volume
     inputs['Ttarget'] = input_boiler_temperature
     
+    map_building_types = {
+        '4': "Detached",
+        '3': "Semi-detached",
+        '2': "Terraced",
+        'flat': "Improved terraced"
+        }
+    inputs['dwelling_type'] = map_building_types[dropdown_house]
+    
     # generating hash for the current config:
     filename = 'cache/' + dict_hash(inputs)
     
