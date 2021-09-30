@@ -20,7 +20,7 @@ set_appliances = \
     "cycle_power": 2400, 
     "cal": 0.036523596330418226, 
     "standby_power": 1, 
-    "owner": 0.500, 
+    "owner": 0.751, 
     "cycle_n": 417.902007298679, 
     "fconv": 0.7, 
     "name": "Hob", 
