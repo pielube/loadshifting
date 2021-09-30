@@ -126,18 +126,20 @@ app.layout = html.Div(id = 'parent', children = [
         html.H2(id='text2', children='Time parameters:'),
         dcc.Dropdown( id = 'dropdown_month',
                      options = [ {'label':calendar.month_name[x], 'value': calendar.month_name[x]} for x in range(1 ,13)]),
-        html.Div(dcc.Input(id='textbox', type='text',value=2020)),
         html.Button('Submit', id='simulate', n_clicks=0),
         html.Div(id='text', children='Enter a value and press submit'),
-        dcc.Graph(id = 'plot'),
-        html.Div(id='outputtext', children='')
+        dcc.Loading(
+            id="loading-1",
+            type="default",
+            children=html.Div(id="loading-output-1")
+        ),
+        dcc.Graph(id = 'plot')
     ])    
     
 @app.callback(Output(component_id='plot', component_property= 'figure'),
               Output(component_id='text', component_property= "children"),
-              Output(component_id='outputtext', component_property= "children"),
-              [Input(component_id='simulate', component_property= 'n_clicks'),
-               Input(component_id='textbox', component_property= 'value')],
+              Output("loading-output-1", "children"),
+              [Input(component_id='simulate', component_property= 'n_clicks')],
               [State(component_id='checklist_apps', component_property= 'value'),
                State(component_id='dropdown_FTE', component_property= 'value'),
                State(component_id='dropdown_Unemployed', component_property= 'value'),
@@ -148,7 +150,7 @@ app.layout = html.Div(id = 'parent', children = [
                State(component_id='input_boiler_volume', component_property= 'value'),
                State(component_id='input_boiler_temperature', component_property= 'value'),               
                State(component_id='dropdown_month', component_property= 'value')])
-def simulate_button(N,textvalue,checklist_apps,dropdown_FTE,dropdown_Unemployed,dropdown_School,dropdown_Retired,dropdown_house,input_hp_power,input_boiler_volume,input_boiler_temperature,month):
+def simulate_button(N,checklist_apps,dropdown_FTE,dropdown_Unemployed,dropdown_School,dropdown_Retired,dropdown_house,input_hp_power,input_boiler_volume,input_boiler_temperature,month):
     '''
     We need as many arguments to the function as there are inputs and states
     Inputs trigger a callback 
@@ -162,10 +164,6 @@ def simulate_button(N,textvalue,checklist_apps,dropdown_FTE,dropdown_Unemployed,
         todisplay = 'Showing data for ' + month + ' (' + str(N) + ')'
         n_month = list(calendar.month_name).index(month)
     print(todisplay)
-    
-    print(checklist_apps)
-    print(dropdown_School)
-    print(input_boiler_volume)
     
     # Reading JSON
     with open('inputs/loadshift_inputs.json') as f:
@@ -198,9 +196,17 @@ def simulate_button(N,textvalue,checklist_apps,dropdown_FTE,dropdown_Unemployed,
     inputs['members'] += ['Unemployed' for i in range(dropdown_Unemployed)]
     inputs['members'] += ['School' for i in range(dropdown_School)]
     
-    inputs['HeatPumpThermalPower'] = input_hp_power
-    inputs['Vcyl'] = input_boiler_volume
-    inputs['Ttarget'] = input_boiler_temperature
+    inputs['HeatPumpThermalPower'] = int(input_hp_power)
+    inputs['Vcyl'] = int(input_boiler_volume)
+    inputs['Ttarget'] = int(input_boiler_temperature)
+    
+    map_building_types = {
+        '4': "Detached",
+        '3': "Semi-detached",
+        '2': "Terraced",
+        'flat': "Improved terraced"
+        }
+    inputs['dwelling_type'] = map_building_types[dropdown_house]
     
     # generating hash for the current config:
     filename = 'cache/' + dict_hash(inputs)
@@ -218,7 +224,7 @@ def simulate_button(N,textvalue,checklist_apps,dropdown_FTE,dropdown_Unemployed,
     #                   ])    
 
 #    fig = px.area(load, load.index)
-    idx = load.index[(load.index.month==n_month) & (load.index.year==int(textvalue))]
+    idx = load.index[(load.index.month==n_month) & (load.index.year==2020)]
     fig = go.Figure()
     for key in load:
         fig.add_trace(go.Scatter(

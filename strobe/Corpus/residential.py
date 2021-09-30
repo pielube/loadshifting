@@ -458,11 +458,6 @@ class Household(object):
             self.r_receptacles = result
             self.n_receptacles = result_n
 
-            # output ##########################################################
-            # only the power load is returned
-            load = int(np.sum(result['P'])/60/1000)
-            print(' - Receptacle load is %s kWh' % str(load))
-            self.textoutput.append(' - Receptacle load is %s kWh' % str(load))
             return None
 
         def lightingload(self):

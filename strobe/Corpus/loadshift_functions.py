@@ -117,15 +117,55 @@ def simulate_scenarios(n_scen,inputs):
         Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting)
         thermal_load = int(sum(Qspace[i,:])/1000./60.)
         print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-        textoutput += [' - Thermal demand for space heating is ',thermal_load,' kWh']
+        textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
+        
+        # Annual load from appliances
+        E_app = int(np.sum(family.P)/60/1000)
+        print(' - Receptacle load (including lighting) is %s kWh' % str(E_app))
+        textoutput.append(' - Receptacle (plugs + lighting) load is %s kWh' % str(E_app))
+        
+        # Annual load from dryer
+        E_td = int(np.sum(family.Ptd)/60/1000)
+        print(' - Load from tumble dryer is %s kWh' % str(E_td))
+        textoutput.append(' - Load from tumble dryer is %s kWh' % str(E_td))
+        
+        # Annual load from washing machine
+        E_wm = int(np.sum(family.Pwm)/60/1000)
+        print(' - Load from washing machine is %s kWh' % str(E_wm))
+        textoutput.append(' - Load from washing machine is %s kWh' % str(E_wm))
+        
+        # Annual load from dish washer
+        E_dw = int(np.sum(family.Pdw)/60/1000)
+        print(' - Load from dish washer is %s kWh' % str(E_dw))
+        textoutput.append(' - Load from dish washer is %s kWh' % str(E_dw))
         
         # Heat pump electric load
-        Wdot_hp[i,:] = ElLoadHP(Tamb,Qspace[i,:])
+        if inputs['HeatPump']:
+            Wdot_hp[i,:] = ElLoadHP(Tamb,Qspace[i,:])
+            E_hp = int(sum(Wdot_hp[i,:])/1000./60.)
+            print(' - Heat pump consumption: ',E_hp,' kWh')
+            textoutput.append(' - Heat pump consumption: ' + str(E_hp) + ' kWh')
+        else:
+            Wdot_hp[i,:] = 0
+            E_hp = 0
         
         # Electric boiler and hot water tank
-        Qeb[i,:] = HotWaterTankModel(inputs,family.mDHW,family.sh_day)
+        if inputs['ElectricBoiler']:
+            Qeb[i,:] = HotWaterTankModel(inputs,family.mDHW,family.sh_day)
+            E_eb = int(sum(Qeb[i,:])/1000./60.)
+            print(' - Electrical boiler consumption: ',E_eb,' kWh')
+            textoutput.append(' - Electrical boiler consumption: ' + str(E_eb) +' kWh')
+        else:
+            Qeb[i,:] = 0
+            E_eb = 0
+        
+        E_total = E_app + E_td + E_wm + E_dw + E_hp + E_eb
+        print(' - Total annual load: ',E_total,' kWh')
+        textoutput.append(' - Total annual load: ' + str(E_total) + ' kWh')   
+        
 
     result={
+        'ElectricalLoad':elec,
         'StaticLoad':pstatic,
         'TumbleDryer':ptd, 
         'DishWasher':pdw, 
