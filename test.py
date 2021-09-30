@@ -32,17 +32,16 @@ n_steps = np.size(result['StaticLoad'][n_scen,:])
 index = pd.date_range(start='2016-01-01 00:00', periods=n_steps, freq='1min')
 df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','ElectricalBoiler','HeatPumpPower','EVCharging'])
 
+#df = df.iloc[:-1,:] # dropping last element (first min year after, strobe stores it)
+df.drop(df.index[-1],inplace=True)
+
 for key in df.columns:
     if key in result:
         df[key] = result[key][n_scen,:]
+    elif key in result_ramp:
+        df[key] = result_ramp[key]* 1000
     else:
         df[key] = 0
-
-for key in df.columns:
-    if key in result_ramp:
-        df[key] = result_ramp[key]
-        
-df = df.iloc[:-1,:] # dropping last element (first min year after, strobe stores it)
 
 # Plotting
 
