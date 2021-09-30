@@ -128,13 +128,17 @@ app.layout = html.Div(id = 'parent', children = [
                      options = [ {'label':calendar.month_name[x], 'value': calendar.month_name[x]} for x in range(1 ,13)]),
         html.Button('Submit', id='simulate', n_clicks=0),
         html.Div(id='text', children='Enter a value and press submit'),
-        dcc.Graph(id = 'plot'),
-        html.Div(id='outputtext', children='')
+        dcc.Loading(
+            id="loading-1",
+            type="default",
+            children=html.Div(id="loading-output-1")
+        ),
+        dcc.Graph(id = 'plot')
     ])    
     
 @app.callback(Output(component_id='plot', component_property= 'figure'),
               Output(component_id='text', component_property= "children"),
-              Output(component_id='outputtext', component_property= "children"),
+              Output("loading-output-1", "children"),
               [Input(component_id='simulate', component_property= 'n_clicks')],
               [State(component_id='checklist_apps', component_property= 'value'),
                State(component_id='dropdown_FTE', component_property= 'value'),
@@ -192,9 +196,9 @@ def simulate_button(N,checklist_apps,dropdown_FTE,dropdown_Unemployed,dropdown_S
     inputs['members'] += ['Unemployed' for i in range(dropdown_Unemployed)]
     inputs['members'] += ['School' for i in range(dropdown_School)]
     
-    inputs['HeatPumpThermalPower'] = input_hp_power
-    inputs['Vcyl'] = input_boiler_volume
-    inputs['Ttarget'] = input_boiler_temperature
+    inputs['HeatPumpThermalPower'] = int(input_hp_power)
+    inputs['Vcyl'] = int(input_boiler_volume)
+    inputs['Ttarget'] = int(input_boiler_temperature)
     
     map_building_types = {
         '4': "Detached",

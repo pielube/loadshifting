@@ -149,7 +149,7 @@ def simulate_scenarios(n_scen,inputs):
             Qeb[i,:] = HotWaterTankModel(inputs,family.mDHW,family.sh_day)
             E_eb = int(sum(Qeb[i,:])/1000./60.)
             print(' - Electrical boiler consumption: ',E_eb,' kWh')
-            textoutput.append(' - Electrical boile consumption: ' + str(E_eb) +' kWh')
+            textoutput.append(' - Electrical boiler consumption: ' + str(E_eb) +' kWh')
         else:
             Qeb[i,:] = 0
             E_eb = 0
