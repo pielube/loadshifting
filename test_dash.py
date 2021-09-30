@@ -16,7 +16,7 @@ import os
 import numpy as np
 import pandas as pd
 import calendar
-import strobe
+import strobe,ramp
 import json
 import pickle
 
@@ -35,17 +35,31 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
 
 def simulate_load(inputs):
     
+    # Strobe
     result,textoutput = strobe.simulate_scenarios(1, inputs)
     
-    # Creating dataframe with the results (only for the first scenarioi)
-    n_scen = 0
+    n_scen = 0 # Working only with the first scenario
+    
+    # RAMP-mobility
+    if inputs['EV']:
+        result_ramp = ramp.EVCharging(inputs, result['occupancy'][n_scen])
+    else:
+        result_ramp=pd.DataFrame()
+    
+    # Creating dataframe with the results 
     n_steps = np.size(result['StaticLoad'][n_scen,:])
-    index = pd.date_range(start='2020-01-01 00:00', periods=n_steps, freq='1min')
+    index = pd.date_range(start='2016-01-01 00:00', periods=n_steps, freq='1min')
     df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','ElectricalBoiler','HeatPumpPower','EVCharging'])
+    
+    result_ramp.loc[df.index[-1],'EVCharging']=0
+    #df.index.union(result_ramp.index)        # too slow
     
     for key in df.columns:
         if key in result:
             df[key] = result[key][n_scen,:]
+        elif key in result_ramp:
+            df[key] = result_ramp[key]* 1000
+            textoutput.append(' - Total EV load: ' + str(int(result_ramp[key].sum()/60)) + ' kWh')
         else:
             df[key] = 0
     

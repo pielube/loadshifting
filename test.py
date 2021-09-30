@@ -25,15 +25,18 @@ result,textoutput = strobe.simulate_scenarios(1, inputs)
 n_scen = 0 # Working only with the first scenario
 
 # RAMP-mobility
-result_ramp = ramp.EVCharging(inputs, result['members'], result['occupancy'][n_scen])
+if inputs['EV']:
+    result_ramp = ramp.EVCharging(inputs, result['occupancy'][n_scen])
+else:
+    result_ramp=pd.DataFrame()
 
 # Creating dataframe with the results 
 n_steps = np.size(result['StaticLoad'][n_scen,:])
 index = pd.date_range(start='2016-01-01 00:00', periods=n_steps, freq='1min')
 df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','ElectricalBoiler','HeatPumpPower','EVCharging'])
 
-#df = df.iloc[:-1,:] # dropping last element (first min year after, strobe stores it)
-df.drop(df.index[-1],inplace=True)
+result_ramp.loc[df.index[-1],'EVCharging']=0
+#df.index.union(result_ramp.index)        # too slow
 
 for key in df.columns:
     if key in result:
@@ -42,6 +45,7 @@ for key in df.columns:
         df[key] = result_ramp[key]* 1000
     else:
         df[key] = 0
+
 
 # Plotting
 

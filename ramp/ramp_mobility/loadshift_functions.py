@@ -10,17 +10,17 @@ import pathlib, os
 ramppath = pathlib.Path(__file__).parent.parent.resolve()
 datapath = os.path.join(ramppath,'database')
 
-def MainDriver(inputs,members):
+def MainDriver(inputs):
     plausibleMDs = ['FTE','PTE','Retired','Unemployed'] # list of plausible main drivers
-    plausibleMDsinDwelling = [value for value in members if value in plausibleMDs] # list of plausible main drivers among house members
+    plausibleMDsinDwelling = [value for value in inputs['members'] if value in plausibleMDs] # list of plausible main drivers among house members
     MD = random.choice(plausibleMDsinDwelling) # main driver
     return MD
 
 
-def EVCharging(inputs,members,occupancy):
-    
-    MD = MainDriver(inputs,members)
-    MDathome = occupancy[members.index(MD)]
+def EVCharging(inputs,occupancy):
+
+    MD = MainDriver(inputs)
+    MDathome = occupancy[inputs['members'].index(MD)]
     
     ndays = inputs['ndays']
     nminutes = ndays * 1440 + 1 
