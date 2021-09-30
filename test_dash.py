@@ -222,8 +222,11 @@ def simulate_button(N,checklist_apps,dropdown_FTE,dropdown_Unemployed,dropdown_S
         }
     inputs['dwelling_type'] = map_building_types[dropdown_house]
     
-    # generating hash for the current config:
+    # generating hash for the current config:        
     filename = 'cache/' + dict_hash(inputs)
+    
+    if not os.path.isdir('cache'):
+        os.mkdir('cache')
     
     if os.path.isfile(filename):
         #results = pd.read_pickle('data.p')           # temporary file to speed up things
