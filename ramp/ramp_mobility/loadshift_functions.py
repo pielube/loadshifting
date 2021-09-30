@@ -6,6 +6,9 @@ from ramp.ramp_mobility.core_model.stochastic_process_mobility import Stochastic
 from ramp.ramp_mobility.core_model.charging_process import Charging_Process
 from ramp.ramp_mobility.post_process import post_process as pp
 
+import pathlib, os
+ramppath = pathlib.Path(__file__).parent.parent.resolve()
+datapath = os.path.join(ramppath,'database')
 
 def MainDriver(inputs,members):
     plausibleMDs = ['FTE','PTE','Retired','Unemployed'] # list of plausible main drivers
@@ -54,11 +57,11 @@ def EVCharging(inputs,members,occupancy):
         Ch_stations = ([3.7, 11, 120], [1.0, 0., 0.]) # [0.6, 0.3, 0.1] Define nominal power of charging stations and their probability 
         
         #inputfile for the temperature data: 
-        inputfile_temp = r".\ramp\database\temp_ninja_pop_1980-2019.csv"
+        inputfile_temp = datapath + "/temp_ninja_pop_1980-2019.csv"
         
         ## If simulating the RES Integration charging strategy, a file with the residual load curve should be included in the folder
         try:
-            inputfile_residual_load = fr".\ramp\database\residual_load\residual_load_{c}.csv"
+            inputfile_residual_load = datapath + "/residual_load/residual_load_{c}.csv"
             residual_load = pd.read_csv(inputfile_residual_load, index_col = 0)
         except FileNotFoundError:      
             residual_load = pd.DataFrame(0, index=range(1), columns=range(1))
