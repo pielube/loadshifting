@@ -238,7 +238,7 @@ def simulate_button(N,checklist_apps,dropdown_FTE,dropdown_Unemployed,dropdown_S
     #                   ])    
 
 #    fig = px.area(load, load.index)
-    idx = load.index[(load.index.month==n_month) & (load.index.year==2020)]
+    idx = load.index[(load.index.month==n_month) & (load.index.year==2016)]
     fig = go.Figure()
     for key in load:
         fig.add_trace(go.Scatter(
