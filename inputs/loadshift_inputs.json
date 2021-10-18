@@ -4,7 +4,7 @@
 "year": 2016,
 "ndays": 366,
 
-"members": ["Retired","Retired","FTE","FTE"],
+"members": ["FTE","PTE","School","U12"],
 
 "appliances": ["WashingMachine","TumbleDryer","DishWasher"],
 
@@ -15,7 +15,7 @@
 "Hloss": 0.5,
 
 "HeatPump": false,
-"dwelling_type": "Terraced",
+"dwelling_type": "Detached",
 "Tthermostatsetpoint": 19.0, 
 "ThermostatDeadband": 2.0,   
 "Tem_target": 40.0,          

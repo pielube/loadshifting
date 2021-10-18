@@ -113,8 +113,21 @@ def simulate_scenarios(n_scen,inputs):
         members += family.members
         
         # House heating model
-        timersetting = HeatingTimer(inputs)
-        Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting)
+        
+        # Thermostat timer setting
+        # 1) According to CREST
+        # timersetting = HeatingTimer(inputs)
+        # 2) No timer
+        # ressize = 527041 # should be defined once and for all not here
+        # timersetting = np.ones(ressize)
+        # 3) According to Aerts
+        timersetting = AertsThermostatTimer(ndays)
+        
+        # Thermostat temperature setting according to Aerts
+        # Look inside HouseThermalModel() if actually used, around line 310
+        Tthermostat  = AertsThermostatTemp(occupancy)
+        
+        Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting,Tthermostat)
         thermal_load = int(sum(Qspace[i,:])/1000./60.)
         print(' - Thermal demand for space heating is ',thermal_load,' kWh')
         textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
@@ -229,7 +242,7 @@ def HotWaterTankModel(inputs,mDHW,Tbath):
     return phi_a
 
 
-def HouseThermalModel(inputs,ressize,To,Go, phi_c,timersetting):
+def HouseThermalModel(inputs,ressize,To,Go, phi_c,timersetting,Tthermostat):
     
     """
     inputs            dictionary with input data from JSON
@@ -295,7 +308,7 @@ def HouseThermalModel(inputs,ressize,To,Go, phi_c,timersetting):
         Tem_test[i] = Tem
         
         if SpaceThermostatState == True  and Ti < (Tthermostatsetpoint + ThermostatDeadband) or \
-            SpaceThermostatState == False and Ti < (Tthermostatsetpoint - ThermostatDeadband):
+            SpaceThermostatState == False and Ti < (Tthermostatsetpoint - ThermostatDeadband): # Tthermostat[i]
                
             SpaceThermostatState = True
         else:
@@ -439,6 +452,41 @@ def ElLoadHP(temp,phi_h_space):
         COP = 0.001*temp[i]**2 + 0.0471*temp[i] + 2.1259
         phi_hp[i] = phi_h_space[i]/COP
     return phi_hp
+
+
+def AertsThermostatTemp(occupancy):
+    
+    ressize = 527041 # should be defined once and for all not here
+    Tthermostat = np.zeros(ressize)
+    
+    occupancy_tot = np.zeros(len(occupancy[0][0]))
+    
+    for i in range(len(occupancy[0])):
+        occupancy_tot = np.multiply(occupancy_tot,np.where(occupancy[0][i] >= 3,0,1))
+    
+    for i in range(len(occupancy_tot)-1):
+        for j in range(10):
+            if occupancy_tot[i] > 0:
+                Tthermostat[i*10+j]=20.
+            else:
+                Tthermostat[i*10+j]=15.
+                
+    Tthermostat[ressize-1] = Tthermostat[ressize-2] 
+    
+    return Tthermostat
+
+    
+def AertsThermostatTimer(ndays):
+    
+    timer_day = np.zeros(1440)
+    
+    for i in range(len(timer_day)):
+        if (360 <= i <= 1380):
+            timer_day[i] = 1
+    timer_year = np.tile(timer_day,ndays)
+    timer_year = np.append(timer_year,timer_year[len(timer_year)-1])
+    
+    return timer_year
 
 
 
