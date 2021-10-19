@@ -258,7 +258,6 @@ def HouseThermalModel(inputs,ressize,To,Go, phi_c,timersetting,Tthermostat):
     
     Tthermostatsetpoint = inputs['Tthermostatsetpoint'] #°C to be updated with data from Strobe or distrib probability
     ThermostatDeadband  = inputs['ThermostatDeadband']  #°C
-    Tem_target          = inputs['Tem_target']          #°C
     Temittersetpoint    = inputs['Temittersetpoint']    #°C
     EmitterDeadband     = inputs['EmitterDeadband']     #°C
 
@@ -266,26 +265,43 @@ def HouseThermalModel(inputs,ressize,To,Go, phi_c,timersetting,Tthermostat):
 
     # Dwelling parameters
     
-    A_s = dwellings[typeofdwelling]['A_s']    # m2 Global irradiance multiplier       
-    Hv  = dwellings[typeofdwelling]['Hv']    # W/K Thermal transfer coefficient representing ventilation heat loss between outside air and internal building thermal capacitance
+    # A_s = dwellings[typeofdwelling]['A_s']   # m2  Global irradiance multiplier       
+    # Hv  = dwellings[typeofdwelling]['Hv']    # W/K Thermal transfer coefficient representing ventilation heat loss between outside air and internal building thermal capacitance
+    # Hob = dwellings[typeofdwelling]['Hob']   # W/K Thermal transfer coefficient between outside air and external building thermal capacitance
+    # Hbi = dwellings[typeofdwelling]['Hbi']   # W/K Thermal transfer coefficient between external building thermal capacitance and internal building thermal capacitance
+    # Hem = dwellings[typeofdwelling]['Hem']   # W/K Heat transfer coefficient of heat emitters
+    # Cb  = dwellings[typeofdwelling]['Cb']    # J/K External building thermal capacitance (Building thermal mass)
+    # Ci  = dwellings[typeofdwelling]['Ci']    # J/K Internal building thermal capacitance (Indoor air thermal mass)
+    # Cem = dwellings[typeofdwelling]['Cem']   # J/K Thermal capacitance of heat emitters (Heat emitter and cooler thermal masses)
+
+    
     Hob = dwellings[typeofdwelling]['Hob']   # W/K Thermal transfer coefficient between outside air and external building thermal capacitance
     Hbi = dwellings[typeofdwelling]['Hbi']   # W/K Thermal transfer coefficient between external building thermal capacitance and internal building thermal capacitance
-    Hem = dwellings[typeofdwelling]['Hem']   # W/K Heat transfer coefficient of heat emitters
     Cb  = dwellings[typeofdwelling]['Cb']    # J/K External building thermal capacitance (Building thermal mass)
     Ci  = dwellings[typeofdwelling]['Ci']    # J/K Internal building thermal capacitance (Indoor air thermal mass)
-    Cem = dwellings[typeofdwelling]['Cem']   # J/K Thermal capacitance of heat emitters (Heat emitter and cooler thermal masses)
+    A_s = dwellings[typeofdwelling]['A_s']   # m2  Global irradiance multiplier       
+    # Nvent = 1.0     # 1/h  Ventilation rate
+    # A_liv = 136.    # m2
+    # L_liv = 4.2     # m
+    Hv  = dwellings[typeofdwelling]['Hv']    # W/K Thermal transfer coefficient representing ventilation heat loss between outside air and internal building thermal capacitance
 
+    Tin_design = 20. # sizing temperatures
+    Tout_design = -2. # sizing temperatures
+    phi_design = (1/(1/Hob + 1/Hbi)+Hv)*(Tin_design-Tout_design)
+    Hem = phi_design/(Temittersetpoint-Tin_design)
+    mem = 14.*phi_design/1000.
+    Cem = mem*4200.
        
     # Temperatures inizialization
 
     Ti = min([max([19.,To[0]]),25.]) + random.random()*2. #°C
     Tem = Ti  #°C
-    Tem_target += EmitterDeadband #°C
+    Tem_target = Temittersetpoint + EmitterDeadband #°C
     Tb = max(16.,To[0])  + random.random()*2. #°C
 
     # Space heating vector inizialization
 
-    phi_h_space        = np.zeros(ressize)
+    phi_h_space = np.zeros(ressize)
     Tem_test =  np.zeros(ressize)
     
     
@@ -456,22 +472,42 @@ def ElLoadHP(temp,phi_h_space):
 
 def AertsThermostatTemp(occupancy):
     
-    ressize = 527041 # should be defined once and for all not here
-    Tthermostat = np.zeros(ressize)
+    """
+    Function that returns thermostat temperature setting based on occupancy.
+    20°C if someone is at home
+    15°C otherwise
     
-    occupancy_tot = np.zeros(len(occupancy[0][0]))
+    occupancy : numpy array, shape (n_scen, tenminutes)
+    DHW demands scenarios, sampled at a
+    10 minute time-step
     
+    Tthermostat: numpy array, shape (nminutes)
+    Thermostat temperature setting, one minute timestep
+
+    """
+    
+    # Length of 1-min array based on 10-min array 
+    ntenmin = len(occupancy[0][0]) 
+    nmin = (ntenmin-1)*10+1 # strobe uses N+1 sized vectors
+    # Initializing thermostat Ts array
+    Tthermostat = np.zeros(nmin)
+    # Initializing resulting occupancy 
+    occupancy_tot = np.zeros(ntenmin)
+    
+    # occupancy_tot[i] = 1 if at least 1 person at home, otherwise 0
     for i in range(len(occupancy[0])):
         occupancy_tot = np.multiply(occupancy_tot,np.where(occupancy[0][i] >= 3,0,1))
     
+    # Thermostat = 20. if someone at home, otherwise 15.
     for i in range(len(occupancy_tot)-1):
         for j in range(10):
             if occupancy_tot[i] > 0:
                 Tthermostat[i*10+j]=20.
             else:
                 Tthermostat[i*10+j]=15.
-                
-    Tthermostat[ressize-1] = Tthermostat[ressize-2] 
+    
+    # Last element would otherwise be 0.
+    Tthermostat[nmin-1] = Tthermostat[nmin-2] 
     
     return Tthermostat
 
