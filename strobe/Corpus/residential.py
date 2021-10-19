@@ -42,21 +42,40 @@ def CustomAppOwnership(inputs,dict_appliances):
     variable directly
     '''
 
+    # Changes on cold appliances that were already part of StRoBe
+
     #changes for new cold-appliance fix #######################################
     # Based on 10000 runs, these new values combined with rule-based fix below
     # lead to the same overall ownership as the original values.
     # We change it here so that the original remain in the Appliances file.
+    
     dict_appliances['Refrigerator']['owner']=0.27     # original:  0.430
     dict_appliances['FridgeFreezer']['owner']=0.40    # original:  0.651
     dict_appliances['ChestFreezer']['owner']=0.19     # original:  0.163
     dict_appliances['UprightFreezer']['owner']=0.31   # original:  0.291
+    
+    # Changes on various appliances ownership probability  based on 
+    # BILAN ÉNERGÉTIQUE DE LA WALLONIE 2018 SECTEUR DOMESTIQUE ET ÉQUIVALENTS
+    # Table 8 (Hob) and Table 9 (all other appliances)
+    # Changed here as not to modify StRoBe input files
+    
+    dict_appliances["Hob"]["owner"] = 0.751             # original:  0.463
+    dict_appliances["Microwave"]["owner"] = 0.900       # original:  0.859
+    dict_appliances["PC"]["owner"] = 0.800              # original:  0.708
+    dict_appliances["TV1"]["owner"] = 0.950             # original:  0.977
+    dict_appliances["TumbleDryer"]["owner"] = 0.600     # original:  0.416
+    dict_appliances["DishWasher"]["owner"] = 0.660      # original:  0.335
+    dict_appliances["WashingMachine"]["owner"] = 0.930  # original:  0.930
+
+    # Changes on appliances for load shifting based on user inputs
+    # Changed here as not to modify StRoBe input files    
     
     if 'appliances' not in inputs:
         return
     if "appliances" in inputs and inputs['appliances'] == None:
         return
 
-    dict_appliances["WasherDryer"]["owner"] = 0.0
+    dict_appliances["WasherDryer"]["owner"] = 0.0 # original: 0.153
         
     if "TumbleDryer" in inputs['appliances']:
         dict_appliances["TumbleDryer"]["owner"] = 1.0
