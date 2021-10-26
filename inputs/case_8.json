@@ -4,9 +4,9 @@
     "ndays": 366,
     "members": [
         "FTE",
-        "PTE",
+        "Unemployed",
         "School",
-        "U12"
+        "School"
     ],
     "appliances": [
         "WashingMachine",

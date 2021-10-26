@@ -6,22 +6,26 @@ Created on Mon Oct 25 16:54:50 2021
 """
 import pandas as pd
 import json
+import os
+import numpy as np
+import random
 
-def CasesPerSheet(inputs,df,nsheet):  
+import pathlib
+cwd = os.getcwd()
+loadshiftpath = pathlib.Path(__file__).parent.parent.resolve()
+os.chdir(loadshiftpath)
+from strobe.Data.Households import households
+os.chdir(cwd)
+
+def CasesPerSheet(inputs,df,nsheet,households):  
     for index, row in df.iterrows():
         
         tempjson = inputs
     
         # Household members
-        if row['Ménage'] == 1:
-            inputs['members'] = ['FTE']
-        elif row['Ménage'] == 2:
-            inputs['members'] = ['FTE','PTE']
-        elif row['Ménage'] == 3:
-            inputs['members'] = ['FTE','PTE','School']
-        elif row['Ménage'] == 4:
-            inputs['members'] = ['FTE','PTE','School','U12']  
-        
+        subset = {key: value for key, value in households.items() if np.size(value) == row['Ménage']}
+        inputs['members'] = random.choice(list(subset.values()))
+              
         # Type of building
         if row['Façades'] == 1:
             inputs['dwelling_type'] = "Terraced"
@@ -70,13 +74,13 @@ data = pd.read_excel (r'.\Profils_Definition.xlsx',sheet_name=['4F','2F','1F'],h
 
 with open(r'.\loadshift_inputs.json') as f:
   inputs = json.load(f)
-
+ 
 count = 0
 for key,value in data.items():
     prova = 'Paramètres\n/Caractéristiques'
     df = value.drop(['Pilotage','Investissement [€]','Elec [€]'], 1)
     nsheet = count
-    CasesPerSheet(inputs,df,nsheet)
+    CasesPerSheet(inputs,df,nsheet,households)
     count += 1
-
+ 
 

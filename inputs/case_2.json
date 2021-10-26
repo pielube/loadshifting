@@ -3,10 +3,10 @@
     "year": 2016,
     "ndays": 366,
     "members": [
-        "FTE",
         "PTE",
+        "Retired",
         "School",
-        "U12"
+        "School"
     ],
     "appliances": [
         "WashingMachine",
