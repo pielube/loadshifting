@@ -24,6 +24,7 @@ result,textoutput = strobe.simulate_scenarios(1, inputs)
 
 n_scen = 0 # Working only with the first scenario
 
+
 # RAMP-mobility
 if inputs['EV']:
     result_ramp = ramp.EVCharging(inputs, result['occupancy'][n_scen])

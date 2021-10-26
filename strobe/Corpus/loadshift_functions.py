@@ -264,17 +264,7 @@ def HouseThermalModel(inputs,ressize,To,Go, phi_c,timersetting,Tthermostat):
     typeofdwelling = inputs['dwelling_type']
 
     # Dwelling parameters
-    
-    # A_s = dwellings[typeofdwelling]['A_s']   # m2  Global irradiance multiplier       
-    # Hv  = dwellings[typeofdwelling]['Hv']    # W/K Thermal transfer coefficient representing ventilation heat loss between outside air and internal building thermal capacitance
-    # Hob = dwellings[typeofdwelling]['Hob']   # W/K Thermal transfer coefficient between outside air and external building thermal capacitance
-    # Hbi = dwellings[typeofdwelling]['Hbi']   # W/K Thermal transfer coefficient between external building thermal capacitance and internal building thermal capacitance
-    # Hem = dwellings[typeofdwelling]['Hem']   # W/K Heat transfer coefficient of heat emitters
-    # Cb  = dwellings[typeofdwelling]['Cb']    # J/K External building thermal capacitance (Building thermal mass)
-    # Ci  = dwellings[typeofdwelling]['Ci']    # J/K Internal building thermal capacitance (Indoor air thermal mass)
-    # Cem = dwellings[typeofdwelling]['Cem']   # J/K Thermal capacitance of heat emitters (Heat emitter and cooler thermal masses)
-
-    
+        
     Hob = dwellings[typeofdwelling]['Hob']   # W/K Thermal transfer coefficient between outside air and external building thermal capacitance
     Hbi = dwellings[typeofdwelling]['Hbi']   # W/K Thermal transfer coefficient between external building thermal capacitance and internal building thermal capacitance
     Cb  = dwellings[typeofdwelling]['Cb']    # J/K External building thermal capacitance (Building thermal mass)

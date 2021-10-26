@@ -1,0 +1,28 @@
+{
+    "name": "test",
+    "year": 2016,
+    "ndays": 366,
+    "members": [
+        "FTE",
+        "PTE",
+        "School"
+    ],
+    "appliances": [
+        "WashingMachine",
+        "TumbleDryer",
+        "DishWasher"
+    ],
+    "ElectricBoiler": false,
+    "Ttarget": 53.0,
+    "Tcw": 10.0,
+    "Vcyl": 50.0,
+    "Hloss": 0.5,
+    "HeatPump": true,
+    "dwelling_type": "Terraced",
+    "Tthermostatsetpoint": 19.0,
+    "ThermostatDeadband": 2.0,
+    "Temittersetpoint": 40.0,
+    "EmitterDeadband": 5.0,
+    "HeatPumpThermalPower": 5000.0,
+    "EV": true
+}
