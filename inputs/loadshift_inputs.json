@@ -8,14 +8,16 @@
 
 "appliances": ["WashingMachine","TumbleDryer","DishWasher"],
 
-"ElectricBoiler": false,
+"DHW": false,
+"type": 0,
+"PowerElMax": 2000.0,
 "Ttarget": 53.0, 
 "Tcw": 10.0,     
 "Vcyl": 50.0,    
 "Hloss": 0.5,
 
 "HeatPump": false,
-"dwelling_type": "Semi-Detached",
+"dwelling_type": "Semi-detached",
 "Tthermostatsetpoint": 19.0, 
 "ThermostatDeadband": 2.0,   
 "Temittersetpoint": 40.0,    

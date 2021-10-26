@@ -49,7 +49,7 @@ def simulate_load(inputs):
     # Creating dataframe with the results 
     n_steps = np.size(result['StaticLoad'][n_scen,:])
     index = pd.date_range(start='2016-01-01 00:00', periods=n_steps, freq='1min')
-    df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','ElectricalBoiler','HeatPumpPower','EVCharging'])
+    df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging'])
     
     result_ramp.loc[df.index[-1],'EVCharging']=0
     #df.index.union(result_ramp.index)        # too slow
@@ -196,9 +196,9 @@ def simulate_button(N,checklist_apps,dropdown_FTE,dropdown_Unemployed,dropdown_S
     else:
         inputs['HeatPump'] = False
     if 'eb' in checklist_apps:
-        inputs['ElectricBoiler'] = True
+        inputs['DomesticHotWater'] = True
     else:
-        inputs['ElectricBoiler'] = False
+        inputs['DomesticHotWater'] = False
     if 'ev' in checklist_apps:
         inputs['EV'] = True
     else:
