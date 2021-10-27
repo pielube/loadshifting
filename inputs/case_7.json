@@ -4,7 +4,7 @@
     "ndays": 366,
     "members": [
         "FTE",
-        "Unemployed",
+        "FTE",
         "School",
         "U12"
     ],
@@ -13,11 +13,13 @@
         "TumbleDryer",
         "DishWasher"
     ],
-    "ElectricBoiler": false,
+    "DHW": false,
+    "type": 2,
+    "PowerElMax": 1000.0,
     "Ttarget": 53.0,
     "Tcw": 10.0,
-    "Vcyl": 50.0,
-    "Hloss": 0.5,
+    "Vcyl": 184.0,
+    "Hloss": 1.5,
     "HeatPump": true,
     "dwelling_type": "Detached",
     "Tthermostatsetpoint": 19.0,

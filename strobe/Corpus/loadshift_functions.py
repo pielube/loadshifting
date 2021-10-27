@@ -213,11 +213,12 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
     """
     
     tstep   = 60.  # s
-    
-    Ttarget = inputs['Ttarget'] #°C
-    Tcw     = inputs['Tcw']     #°C
-    Vcyl    = inputs['Vcyl']    # l
-    Hloss   = inputs['Hloss']  # W/K
+
+    PowerElMax = inputs['PowerElMax']   # W  
+    Ttarget    = inputs['Ttarget'] #°C
+    Tcw        = inputs['Tcw']     #°C
+    Vcyl       = inputs['Vcyl']    # l
+    Hloss      = inputs['Hloss']  # W/K
     
     phi_t = np.zeros(np.size(mDHW))
     phi_a = np.zeros(np.size(mDHW))
@@ -239,7 +240,7 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
             
             phi_t[i] = Ccyl/tstep * (Ttarget-Tcyl) + resH[i] * (Tcyl-Tcw) + Hloss * (Tcyl-Tbath[j])
             phi_a[i] = phi_t[i]/eff
-            phi_a[i] = max([0.,min([2000.,phi_a[i]])])
+            phi_a[i] = max([0.,min([PowerElMax,phi_a[i]])])
             deltaTcyl = (tstep/Ccyl) * (Hloss*Tbath[j] - (Hloss+resH[i])*Tcyl + resH[i]*Tcw + phi_a[i])
             Tcyl += deltaTcyl
             
@@ -251,7 +252,7 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
             
             phi_t[i] = Ccyl/tstep * (Ttarget-Tcyl) + resH[i] * (Tcyl-Tcw) + Hloss * (Tcyl-Tbath[j])
             phi_a[i] = phi_t[i]/COP_Tamb(Tamb[i])
-            phi_a[i] = max([0.,min([2000.,phi_a[i]])])
+            phi_a[i] = max([0.,min([PowerElMax,phi_a[i]])])
             deltaTcyl = (tstep/Ccyl) * (Hloss*Tbath[j] - (Hloss+resH[i])*Tcyl + resH[i]*Tcw + phi_a[i])
             Tcyl += deltaTcyl
       

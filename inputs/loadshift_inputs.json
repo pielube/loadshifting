@@ -8,8 +8,8 @@
 
 "appliances": ["WashingMachine","TumbleDryer","DishWasher"],
 
-"DHW": false,
-"type": 0,
+"DHW": true,
+"type": 1,
 "PowerElMax": 2000.0,
 "Ttarget": 53.0, 
 "Tcw": 10.0,     

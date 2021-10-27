@@ -17,6 +17,7 @@ os.chdir(loadshiftpath)
 from strobe.Data.Households import households
 os.chdir(cwd)
 
+
 def CasesPerSheet(inputs,df,nsheet,households):  
     for index, row in df.iterrows():
         
@@ -50,13 +51,7 @@ def CasesPerSheet(inputs,df,nsheet,households):
             inputs['HeatPump'] = True
             
         # Electric boiler
-        if row['ECS'] == 0:
-            inputs['ElectricBoiler'] = False
-        elif row['ECS'] == 1:
-            inputs['ElectricBoiler'] = True
-        elif row['ECS'] == 2:
-            inputs['ElectricBoiler'] = True
-            print('WARNING: Electric boiler = 2')
+        inputs = DHWinputs(row['Ménage'],row['ECS'],inputs)
     
         # Electric vehicle
         if row['VE'] == 0:
@@ -69,6 +64,60 @@ def CasesPerSheet(inputs,df,nsheet,households):
         with open(filename, 'w',encoding='utf-8') as f:
             json.dump(tempjson, f,ensure_ascii=False, indent=4)
 
+
+def DHWinputs(npeople,ECS,inputs):
+    
+    if ECS == 0:
+        inputs['DHW'] = False
+
+    elif ECS == 1:
+        inputs['DHW'] = True
+        inputs['type'] = 1
+        
+        if npeople == 1:
+            inputs["PowerElMax"]= 2000.0
+            inputs["Ttarget"]= 53.0 
+            inputs["Tcw"]= 10.0     
+            inputs["Vcyl"]= 20.0  
+            inputs["Hloss"]= 0.5
+        elif npeople in {2,3}:
+            inputs["PowerElMax"]= 2000.0
+            inputs["Ttarget"]= 53.0 
+            inputs["Tcw"]= 10.0     
+            inputs["Vcyl"]= 54.0  
+            inputs["Hloss"]= 0.5
+        elif npeople >= 4:
+            inputs["PowerElMax"]= 2000.0
+            inputs["Ttarget"]= 53.0 
+            inputs["Tcw"]= 10.0     
+            inputs["Vcyl"]= 87.0  
+            inputs["Hloss"]= 1.0
+                  
+    elif ECS == 2:
+        inputs['DHW'] = True
+        inputs['type'] = 2
+        
+        if npeople == 1:
+            inputs["PowerElMax"]= 350.0
+            inputs["Ttarget"]= 53.0 
+            inputs["Tcw"]= 10.0     
+            inputs["Vcyl"]= 50.0  
+            inputs["Hloss"]= 0.5
+        elif npeople in {2,3}:
+            inputs["PowerElMax"]= 700.0
+            inputs["Ttarget"]= 53.0 
+            inputs["Tcw"]= 10.0     
+            inputs["Vcyl"]= 85.0  
+            inputs["Hloss"]= 1.0
+        elif npeople >= 4:
+            inputs["PowerElMax"]= 1000.0
+            inputs["Ttarget"]= 53.0 
+            inputs["Tcw"]= 10.0     
+            inputs["Vcyl"]= 184.0  
+            inputs["Hloss"]= 1.5  
+
+    return(inputs)
+            
 
 data = pd.read_excel (r'.\Profils_Definition.xlsx',sheet_name=['4F','2F','1F'],header=3)
 
