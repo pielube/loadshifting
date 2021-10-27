@@ -4,18 +4,20 @@
     "ndays": 366,
     "members": [
         "FTE",
-        "School"
+        "FTE"
     ],
     "appliances": [
         "WashingMachine",
         "TumbleDryer",
         "DishWasher"
     ],
-    "ElectricBoiler": true,
+    "DHW": true,
+    "type": 2,
+    "PowerElMax": 700.0,
     "Ttarget": 53.0,
     "Tcw": 10.0,
-    "Vcyl": 50.0,
-    "Hloss": 0.5,
+    "Vcyl": 85.0,
+    "Hloss": 1.0,
     "HeatPump": true,
     "dwelling_type": "Terraced",
     "Tthermostatsetpoint": 19.0,

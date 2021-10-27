@@ -3,17 +3,19 @@
     "year": 2016,
     "ndays": 366,
     "members": [
-        "PTE",
-        "Retired",
-        "School",
-        "School"
+        "FTE",
+        "FTE",
+        "U12",
+        "U12"
     ],
     "appliances": [
         "WashingMachine",
         "TumbleDryer",
         "DishWasher"
     ],
-    "ElectricBoiler": false,
+    "DHW": false,
+    "type": 1,
+    "PowerElMax": 2000.0,
     "Ttarget": 53.0,
     "Tcw": 10.0,
     "Vcyl": 50.0,

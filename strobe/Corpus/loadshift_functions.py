@@ -163,11 +163,11 @@ def simulate_scenarios(n_scen,inputs):
             E_hp = 0
         
         # Electric boiler and hot water tank
-        if inputs['ElectricBoiler']:
-            Qeb[i,:] = HotWaterTankModel(inputs,family.mDHW,family.sh_day)
+        if inputs['DHW']:
+            Qeb[i,:] = DomesticHotWater(inputs,family.mDHW,Tamb,family.sh_day)
             E_eb = int(sum(Qeb[i,:])/1000./60.)
-            print(' - Electrical boiler consumption: ',E_eb,' kWh')
-            textoutput.append(' - Electrical boiler consumption: ' + str(E_eb) +' kWh')
+            print(' - Domestic hot water electricity consumption: ',E_eb,' kWh')
+            textoutput.append(' - Domestic hot water electricity consumption: ' + str(E_eb) +' kWh')
         else:
             Qeb[i,:] = 0
             E_eb = 0
@@ -183,7 +183,7 @@ def simulate_scenarios(n_scen,inputs):
         'TumbleDryer':ptd, 
         'DishWasher':pdw, 
         'WashingMachine':pwm, 
-        'ElectricalBoiler':Qeb,
+        'DomesticHotWater':Qeb,
         'SpaceHeating':Qspace,
         'HeatPumpPower':Wdot_hp,
         'InternalGains':Qrad+Qcon,
@@ -195,49 +195,66 @@ def simulate_scenarios(n_scen,inputs):
 
 
 
-def HotWaterTankModel(inputs,mDHW,Tbath):
+def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
     
     """
-    Electric boiler and water tank
+    Domestic hot water heater
+    Can be both 
     
     In:
     inputs    dictionary with input data from JSON
     mDHW      tap water required l/min [every min]
+    Tamb      ambient temperature [every min]
     Tbath     temperature in the room where the boiler is stored [every 10 min]
     
     Out: 
-    power consumption [every min]
+    electrical power consumption [every min]
     
-    hp. eff boiler = 100%
     """
     
     tstep   = 60.  # s
-    
-    Ttarget = inputs['Ttarget'] #°C
-    Tcw     = inputs['Tcw']     #°C
-    Vcyl    = inputs['Vcyl']    # l
-    Hloss   = inputs['Hloss']  # W/K
+
+    PowerElMax = inputs['PowerElMax']   # W  
+    Ttarget    = inputs['Ttarget'] #°C
+    Tcw        = inputs['Tcw']     #°C
+    Vcyl       = inputs['Vcyl']    # l
+    Hloss      = inputs['Hloss']  # W/K
     
     phi_t = np.zeros(np.size(mDHW))
     phi_a = np.zeros(np.size(mDHW))
     
     # Inizialization
     Tcyl = 60. + random.random()*2. #°C
-
     resV = mDHW / 1000. / 60. # from l/min to m3/s
     resM = resV * 1000.       # from m3/s to kg/s
     resH = resM * 4200.       # from kg/s to W/K, cp = 4200. J/kg/K
-      
     Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
-    
-    for i in range(np.size(mDHW)):
+
+    if inputs['type'] == 1:
         
-        j = int(i/10)
+        for i in range(np.size(mDHW)):
+            
+            j = int(i/10)
+            
+            eff = 1.
+            
+            phi_t[i] = Ccyl/tstep * (Ttarget-Tcyl) + resH[i] * (Tcyl-Tcw) + Hloss * (Tcyl-Tbath[j])
+            phi_a[i] = phi_t[i]/eff
+            phi_a[i] = max([0.,min([PowerElMax,phi_a[i]])])
+            deltaTcyl = (tstep/Ccyl) * (Hloss*Tbath[j] - (Hloss+resH[i])*Tcyl + resH[i]*Tcw + phi_a[i])
+            Tcyl += deltaTcyl
+            
+    elif inputs['type'] == 2:
         
-        phi_t[i] = Ccyl/tstep * (Ttarget-Tcyl) + resH[i] * (Tcyl-Tcw) + Hloss * (Tcyl-Tbath[j])
-        phi_a[i] = max([0.,min([2000.,phi_t[i]])])
-        deltaTcyl = (tstep/Ccyl) * (Hloss*Tbath[j] - (Hloss+resH[i])*Tcyl + resH[i]*Tcw + phi_a[i])
-        Tcyl += deltaTcyl        
+        for i in range(np.size(mDHW)):
+            
+            j = int(i/10)
+            
+            phi_t[i] = Ccyl/tstep * (Ttarget-Tcyl) + resH[i] * (Tcyl-Tcw) + Hloss * (Tcyl-Tbath[j])
+            phi_a[i] = phi_t[i]/COP_Tamb(Tamb[i])
+            phi_a[i] = max([0.,min([PowerElMax,phi_a[i]])])
+            deltaTcyl = (tstep/Ccyl) * (Hloss*Tbath[j] - (Hloss+resH[i])*Tcyl + resH[i]*Tcw + phi_a[i])
+            Tcyl += deltaTcyl
       
     return phi_a
 
@@ -454,10 +471,14 @@ def HeatingTimer(inputs):
 
 def ElLoadHP(temp,phi_h_space):
     phi_hp= np.zeros(np.size(phi_h_space))
-    for i in range(np.size(phi_h_space)):
-        COP = 0.001*temp[i]**2 + 0.0471*temp[i] + 2.1259
-        phi_hp[i] = phi_h_space[i]/COP
+    for i in range(np.size(phi_h_space)):   
+        phi_hp[i] = phi_h_space[i]/COP_Tamb(temp[i])
     return phi_hp
+
+
+def COP_Tamb(Temp):
+    COP = 0.001*Temp**2 + 0.0471*Temp + 2.1259
+    return COP
 
 
 def AertsThermostatTemp(occupancy):

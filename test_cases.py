@@ -30,7 +30,7 @@ def simulation(inputs):
     n_steps = np.size(result['StaticLoad'][n_scen,:])
     # n_steps = 1000
     index = pd.date_range(start='2016-01-01 00:00', periods=n_steps, freq='1min')
-    df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','ElectricalBoiler','HeatPumpPower','EVCharging'])
+    df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging'])
     result_ramp.loc[df.index[-1],'EVCharging'] = 0
     #df.index.union(result_ramp.index)        # too slow
     
