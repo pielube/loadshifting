@@ -8,13 +8,8 @@ import ramp
 import json
 import os
 import matplotlib.pyplot as plt
+import time
 
-
-# Loading inputs for the desired case
-
-case = 1
-with open('inputs/case_'+str(case)+'.json') as f:
-  inputs = json.load(f)
 
 
 # Simulation function
@@ -65,38 +60,55 @@ def Profile_cloud_plot(stoch_profiles,stoch_profiles_avg):
         plt.plot(np.arange(nelem),n,'#b0c4de')
         plt.xlabel('Time (hours)')
         plt.ylabel('Power (W)')
+        plt.xlim([0,1440])
         plt.ylim(ymin=0)
         #plt.ylim(ymax=5000)
         plt.margins(x=0)
         plt.margins(y=0)
     plt.plot(np.arange(nelem),stoch_profiles_avg,'#4169e1')
-    plt.xticks([0,1440*31,1440*60,1440*91,1440*121,1440*152,1440*182,1440*213,1440*244,1440*274,1440*305,1440*335],["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dic"])
+    # plt.xticks([0,1440*31,1440*60,1440*91,1440*121,1440*152,1440*182,1440*213,1440*244,1440*274,1440*305,1440*335],["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dic"])
     #plt.savefig('profiles.eps', format='eps', dpi=1000)
     plt.show()
 
 # Running ten simulations for the case selected
- 
-nsimulations = 10
-simulations = []
 
-for i in range(nsimulations):
-    # Running i-th simulation
-    df = simulation(inputs)
-    # Storing i-th simulation results
-    newpath = r'.\simulations\case_'+str(case) 
-    if not os.path.exists(newpath):
-        os.makedirs(newpath)
-    filename = 'run_{0}.pkl'.format(i+1)
-    filename = os.path.join(newpath,filename)
-    df.to_pickle(filename)
-    # Appending i-th simulation results to results' list
-    df = df.sum(axis=1)
-    profile = df.to_numpy()
-    simulations.append(profile)
+# Loading inputs for the desired case
+
+start_time = time.time()
+
+
+for i in range(36):
     
-profile_average = profile_average(simulations)
-Profile_cloud_plot(simulations,profile_average)
+    
+    case = i+1
+    message = '################### Running case {0} ###################'.format(case)
+    print(message)
+    
+    with open('inputs/case_'+str(case)+'.json') as f:
+      inputs = json.load(f)
+     
+    nsimulations = 10
+    simulations = []
+    
+    for i in range(nsimulations):
+        # Running i-th simulation
+        df = simulation(inputs)
+        # Storing i-th simulation results
+        newpath = r'.\simulations\case_'+str(case) 
+        if not os.path.exists(newpath):
+            os.makedirs(newpath)
+        filename = 'run_{0}.pkl'.format(i+1)
+        filename = os.path.join(newpath,filename)
+        df.to_pickle(filename)
+        # Appending i-th simulation results to results' list
+        df = df.sum(axis=1)
+        profile = df.to_numpy()
+        simulations.append(profile)
+        
+    profile_avg = profile_average(simulations)
+    Profile_cloud_plot(simulations,profile_avg)
 
+print("--- %s seconds ---" % (time.time() - start_time))
 
     
 
