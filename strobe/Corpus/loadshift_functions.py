@@ -129,16 +129,16 @@ def simulate_scenarios(n_scen,inputs):
         # Look inside HouseThermalModel() if actually used, around line 310
         Tthermostat  = AertsThermostatTemp(occupancy)
         
-        # Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting,Tthermostat)
-        # thermal_load = int(sum(Qspace[i,:])/1000./60.)
-        # print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-        # textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
-        
-        # R51C model
-        Qspace[i,:] = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon)
+        Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting,Tthermostat)
         thermal_load = int(sum(Qspace[i,:])/1000./60.)
         print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-        textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')        
+        textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
+        
+        # R51C model
+        # Qspace[i,:] = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon)
+        # thermal_load = int(sum(Qspace[i,:])/1000./60.)
+        # print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+        # textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')        
         
         # Annual load from appliances
         E_app = int(np.sum(family.P)/60/1000)
