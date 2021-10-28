@@ -4,4 +4,3 @@ from .Corpus.loadshift_functions import simulate_scenarios,DomesticHotWater,Hous
 from .Corpus.residential import Household,Equipment
 from .Corpus import feeder
 
-

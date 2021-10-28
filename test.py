@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 import strobe
 import ramp
 import json
+import time
 
+start_time = time.time()
 
 # Loading inputs:
 with open('inputs/loadshift_inputs.json') as f:
@@ -59,4 +61,5 @@ ax = df.loc['2016-01-06'].plot.area(lw=0)
 ax.set(ylabel = "Power [W]")
 plt.legend(loc='upper left')
 
+print("--- %s seconds ---" % (time.time() - start_time))
         

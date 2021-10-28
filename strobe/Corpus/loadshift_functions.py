@@ -10,6 +10,8 @@ import numpy as np
 import datetime
 import random
 from .residential import Household
+from ..RC_BuildingSimulator import Zone
+
 
 import pathlib
 strobepath = pathlib.Path(__file__).parent.parent.resolve()
@@ -131,6 +133,12 @@ def simulate_scenarios(n_scen,inputs):
         thermal_load = int(sum(Qspace[i,:])/1000./60.)
         print(' - Thermal demand for space heating is ',thermal_load,' kWh')
         textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
+        
+        # R51C model
+        # Qspace[i,:] = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon)
+        # thermal_load = int(sum(Qspace[i,:])/1000./60.)
+        # print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+        # textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')        
         
         # Annual load from appliances
         E_app = int(np.sum(family.P)/60/1000)
@@ -536,4 +544,27 @@ def AertsThermostatTimer(ndays):
     return timer_year
 
 
+def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains):
+
+    # no timer setting
+    # thermostat T = 20°C always    
+
+    House = Zone(t_set_heating=20.)
+    
+    typeofdwelling = inputs['dwelling_type']
+    A_s = dwellings[typeofdwelling]['A_s']   # m2  Global irradiance multiplier 
+    Qsolgains = irr * A_s
+    
+    Tin = max(16.,Tamb[0])  + random.random()*2. #°C
+
+    Qheat = np.zeros(nminutes)
+    
+    for i in range(nminutes):
+        
+        House.solve_energy(Qintgains[i], Qsolgains[i], Tamb[i], Tin)
+        Tin      = House.t_m_next
+        Qheat[i] = House.heating_demand
+    
+    return Qheat
+        
 
