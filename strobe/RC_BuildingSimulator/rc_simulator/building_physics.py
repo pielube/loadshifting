@@ -1,9 +1,11 @@
 """
-Physics Required to calculate sensible space heating and space cooling loads
+Physics Required to calculate sensible space heating and space cooling loads, and space lighting loads
 EN-13970
 
 The equations presented here is this code are derived from ISO 13790 Annex C,
 Methods are listed in order of apperance in the Annex
+
+Daylighting is based on methods in The Environmental Science Handbook, S V Szokolay
 
 HOW TO USE
 
@@ -12,6 +14,7 @@ HOW TO USE
     from buildingPhysics import Zone  #Importing Zone Class
     office = Zone()  #Set an instance of the class
     office.solve_energy(internal_gains, solar_gains, t_out, t_m_prev) #Solve for Heating
+    office.solve_lighting(illumination, occupancy) #Solve for Lighting
 
 VARIABLE DEFINITION
     internal_gains: Internal Heat Gains [W]
@@ -48,9 +51,19 @@ INPUT PARAMETER DEFINITION
     floor_area : floor area of zone [m2]
     room_vol: volume of interior zone [m3]
     total_internal_area: area of all surfaces facing the room. A_t [m2]
+    lighting_load: Lighting Load [W/m2]
+    lighting_control: Lux threshold at which the lights turn on [Lx]
+    u_walls: U value of opaque surfaces  [W/m2K]
+    u_windows: U value of glazed surfaces [W/m2K]
+    ach_vent: Air changes per hour through ventilation [Air Changes Per Hour]
+    ach_infl: Air changes per hour through infiltration [Air Changes Per Hour]
+    ventilation_efficiency: The efficiency of the heat recovery system for ventilation. Set to 0 if there is no heat
+        recovery []
+    thermal_capacitance_per_floor_area: Thermal capacitance of the room per floor area [J/m2K]
     t_set_heating : Thermal heating set point [C]
     t_set_cooling: Thermal cooling set point [C]
     max_cooling_energy_per_floor_area: Maximum cooling load. Set to -np.inf for unrestricted cooling [C]
+    max_heating_energy_per_floor_area: Maximum heating load per floor area. Set to no.inf for unrestricted heating [C]
     heating_supply_system: The type of heating system. Choices are DirectHeater, ResistiveHeater, HeatPumpHeater.
         Direct heater has no changes to the heating demand load, a resistive heater takes an efficiency into account,
         HeatPumpHeatercalculates a COP based on the outdoor and system supply temperature
@@ -79,11 +92,17 @@ class Zone(object):
     '''Sets the parameters of the zone. '''
 
     def __init__(self,
-                 window_area=4.0,
-                 walls_area=11.0,
-                 floor_area=35.0,
-                 room_vol=105,
-                 total_internal_area=142.0,
+                 window_area=14.0,
+                 walls_area=130.0,
+                 floor_area=90.0,
+                 room_vol=280.0,
+                 total_internal_area=105.0,
+                 u_walls=3.0,
+                 u_windows=2.75,
+                 ach_vent=1.5,
+                 ach_infl=0.5,
+                 ventilation_efficiency=0.6,
+                 thermal_capacitance_per_floor_area=79000.,
                  t_set_heating=20.0,
                  t_set_cooling=26.0,
                  heating_supply_system=supply_system.HeatPumpWater,
@@ -106,20 +125,25 @@ class Zone(object):
 
         # Single Capacitance  5 conductance Model Parameters
         # [kWh/K] Room Capacitance. Default based on ISO standard 12.3.1.2 for medium heavy zones
-        self.c_m = 5775000.0
+        self.c_m = thermal_capacitance_per_floor_area * self.floor_area
         # Conductance of opaque surfaces to exterior [W/K]
-        self.h_tr_em = 2.2
+        self.h_tr_em = u_walls * walls_area
         # Conductance to exterior through glazed surfaces [W/K], based on
         # U-wert of 1W/m2K
-        self.h_tr_w = 4.4
+        self.h_tr_w = u_windows * window_area
 
-
-        self.h_ve_adj = 38.5  # Conductance through ventilation [W/M]
+        # Determine the ventilation conductance
+        ach_tot = ach_infl + ach_vent  # Total Air Changes Per Hour
+        # temperature adjustment factor taking ventilation and infiltration
+        # [ISO: E -27]
+        b_ek = (1 - (ach_vent / (ach_tot)) * ventilation_efficiency)
+        self.h_ve_adj = 1200 * b_ek * self.room_vol * \
+            (ach_tot / 3600)  # Conductance through ventilation [W/M]
         # transmittance from the internal air to the thermal mass of the
         # zone
-        self.h_tr_ms = 796.25
+        self.h_tr_ms = 9.1 * self.mass_area
         # Conductance from the conditioned air to interior zone surface
-        self.h_tr_is = 489.90000000000003
+        self.h_tr_is = self.total_internal_area * 3.45
 
         # Thermal set points
         self.t_set_heating = t_set_heating
@@ -129,7 +153,7 @@ class Zone(object):
         self.has_heating_demand = True  # Boolean for if heating is required
         self.has_cooling_demand = False  # Boolean for if cooling is required
         self.max_cooling_energy = -float("inf")  # max cooling load (W/m2)
-        self.max_heating_energy = 500.  # max heating load (W/m2)
+        self.max_heating_energy = 2000. #float("inf")
 
         # Zone System Properties
         self.heating_supply_system = heating_supply_system
@@ -169,7 +193,6 @@ class Zone(object):
         # (C.12) in [C.3 ISO 13790]
         """
         return 0.3 * self.t_air + 0.7 * self.t_s
-
 
     def solve_energy(self, internal_gains, solar_gains, t_out, t_m_prev):
         """
