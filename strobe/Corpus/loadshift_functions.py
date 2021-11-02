@@ -116,29 +116,41 @@ def simulate_scenarios(n_scen,inputs):
         
         # House heating model
         
-        # Thermostat timer setting
-        # 1) According to CREST
-        # timersetting = HeatingTimer(inputs)
-        # 2) No timer
-        # ressize = 527041 # should be defined once and for all not here
-        # timersetting = np.ones(ressize)
-        # 3) According to Aerts
-        timersetting = AertsThermostatTimer(ndays)
+        if inputs['model'] == 0:
+            
+            # Thermostat timer setting
+            # 1) According to CREST
+            # timersetting = HeatingTimer(inputs)
+            # 2) No timer
+            # ressize = 527041 # should be defined once and for all not here
+            # timersetting = np.ones(ressize)
+            # 3) According to Aerts
+            timersetting = AertsThermostatTimer(ndays)
+            
+            # Thermostat temperature setting according to Aerts
+            # Look inside HouseThermalModel() if actually used, around line 310
+            Tthermostat  = AertsThermostatTemp(occupancy)
+
+            Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting,Tthermostat)
+            thermal_load = int(sum(Qspace[i,:])/1000./60.)
+            print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
+            
+        elif inputs['model'] == 1:
         
-        # Thermostat temperature setting according to Aerts
-        # Look inside HouseThermalModel() if actually used, around line 310
-        Tthermostat  = AertsThermostatTemp(occupancy)
+            # R51C model
+            Qspace[i,:] = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon)
+            thermal_load = int(sum(Qspace[i,:])/1000./60.)
+            print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
         
-        # Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting,Tthermostat)
-        # thermal_load = int(sum(Qspace[i,:])/1000./60.)
-        # print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-        # textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
+        else:
+            Qspace[i,:] = 0
+            thermal_load = 0
+            print('WARNING: wrong house thermal model option - Thermal demand forced to be null')
+            print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')            
         
-        # R51C model
-        Qspace[i,:] = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon)
-        thermal_load = int(sum(Qspace[i,:])/1000./60.)
-        print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-        textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')        
         
         # Annual load from appliances
         E_app = int(np.sum(family.P)/60/1000)

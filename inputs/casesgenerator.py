@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Oct 25 16:54:50 2021
 
-@author: pietro
 """
+Code to generate .json input files for the cases defined in Profils_Definition.xslx
+"""
+
 import pandas as pd
 import json
 import os
-import numpy as np
-import random
 
 import pathlib
 cwd = os.getcwd()
@@ -22,21 +20,16 @@ def CasesPerSheet(inputs,df,nsheet,households):
     for index, row in df.iterrows():
         
         tempjson = inputs
-    
-        # Household members
-        subset = {key: value for key, value in households.items() if np.size(value) == row['Ménage']}
-        inputs['members'] = random.choice(list(subset.values()))
-              
+                
         # Type of building
         if row['Façades'] == 1:
-            inputs['dwelling_type'] = "Terraced"
-            print('WARNING: missing apartment data')
+            inputs['dwelling_type'] = "Apartment"
         elif row['Façades'] == 2:
             inputs['dwelling_type'] = "Terraced"
         elif row['Façades'] == 3:
-            inputs['dwelling_type'] = "Semi-Detached"
+            inputs['dwelling_type'] = "Semi-detached"
         elif row['Façades'] == 4:
-            inputs['dwelling_type'] = "Detached"
+            inputs['dwelling_type'] = "Freestanding"
     
         # Appliances
         if row['Machines'] == 0:
@@ -121,13 +114,12 @@ def DHWinputs(npeople,ECS,inputs):
 
 data = pd.read_excel (r'.\Profils_Definition.xlsx',sheet_name=['4F','2F','1F'],header=3)
 
-with open(r'.\loadshift_inputs.json') as f:
+with open(r'.\inputs.json') as f:
   inputs = json.load(f)
  
 count = 0
 for key,value in data.items():
-    prova = 'Paramètres\n/Caractéristiques'
-    df = value.drop(['Pilotage','Investissement [€]','Elec [€]'], 1)
+    df = value.drop(['Paramètres\n/Caractéristiques','Pilotage','Investissement [€]','Elec [€]'], 1)
     nsheet = count
     CasesPerSheet(inputs,df,nsheet,households)
     count += 1
