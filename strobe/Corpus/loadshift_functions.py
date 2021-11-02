@@ -562,9 +562,20 @@ def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains):
     # thermostat T = 20°C always    
 
     House = Zone(t_set_heating=20.)
+
+
+    # Rough estimation of solar gains based on data from Crest
+    # Could be improved
     
-    typeofdwelling = inputs['dwelling_type']
-    A_s = dwellings[typeofdwelling]['A_s']   # m2  Global irradiance multiplier 
+    typeofdwelling = inputs['dwelling_type'] 
+    if typeofdwelling == 'Freestanding':
+        A_s = 4.327106037
+    elif typeofdwelling == 'Semi-detached':
+        A_s = 4.862912117
+    elif typeofdwelling == 'Terraced':
+        A_s = 2.790283243
+    elif typeofdwelling == 'Apartment':
+        A_s = 1.5   
     Qsolgains = irr * A_s
     
     Tin = max(16.,Tamb[0])  + random.random()*2. #°C
