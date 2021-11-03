@@ -246,7 +246,7 @@ Calling the previously defined functions to simulate nsimulations times
 the ncases defined by the json files in the inputs folder
 """
 
-ncases = 36 # number of cases to be simulated
+ncases = 12 # number of cases to be simulated
 nsimulations = 10 # number of simulation per case
 
 
@@ -255,7 +255,7 @@ start_time = time.time()
 
 for i in range(ncases):
         
-    case = i+1
+    case = i+1+24
     
     # Reading fixed inputs from json file
     
