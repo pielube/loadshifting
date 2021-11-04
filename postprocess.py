@@ -76,7 +76,7 @@ for j in range(ntestcases):
     
     fig = ax.get_figure()
     
-    newpath = r'.\plots' 
+    newpath = r'.\simulations\plots' 
     if not os.path.exists(newpath):
         os.makedirs(newpath)
     figname = 'case_{0}.pdf'.format(ncase)
