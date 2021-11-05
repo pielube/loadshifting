@@ -2,10 +2,6 @@
     "name": "test",
     "year": 2016,
     "ndays": 366,
-    "members": [
-        "FTE",
-        "PTE"
-    ],
     "appliances": [
         "WashingMachine",
         "TumbleDryer",
@@ -19,7 +15,8 @@
     "Vcyl": 54.0,
     "Hloss": 0.5,
     "HeatPump": false,
-    "dwelling_type": "Terraced",
+    "model": 1,
+    "dwelling_type": "Apartment",
     "Tthermostatsetpoint": 19.0,
     "ThermostatDeadband": 2.0,
     "Temittersetpoint": 40.0,

@@ -10,6 +10,8 @@ import numpy as np
 import datetime
 import random
 from .residential import Household
+from ..RC_BuildingSimulator import Zone
+
 
 import pathlib
 strobepath = pathlib.Path(__file__).parent.parent.resolve()
@@ -114,23 +116,41 @@ def simulate_scenarios(n_scen,inputs):
         
         # House heating model
         
-        # Thermostat timer setting
-        # 1) According to CREST
-        # timersetting = HeatingTimer(inputs)
-        # 2) No timer
-        # ressize = 527041 # should be defined once and for all not here
-        # timersetting = np.ones(ressize)
-        # 3) According to Aerts
-        timersetting = AertsThermostatTimer(ndays)
+        if inputs['model'] == 0:
+            
+            # Thermostat timer setting
+            # 1) According to CREST
+            # timersetting = HeatingTimer(inputs)
+            # 2) No timer
+            # ressize = 527041 # should be defined once and for all not here
+            # timersetting = np.ones(ressize)
+            # 3) According to Aerts
+            timersetting = AertsThermostatTimer(ndays)
+            
+            # Thermostat temperature setting according to Aerts
+            # Look inside HouseThermalModel() if actually used, around line 310
+            Tthermostat  = AertsThermostatTemp(occupancy)
+
+            Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting,Tthermostat)
+            thermal_load = int(sum(Qspace[i,:])/1000./60.)
+            print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
+            
+        elif inputs['model'] == 1:
         
-        # Thermostat temperature setting according to Aerts
-        # Look inside HouseThermalModel() if actually used, around line 310
-        Tthermostat  = AertsThermostatTemp(occupancy)
+            # R51C model
+            Qspace[i,:] = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon)
+            thermal_load = int(sum(Qspace[i,:])/1000./60.)
+            print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
         
-        Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting,Tthermostat)
-        thermal_load = int(sum(Qspace[i,:])/1000./60.)
-        print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-        textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
+        else:
+            Qspace[i,:] = 0
+            thermal_load = 0
+            print('WARNING: wrong house thermal model option - Thermal demand forced to be null')
+            print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')            
+        
         
         # Annual load from appliances
         E_app = int(np.sum(family.P)/60/1000)
@@ -536,4 +556,38 @@ def AertsThermostatTimer(ndays):
     return timer_year
 
 
+def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains):
+
+    # no timer setting
+    # thermostat T = 20°C always    
+
+    House = Zone(t_set_heating=20.)
+
+
+    # Rough estimation of solar gains based on data from Crest
+    # Could be improved
+    
+    typeofdwelling = inputs['dwelling_type'] 
+    if typeofdwelling == 'Freestanding':
+        A_s = 4.327106037
+    elif typeofdwelling == 'Semi-detached':
+        A_s = 4.862912117
+    elif typeofdwelling == 'Terraced':
+        A_s = 2.790283243
+    elif typeofdwelling == 'Apartment':
+        A_s = 1.5   
+    Qsolgains = irr * A_s
+    
+    Tin = max(16.,Tamb[0])  + random.random()*2. #°C
+
+    Qheat = np.zeros(nminutes)
+    
+    for i in range(nminutes):
+        
+        House.solve_energy(Qintgains[i], Qsolgains[i], Tamb[i], Tin)
+        Tin      = House.t_m_next
+        Qheat[i] = House.heating_demand
+    
+    return Qheat
+        
 

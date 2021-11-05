@@ -2,12 +2,6 @@
     "name": "test",
     "year": 2016,
     "ndays": 366,
-    "members": [
-        "PTE",
-        "School",
-        "U12",
-        "U12"
-    ],
     "appliances": [
         "WashingMachine",
         "TumbleDryer",
@@ -21,7 +15,8 @@
     "Vcyl": 87.0,
     "Hloss": 1.0,
     "HeatPump": true,
-    "dwelling_type": "Detached",
+    "model": 1,
+    "dwelling_type": "Freestanding",
     "Tthermostatsetpoint": 19.0,
     "ThermostatDeadband": 2.0,
     "Temittersetpoint": 40.0,

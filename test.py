@@ -9,10 +9,12 @@ import matplotlib.pyplot as plt
 import strobe
 import ramp
 import json
+import time
 
+start_time = time.time()
 
 # Loading inputs:
-with open('inputs/loadshift_inputs.json') as f:
+with open('inputs/inputs.json') as f:
   inputs = json.load(f)
 
 """
@@ -20,7 +22,7 @@ Actual simulations
 """
 
 # Strobe
-result,textoutput = strobe.simulate_scenarios(1, inputs)
+result,textoutput = strobe.simulate_scenarios(1,inputs)
 
 n_scen = 0 # Working only with the first scenario
 
@@ -59,4 +61,5 @@ ax = df.loc['2016-01-06'].plot.area(lw=0)
 ax.set(ylabel = "Power [W]")
 plt.legend(loc='upper left')
 
+print("--- %s seconds ---" % (time.time() - start_time))
         
