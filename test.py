@@ -14,7 +14,7 @@ import time
 start_time = time.time()
 
 # Loading inputs:
-with open('inputs/loadshift_inputs.json') as f:
+with open('inputs/inputs.json') as f:
   inputs = json.load(f)
 
 """
@@ -22,7 +22,7 @@ Actual simulations
 """
 
 # Strobe
-result,textoutput = strobe.simulate_scenarios(1, inputs)
+result,textoutput = strobe.simulate_scenarios(1,inputs)
 
 n_scen = 0 # Working only with the first scenario
 

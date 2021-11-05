@@ -31,8 +31,14 @@ def CustomAppOwnership(inputs,dict_appliances):
 
     Parameters
     ----------
+    updappownership: dict
+        Contains the updated appliances ownerhisp probabilities, not considering
+        load shifting, based on 
+        BILAN ÉNERGÉTIQUE DE LA WALLONIE 2018 SECTEUR DOMESTIQUE ET ÉQUIVALENTS
+       Table 8 (Hob) and Table 9 (all other appliances)
     inputs : dict
-        Contains all the entries that should be modified within set_appliances
+        Contains the appliances of which the presence must be forced to 
+        be considered for load shifting applications
     set_appliances : dict
         Appliances description, as defined in by the file Data/Appliances.py.
 
@@ -41,41 +47,32 @@ def CustomAppOwnership(inputs,dict_appliances):
     This function does not return any value, but modifies the dict_appliances 
     variable directly
     '''
+    
 
-    # Changes on cold appliances that were already part of StRoBe
+    # Updating not load shifting related app ownerhisps
+    
+    dict_appliances["Hob"]["owner"]            = inputs["AppOwnership"]["Hob"]
+    dict_appliances["Microwave"]["owner"]      = inputs["AppOwnership"]["Microwave"]  
+    dict_appliances["PC"]["owner"]             = inputs["AppOwnership"]["PC"]   
+    dict_appliances["TV1"]["owner"]            = inputs["AppOwnership"]["TV1"]    
+    dict_appliances["TumbleDryer"]["owner"]    = inputs["AppOwnership"]["TumbleDryer"]
+    dict_appliances["DishWasher"]["owner"]     = inputs["AppOwnership"]["DishWasher"] 
+    dict_appliances["WashingMachine"]["owner"] = inputs["AppOwnership"]["WashingMachine"] 
+    dict_appliances["WasherDryer"]["owner"]    = inputs["AppOwnership"]["WasherDryer"] 
+    dict_appliances['Refrigerator']['owner']   = inputs["AppOwnership"]["Refrigerator"]  
+    dict_appliances['FridgeFreezer']['owner']  = inputs["AppOwnership"]["FridgeFreezer"] 
+    dict_appliances['ChestFreezer']['owner']   = inputs["AppOwnership"]["ChestFreezer"]  
+    dict_appliances['UprightFreezer']['owner'] = inputs["AppOwnership"]["UprightFreezer"]
 
-    #changes for new cold-appliance fix #######################################
-    # Based on 10000 runs, these new values combined with rule-based fix below
-    # lead to the same overall ownership as the original values.
-    # We change it here so that the original remain in the Appliances file.
-    
-    dict_appliances['Refrigerator']['owner']=0.27     # original:  0.430
-    dict_appliances['FridgeFreezer']['owner']=0.40    # original:  0.651
-    dict_appliances['ChestFreezer']['owner']=0.19     # original:  0.163
-    dict_appliances['UprightFreezer']['owner']=0.31   # original:  0.291
-    
-    # Changes on various appliances ownership probability  based on 
-    # BILAN ÉNERGÉTIQUE DE LA WALLONIE 2018 SECTEUR DOMESTIQUE ET ÉQUIVALENTS
-    # Table 8 (Hob) and Table 9 (all other appliances)
-    # Changed here as not to modify StRoBe input files
-    
-    dict_appliances["Hob"]["owner"] = 0.751             # original:  0.463
-    dict_appliances["Microwave"]["owner"] = 0.900       # original:  0.859
-    dict_appliances["PC"]["owner"] = 0.800              # original:  0.708
-    dict_appliances["TV1"]["owner"] = 0.950             # original:  0.977
-    dict_appliances["TumbleDryer"]["owner"] = 0.600     # original:  0.416
-    dict_appliances["DishWasher"]["owner"] = 0.660      # original:  0.335
-    dict_appliances["WashingMachine"]["owner"] = 0.930  # original:  0.930
 
-    # Changes on appliances for load shifting based on user inputs
-    # Changed here as not to modify StRoBe input files    
-    
+    # Forcing appliances to be considered for load shifting
+    # TODO: if not forced probability must remain unchanged, not 0
+    #       but they should not be considered in the final load shifting df
+   
     if 'appliances' not in inputs:
         return
     if "appliances" in inputs and inputs['appliances'] == None:
         return
-
-    dict_appliances["WasherDryer"]["owner"] = 0.0 # original: 0.153
         
     if "TumbleDryer" in inputs['appliances']:
         dict_appliances["TumbleDryer"]["owner"] = 1.0
@@ -119,7 +116,7 @@ class Household(object):
             name = 'nameless'
             
         #Adding the inputs config variable:
-        self.inputs = kwargs       
+        self.inputs = kwargs   
 
         # first define the name of the household object
         self.creation = time.asctime()
@@ -159,12 +156,13 @@ class Household(object):
             Define the pressent household appliances based on average national
             statistics independent of household member composition.
             '''
+            
+            # Update appliances with user inputs:
+            CustomAppOwnership(kwargs,set_appliances)
+
             # Loop through all appliances and pick randomly based on the
             # rate of ownership.
-            
-            # update appliances with user inputs:
-            CustomAppOwnership(kwargs,set_appliances)
-                
+
             app_n = []
             for app in set_appliances:
                 if set_appliances[app]['type'] == 'appliance':
@@ -172,20 +170,6 @@ class Household(object):
                     owner = obj.owner >= random.random()
                     app_n.append(app) if owner else None
                     
-            # Cold appliances fix:   ###############################################        
-            if not ('FridgeFreezer' in app_n) and not ('Refrigerator' in app_n): # if there was none of the two-> add one of the two.
-                #  Find probability of household to own FF instead of R: (FF ownership over sum of two ownerships-> scale to 0-1 interval)
-                prob=set_appliances['FridgeFreezer']['owner']/(set_appliances['FridgeFreezer']['owner']+set_appliances['Refrigerator']['owner'])
-                # if random number is below prob, then the household will own a FF, otherwise a R -> add it
-                app_n.append('FridgeFreezer') if prob >= random.random()  else app_n.append('Refrigerator') 
-            
-            if 'FridgeFreezer' in app_n and 'ChestFreezer' in app_n and 'UprightFreezer' in app_n:  #if there were 3 freezers-> remove a freezer-only
-                #find probability of household to own CF instead of UF:  (CF ownership over sum of two ownerships-> scale to 0-1 interval)
-                prob=set_appliances['ChestFreezer']['owner']/(set_appliances['ChestFreezer']['owner']+set_appliances['UprightFreezer']['owner'])
-                # if random number is below prob, then the household will own a CF, otherwise an UF-> remove the other
-                app_n.remove('UprightFreezer') if prob >= random.random()  else app_n.remove('ChestFreezer') #remove the one you don't own
-                
-            #########################################################################
             return app_n
 
         def tappings():
