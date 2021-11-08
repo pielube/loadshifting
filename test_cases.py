@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+
+"""Simulate demand scenarios at building level, for 36 cases"""
+
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,10 @@ import time
 import random
 from strobe.Data.Households import households
 
+
+"""
+Functions used by the launcher
+"""
 
 def ProcebarExtractor(buildtype):
     
@@ -190,7 +195,7 @@ def simulation(inputs):
     n_scen = 0 # Working only with the first scenario
     
     # RAMP-mobility
-    if inputs['EV']:
+    if inputs['EV']['loadshift']:
         result_ramp = ramp.EVCharging(inputs, result['occupancy'][n_scen])
     else:
         result_ramp=pd.DataFrame()
@@ -215,6 +220,9 @@ def simulation(inputs):
 
 
 def profile_average(stoch_profiles):
+    """
+    Function to obtain the average of the nsimulations
+    """
     nelem = np.size(stoch_profiles[0])
     Profile_avg = np.zeros(nelem)
     for pr in stoch_profiles:
@@ -224,6 +232,9 @@ def profile_average(stoch_profiles):
 
 
 def Profile_cloud_plot(stoch_profiles,stoch_profiles_avg):
+    """
+    Function to draw a cloud plot for immediate visualization
+    """
     nelem = np.size(stoch_profiles_avg)
     plt.figure(figsize=(10,5))
     for n in stoch_profiles:
@@ -232,12 +243,9 @@ def Profile_cloud_plot(stoch_profiles,stoch_profiles_avg):
         plt.ylabel('Power (W)')
         plt.xlim([0,1440])
         plt.ylim(ymin=0)
-        #plt.ylim(ymax=5000)
         plt.margins(x=0)
         plt.margins(y=0)
     plt.plot(np.arange(nelem),stoch_profiles_avg,'#4169e1')
-    # plt.xticks([0,1440*31,1440*60,1440*91,1440*121,1440*152,1440*182,1440*213,1440*244,1440*274,1440*305,1440*335],["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dic"])
-    #plt.savefig('profiles.eps', format='eps', dpi=1000)
     plt.show()
 
 
@@ -246,7 +254,7 @@ Calling the previously defined functions to simulate nsimulations times
 the ncases defined by the json files in the inputs folder
 """
 
-ncases = 12 # number of cases to be simulated
+ncases = 36 # number of cases to be simulated
 nsimulations = 10 # number of simulation per case
 
 
@@ -255,7 +263,7 @@ start_time = time.time()
 
 for i in range(ncases):
         
-    case = i+1+24
+    case = i+1
     
     # Reading fixed inputs from json file
     
@@ -275,13 +283,15 @@ for i in range(ncases):
         
         # People living in the dwelling
         # Taken from StRoBe list
-        
-        inputs['members'] = HouseholdMembers(inputs['dwelling_type'])
+        cond1 = 'members' not in inputs
+        cond2 = 'members' in inputs and inputs['members'] == None
+        if cond1 or cond2:
+            inputs['members'] = HouseholdMembers(inputs['dwelling_type'])
         
         # Thermal parameters of the dwelling
         # Taken from Procebar .xls files
         
-        procebinp = ProcebarExtractor(inputs['dwelling_type'])
+        procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'])
         inputs = {**inputs,**procebinp}
         
         # Running i-th simulation
@@ -301,7 +311,9 @@ for i in range(ncases):
     profile_avg = profile_average(simulations)
     Profile_cloud_plot(simulations,profile_avg)
 
-print("--- %s seconds ---" % (time.time() - start_time))
+
+exectime = (time.time() - start_time)/60.
+print("{:.1f} minutes".format(exectime))
 
 
 

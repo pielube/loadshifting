@@ -116,7 +116,7 @@ def simulate_scenarios(n_scen,inputs):
         
         # House heating model
         
-        if inputs['model'] == 0:
+        if inputs['HP']['model'] == 0:
             
             # Thermostat timer setting
             # 1) According to CREST
@@ -136,7 +136,7 @@ def simulate_scenarios(n_scen,inputs):
             print(' - Thermal demand for space heating is ',thermal_load,' kWh')
             textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
             
-        elif inputs['model'] == 1:
+        elif inputs['HP']['model'] == 1:
         
             # R51C model
             Qspace[i,:] = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon)
@@ -173,7 +173,7 @@ def simulate_scenarios(n_scen,inputs):
         textoutput.append(' - Load from dish washer is %s kWh' % str(E_dw))
         
         # Heat pump electric load
-        if inputs['HeatPump']:
+        if inputs['HP']['loadshift']:
             Wdot_hp[i,:] = ElLoadHP(Tamb,Qspace[i,:])
             E_hp = int(sum(Wdot_hp[i,:])/1000./60.)
             print(' - Heat pump consumption: ',E_hp,' kWh')
@@ -183,7 +183,7 @@ def simulate_scenarios(n_scen,inputs):
             E_hp = 0
         
         # Electric boiler and hot water tank
-        if inputs['DHW']:
+        if inputs['DHW']['loadshift']:
             Qeb[i,:] = DomesticHotWater(inputs,family.mDHW,Tamb,family.sh_day)
             E_eb = int(sum(Qeb[i,:])/1000./60.)
             print(' - Domestic hot water electricity consumption: ',E_eb,' kWh')
@@ -234,11 +234,11 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
     
     tstep   = 60.  # s
 
-    PowerElMax = inputs['PowerElMax']   # W  
-    Ttarget    = inputs['Ttarget'] #°C
-    Tcw        = inputs['Tcw']     #°C
-    Vcyl       = inputs['Vcyl']    # l
-    Hloss      = inputs['Hloss']  # W/K
+    PowerElMax = inputs['DHW']['PowerElMax']   # W  
+    Ttarget    = inputs['DHW']['Ttarget'] #°C
+    Tcw        = inputs['DHW']['Tcw']     #°C
+    Vcyl       = inputs['DHW']['Vcyl']    # l
+    Hloss      = inputs['DHW']['Hloss']  # W/K
     
     phi_t = np.zeros(np.size(mDHW))
     phi_a = np.zeros(np.size(mDHW))
@@ -250,7 +250,7 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
     resH = resM * 4200.       # from kg/s to W/K, cp = 4200. J/kg/K
     Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
 
-    if inputs['type'] == 1:
+    if inputs['DHW']['type'] == 1:
         
         for i in range(np.size(mDHW)):
             
@@ -264,7 +264,7 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
             deltaTcyl = (tstep/Ccyl) * (Hloss*Tbath[j] - (Hloss+resH[i])*Tcyl + resH[i]*Tcw + phi_a[i])
             Tcyl += deltaTcyl
             
-    elif inputs['type'] == 2:
+    elif inputs['DHW']['type'] == 2:
         
         for i in range(np.size(mDHW)):
             
@@ -293,12 +293,12 @@ def HouseThermalModel(inputs,ressize,To,Go, phi_c,timersetting,Tthermostat):
 
     tstep = 60.             # s
     
-    Tthermostatsetpoint = inputs['Tthermostatsetpoint'] #°C to be updated with data from Strobe or distrib probability
-    ThermostatDeadband  = inputs['ThermostatDeadband']  #°C
-    Temittersetpoint    = inputs['Temittersetpoint']    #°C
-    EmitterDeadband     = inputs['EmitterDeadband']     #°C
+    Tthermostatsetpoint = inputs['HP']['Tthermostatsetpoint'] #°C to be updated with data from Strobe or distrib probability
+    ThermostatDeadband  = inputs['HP']['ThermostatDeadband']  #°C
+    Temittersetpoint    = inputs['HP']['Temittersetpoint']    #°C
+    EmitterDeadband     = inputs['HP']['EmitterDeadband']     #°C
 
-    typeofdwelling = inputs['dwelling_type']
+    typeofdwelling = inputs['HP']['dwelling_type']
 
     # Dwelling parameters
         
@@ -561,13 +561,25 @@ def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains):
     # no timer setting
     # thermostat T = 20°C always    
 
-    House = Zone(t_set_heating=20.)
+    House = Zone(window_area=inputs['HP']['Aglazed'],
+                 walls_area=inputs['HP']['Aopaque'],
+                 floor_area=inputs['HP']['Afloor'],
+                 room_vol=inputs['HP']['volume'],
+                 total_internal_area=inputs['HP']['Atotal'],
+                 u_walls=inputs['HP']['Uwalls'],
+                 u_windows=inputs['HP']['Uwindows'],
+                 ach_vent=inputs['HP']['ACH_vent'],
+                 ach_infl=inputs['HP']['ACH_infl'],
+                 ventilation_efficiency=inputs['HP']['VentEff'],
+                 thermal_capacitance=inputs['HP']['Ctot'],
+                 t_set_heating=inputs['HP']['Tthermostatsetpoint'],
+                 max_heating_power=inputs['HP']['HeatPumpThermalPower'])
 
 
     # Rough estimation of solar gains based on data from Crest
     # Could be improved
     
-    typeofdwelling = inputs['dwelling_type'] 
+    typeofdwelling = inputs['HP']['dwelling_type'] 
     if typeofdwelling == 'Freestanding':
         A_s = 4.327106037
     elif typeofdwelling == 'Semi-detached':

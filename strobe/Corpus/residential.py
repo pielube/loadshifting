@@ -48,47 +48,39 @@ def CustomAppOwnership(inputs,dict_appliances):
     variable directly
     '''
     
-
     # Updating not load shifting related app ownerhisps
     
-    dict_appliances["Hob"]["owner"]            = inputs["AppOwnership"]["Hob"]
-    dict_appliances["Microwave"]["owner"]      = inputs["AppOwnership"]["Microwave"]  
-    dict_appliances["PC"]["owner"]             = inputs["AppOwnership"]["PC"]   
-    dict_appliances["TV1"]["owner"]            = inputs["AppOwnership"]["TV1"]    
-    dict_appliances["TumbleDryer"]["owner"]    = inputs["AppOwnership"]["TumbleDryer"]
-    dict_appliances["DishWasher"]["owner"]     = inputs["AppOwnership"]["DishWasher"] 
-    dict_appliances["WashingMachine"]["owner"] = inputs["AppOwnership"]["WashingMachine"] 
-    dict_appliances["WasherDryer"]["owner"]    = inputs["AppOwnership"]["WasherDryer"] 
-    dict_appliances['Refrigerator']['owner']   = inputs["AppOwnership"]["Refrigerator"]  
-    dict_appliances['FridgeFreezer']['owner']  = inputs["AppOwnership"]["FridgeFreezer"] 
-    dict_appliances['ChestFreezer']['owner']   = inputs["AppOwnership"]["ChestFreezer"]  
-    dict_appliances['UprightFreezer']['owner'] = inputs["AppOwnership"]["UprightFreezer"]
+    dict_appliances["Hob"]["owner"]            = inputs["appliances"]["prob_own"]["Hob"]
+    dict_appliances["Microwave"]["owner"]      = inputs["appliances"]["prob_own"]["Microwave"]  
+    dict_appliances["PC"]["owner"]             = inputs["appliances"]["prob_own"]["PC"]   
+    dict_appliances["TV1"]["owner"]            = inputs["appliances"]["prob_own"]["TV1"]    
+    dict_appliances["TumbleDryer"]["owner"]    = inputs["appliances"]["prob_own"]["TumbleDryer"]
+    dict_appliances["DishWasher"]["owner"]     = inputs["appliances"]["prob_own"]["DishWasher"] 
+    dict_appliances["WashingMachine"]["owner"] = inputs["appliances"]["prob_own"]["WashingMachine"] 
+    dict_appliances["WasherDryer"]["owner"]    = inputs["appliances"]["prob_own"]["WasherDryer"] 
+    dict_appliances['Refrigerator']['owner']   = inputs["appliances"]["prob_own"]["Refrigerator"]  
+    dict_appliances['FridgeFreezer']['owner']  = inputs["appliances"]["prob_own"]["FridgeFreezer"] 
+    dict_appliances['ChestFreezer']['owner']   = inputs["appliances"]["prob_own"]["ChestFreezer"]  
+    dict_appliances['UprightFreezer']['owner'] = inputs["appliances"]["prob_own"]["UprightFreezer"]
 
 
-    # Forcing appliances to be considered for load shifting
-    # TODO: if not forced probability must remain unchanged, not 0
-    #       but they should not be considered in the final load shifting df
+    # Forcing appliances to be there is necessary for load shifting
    
-    if 'appliances' not in inputs:
+    if not inputs['appliances']['loadshift']:
         return
-    if "appliances" in inputs and inputs['appliances'] == None:
+    if 'apps' not in inputs['appliances']:
+        return
+    if 'apps' in inputs and inputs['appliances']['apps'] == None:
         return
         
-    if "TumbleDryer" in inputs['appliances']:
+    if "TumbleDryer" in inputs['appliances']['apps']:
         dict_appliances["TumbleDryer"]["owner"] = 1.0
-    else:
-        dict_appliances["TumbleDryer"]["owner"] = 0.0
         
-    if "DishWasher" in inputs['appliances']:
+    if "DishWasher" in inputs['appliances']['apps']:
         dict_appliances["DishWasher"]["owner"] = 1.0
-    else:
-        dict_appliances["DishWasher"]["owner"] = 0.0
         
-    if "WashingMachine" in inputs['appliances']:
+    if "WashingMachine" in inputs['appliances']['apps']:
         dict_appliances["WashingMachine"]["owner"] = 1.0
-    else:
-        dict_appliances["WashingMachine"]["owner"] = 0.0
-        
 
 
 

@@ -23,34 +23,34 @@ def CasesPerSheet(inputs,df,nsheet,households):
                 
         # Type of building
         if row['Façades'] == 1:
-            inputs['dwelling_type'] = "Apartment"
+            inputs['HP']['dwelling_type'] = "Apartment"
         elif row['Façades'] == 2:
-            inputs['dwelling_type'] = "Terraced"
+            inputs['HP']['dwelling_type'] = "Terraced"
         elif row['Façades'] == 3:
-            inputs['dwelling_type'] = "Semi-detached"
+            inputs['HP']['dwelling_type'] = "Semi-detached"
         elif row['Façades'] == 4:
-            inputs['dwelling_type'] = "Freestanding"
+            inputs['HP']['dwelling_type'] = "Freestanding"
     
         # Appliances
         if row['Machines'] == 0:
-            inputs['appliances'] = []
+            inputs['appliances']['apps'] = []
         elif row['Machines'] == 1:
-            inputs['appliances'] = ["WashingMachine","TumbleDryer","DishWasher"]
+            inputs['appliances']['apps'] = ["WashingMachine","TumbleDryer","DishWasher"]
             
         # Heat Pump
         if row['PAC'] == 0:
-            inputs['HeatPump'] = False
+            inputs['HP']['loadshift'] = False
         elif row['PAC'] == 1:
-            inputs['HeatPump'] = True
+            inputs['HP']['loadshift'] = True
             
         # Electric boiler
         inputs = DHWinputs(row['Ménage'],row['ECS'],inputs)
     
         # Electric vehicle
         if row['VE'] == 0:
-            inputs['EV'] = False
+            inputs['EV']['loadshift'] = False
         elif row['VE'] == 1:
-            inputs['EV'] = True
+            inputs['EV']['loadshift'] = True
  
         filenumber = nsheet*12+index+1    
         filename = 'case_'+str(filenumber)+'.json'
@@ -61,60 +61,60 @@ def CasesPerSheet(inputs,df,nsheet,households):
 def DHWinputs(npeople,ECS,inputs):
     
     if ECS == 0:
-        inputs['DHW'] = False
+        inputs['DHW']['loadshift'] = False
 
     elif ECS == 1:
-        inputs['DHW'] = True
-        inputs['type'] = 1
+        inputs['DHW']['loadshift'] = True
+        inputs['DHW']['type'] = 1
         
         if npeople == 1:
-            inputs["PowerElMax"]= 2000.0
-            inputs["Ttarget"]= 53.0 
-            inputs["Tcw"]= 10.0     
-            inputs["Vcyl"]= 20.0  
-            inputs["Hloss"]= 0.5
+            inputs['DHW']["PowerElMax"]= 2000.0
+            inputs['DHW']["Ttarget"]= 53.0 
+            inputs['DHW']["Tcw"]= 10.0     
+            inputs['DHW']["Vcyl"]= 20.0  
+            inputs['DHW']["Hloss"]= 0.5
         elif npeople in {2,3}:
-            inputs["PowerElMax"]= 2000.0
-            inputs["Ttarget"]= 53.0 
-            inputs["Tcw"]= 10.0     
-            inputs["Vcyl"]= 54.0  
-            inputs["Hloss"]= 0.5
+            inputs['DHW']["PowerElMax"]= 2000.0
+            inputs['DHW']["Ttarget"]= 53.0 
+            inputs['DHW']["Tcw"]= 10.0     
+            inputs['DHW']["Vcyl"]= 54.0  
+            inputs['DHW']["Hloss"]= 0.5
         elif npeople >= 4:
-            inputs["PowerElMax"]= 2000.0
-            inputs["Ttarget"]= 53.0 
-            inputs["Tcw"]= 10.0     
-            inputs["Vcyl"]= 87.0  
-            inputs["Hloss"]= 1.0
+            inputs['DHW']["PowerElMax"]= 2000.0
+            inputs['DHW']["Ttarget"]= 53.0 
+            inputs['DHW']["Tcw"]= 10.0     
+            inputs['DHW']["Vcyl"]= 87.0  
+            inputs['DHW']["Hloss"]= 1.0
                   
     elif ECS == 2:
-        inputs['DHW'] = True
-        inputs['type'] = 2
+        inputs['DHW']['loadshift'] = True
+        inputs['DHW']['type'] = 2
         
         if npeople == 1:
-            inputs["PowerElMax"]= 350.0
-            inputs["Ttarget"]= 53.0 
-            inputs["Tcw"]= 10.0     
-            inputs["Vcyl"]= 50.0  
-            inputs["Hloss"]= 0.5
+            inputs['DHW']["PowerElMax"]= 350.0
+            inputs['DHW']["Ttarget"]= 53.0 
+            inputs['DHW']["Tcw"]= 10.0     
+            inputs['DHW']["Vcyl"]= 50.0  
+            inputs['DHW']["Hloss"]= 0.5
         elif npeople in {2,3}:
-            inputs["PowerElMax"]= 700.0
-            inputs["Ttarget"]= 53.0 
-            inputs["Tcw"]= 10.0     
-            inputs["Vcyl"]= 85.0  
-            inputs["Hloss"]= 1.0
+            inputs['DHW']["PowerElMax"]= 700.0
+            inputs['DHW']["Ttarget"]= 53.0 
+            inputs['DHW']["Tcw"]= 10.0     
+            inputs['DHW']["Vcyl"]= 85.0  
+            inputs['DHW']["Hloss"]= 1.0
         elif npeople >= 4:
-            inputs["PowerElMax"]= 1000.0
-            inputs["Ttarget"]= 53.0 
-            inputs["Tcw"]= 10.0     
-            inputs["Vcyl"]= 184.0  
-            inputs["Hloss"]= 1.5  
+            inputs['DHW']["PowerElMax"]= 1000.0
+            inputs['DHW']["Ttarget"]= 53.0 
+            inputs['DHW']["Tcw"]= 10.0     
+            inputs['DHW']["Vcyl"]= 184.0  
+            inputs['DHW']["Hloss"]= 1.5  
 
     return(inputs)
             
 
 data = pd.read_excel (r'.\Profils_Definition.xlsx',sheet_name=['4F','2F','1F'],header=3)
 
-with open(r'.\inputs.json') as f:
+with open(r'.\case_ref.json') as f:
   inputs = json.load(f)
  
 count = 0

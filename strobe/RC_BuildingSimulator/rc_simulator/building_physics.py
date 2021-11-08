@@ -102,14 +102,14 @@ class Zone(object):
                  ach_vent=1.5,
                  ach_infl=0.5,
                  ventilation_efficiency=0.6,
-                 thermal_capacitance_per_floor_area=79000.,
+                 thermal_capacitance=5775000.0,
                  t_set_heating=20.0,
                  t_set_cooling=26.0,
                  heating_supply_system=supply_system.HeatPumpWater,
                  cooling_supply_system=supply_system.HeatPumpAir,
                  heating_emission_system=emission_system.NewRadiators,
                  cooling_emission_system=emission_system.AirConditioning,
-                 ):
+                 max_heating_power=2000.):
 
         # Zone Dimensions
         self.window_area = window_area  # [m2] Window Area
@@ -125,7 +125,7 @@ class Zone(object):
 
         # Single Capacitance  5 conductance Model Parameters
         # [kWh/K] Room Capacitance. Default based on ISO standard 12.3.1.2 for medium heavy zones
-        self.c_m = thermal_capacitance_per_floor_area * self.floor_area
+        self.c_m = thermal_capacitance
         # Conductance of opaque surfaces to exterior [W/K]
         self.h_tr_em = u_walls * walls_area
         # Conductance to exterior through glazed surfaces [W/K], based on
@@ -153,7 +153,7 @@ class Zone(object):
         self.has_heating_demand = True  # Boolean for if heating is required
         self.has_cooling_demand = False  # Boolean for if cooling is required
         self.max_cooling_energy = -float("inf")  # max cooling load (W/m2)
-        self.max_heating_energy = 2000. #float("inf")
+        self.max_heating_energy = max_heating_power #2000. #float("inf")
 
         # Zone System Properties
         self.heating_supply_system = heating_supply_system

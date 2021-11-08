@@ -4,8 +4,6 @@
 "year": 2016,
 "ndays": 366,
 
-"members": ["FTE","PTE","School","U12"],
-
 "appliances": 
     {
     "loadshift": true,
@@ -38,8 +36,8 @@
     "Hloss": 0.5,
     "prob_own":
         {
-        "elboil": 0.226,
-        "HP": 0.007
+        "elboil": 0.0,
+        "HP": 0.0
         }
         
     },
@@ -65,7 +63,7 @@
     "ACH_infl": null,
     "VentEff": null,
     "Ctot": null,
-    "prob_own": 0.02
+    "prob_own": 0.0
     }, 
 
 "EV": 
