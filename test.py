@@ -232,12 +232,13 @@ for key in df.columns:
 Plotting
 """
 
-rng = pd.date_range(start='2016-01-02',end='2016-01-09',freq='min')
+rng = pd.date_range(start='2016-08-09',end='2016-08-16',freq='min')
 ax = df.loc[rng].plot.area(lw=0)
 ax.set(ylabel = "Power [W]")
 plt.legend(loc='upper left')
 
-ax = df.loc['2016-01-06'].plot.area(lw=0)
+ax = df.loc['2016-08-06'].plot.area(figsize=(8,4),lw=0)
+ax.set(xlabel = 'Time [min]')
 ax.set(ylabel = "Power [W]")
 plt.legend(loc='upper left')
 
