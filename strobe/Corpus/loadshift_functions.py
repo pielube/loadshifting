@@ -10,6 +10,8 @@ import numpy as np
 import datetime
 import random
 from .residential import Household
+from ..RC_BuildingSimulator import Zone
+
 
 import pathlib
 strobepath = pathlib.Path(__file__).parent.parent.resolve()
@@ -113,11 +115,42 @@ def simulate_scenarios(n_scen,inputs):
         members += family.members
         
         # House heating model
-        timersetting = HeatingTimer(inputs)
-        Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting)
-        thermal_load = int(sum(Qspace[i,:])/1000./60.)
-        print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-        textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
+        
+        if inputs['model'] == 0:
+            
+            # Thermostat timer setting
+            # 1) According to CREST
+            # timersetting = HeatingTimer(inputs)
+            # 2) No timer
+            # ressize = 527041 # should be defined once and for all not here
+            # timersetting = np.ones(ressize)
+            # 3) According to Aerts
+            timersetting = AertsThermostatTimer(ndays)
+            
+            # Thermostat temperature setting according to Aerts
+            # Look inside HouseThermalModel() if actually used, around line 310
+            Tthermostat  = AertsThermostatTemp(occupancy)
+
+            Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting,Tthermostat)
+            thermal_load = int(sum(Qspace[i,:])/1000./60.)
+            print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
+            
+        elif inputs['model'] == 1:
+        
+            # R51C model
+            Qspace[i,:] = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon)
+            thermal_load = int(sum(Qspace[i,:])/1000./60.)
+            print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
+        
+        else:
+            Qspace[i,:] = 0
+            thermal_load = 0
+            print('WARNING: wrong house thermal model option - Thermal demand forced to be null')
+            print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')            
+        
         
         # Annual load from appliances
         E_app = int(np.sum(family.P)/60/1000)
@@ -150,11 +183,11 @@ def simulate_scenarios(n_scen,inputs):
             E_hp = 0
         
         # Electric boiler and hot water tank
-        if inputs['ElectricBoiler']:
-            Qeb[i,:] = HotWaterTankModel(inputs,family.mDHW,family.sh_day)
+        if inputs['DHW']:
+            Qeb[i,:] = DomesticHotWater(inputs,family.mDHW,Tamb,family.sh_day)
             E_eb = int(sum(Qeb[i,:])/1000./60.)
-            print(' - Electrical boiler consumption: ',E_eb,' kWh')
-            textoutput.append(' - Electrical boiler consumption: ' + str(E_eb) +' kWh')
+            print(' - Domestic hot water electricity consumption: ',E_eb,' kWh')
+            textoutput.append(' - Domestic hot water electricity consumption: ' + str(E_eb) +' kWh')
         else:
             Qeb[i,:] = 0
             E_eb = 0
@@ -170,7 +203,7 @@ def simulate_scenarios(n_scen,inputs):
         'TumbleDryer':ptd, 
         'DishWasher':pdw, 
         'WashingMachine':pwm, 
-        'ElectricalBoiler':Qeb,
+        'DomesticHotWater':Qeb,
         'SpaceHeating':Qspace,
         'HeatPumpPower':Wdot_hp,
         'InternalGains':Qrad+Qcon,
@@ -182,54 +215,71 @@ def simulate_scenarios(n_scen,inputs):
 
 
 
-def HotWaterTankModel(inputs,mDHW,Tbath):
+def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
     
     """
-    Electric boiler and water tank
+    Domestic hot water heater
+    Can be both 
     
     In:
     inputs    dictionary with input data from JSON
     mDHW      tap water required l/min [every min]
+    Tamb      ambient temperature [every min]
     Tbath     temperature in the room where the boiler is stored [every 10 min]
     
     Out: 
-    power consumption [every min]
+    electrical power consumption [every min]
     
-    hp. eff boiler = 100%
     """
     
     tstep   = 60.  # s
-    
-    Ttarget = inputs['Ttarget'] #°C
-    Tcw     = inputs['Tcw']     #°C
-    Vcyl    = inputs['Vcyl']    # l
-    Hloss   = inputs['Hloss']  # W/K
+
+    PowerElMax = inputs['PowerElMax']   # W  
+    Ttarget    = inputs['Ttarget'] #°C
+    Tcw        = inputs['Tcw']     #°C
+    Vcyl       = inputs['Vcyl']    # l
+    Hloss      = inputs['Hloss']  # W/K
     
     phi_t = np.zeros(np.size(mDHW))
     phi_a = np.zeros(np.size(mDHW))
     
     # Inizialization
     Tcyl = 60. + random.random()*2. #°C
-
     resV = mDHW / 1000. / 60. # from l/min to m3/s
     resM = resV * 1000.       # from m3/s to kg/s
     resH = resM * 4200.       # from kg/s to W/K, cp = 4200. J/kg/K
-      
     Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
-    
-    for i in range(np.size(mDHW)):
+
+    if inputs['type'] == 1:
         
-        j = int(i/10)
+        for i in range(np.size(mDHW)):
+            
+            j = int(i/10)
+            
+            eff = 1.
+            
+            phi_t[i] = Ccyl/tstep * (Ttarget-Tcyl) + resH[i] * (Tcyl-Tcw) + Hloss * (Tcyl-Tbath[j])
+            phi_a[i] = phi_t[i]/eff
+            phi_a[i] = max([0.,min([PowerElMax,phi_a[i]])])
+            deltaTcyl = (tstep/Ccyl) * (Hloss*Tbath[j] - (Hloss+resH[i])*Tcyl + resH[i]*Tcw + phi_a[i])
+            Tcyl += deltaTcyl
+            
+    elif inputs['type'] == 2:
         
-        phi_t[i] = Ccyl/tstep * (Ttarget-Tcyl) + resH[i] * (Tcyl-Tcw) + Hloss * (Tcyl-Tbath[j])
-        phi_a[i] = max([0.,min([2000.,phi_t[i]])])
-        deltaTcyl = (tstep/Ccyl) * (Hloss*Tbath[j] - (Hloss+resH[i])*Tcyl + resH[i]*Tcw + phi_a[i])
-        Tcyl += deltaTcyl        
+        for i in range(np.size(mDHW)):
+            
+            j = int(i/10)
+            
+            phi_t[i] = Ccyl/tstep * (Ttarget-Tcyl) + resH[i] * (Tcyl-Tcw) + Hloss * (Tcyl-Tbath[j])
+            phi_a[i] = phi_t[i]/COP_Tamb(Tamb[i])
+            phi_a[i] = max([0.,min([PowerElMax,phi_a[i]])])
+            deltaTcyl = (tstep/Ccyl) * (Hloss*Tbath[j] - (Hloss+resH[i])*Tcyl + resH[i]*Tcw + phi_a[i])
+            Tcyl += deltaTcyl
       
     return phi_a
 
 
-def HouseThermalModel(inputs,ressize,To,Go, phi_c,timersetting):
+def HouseThermalModel(inputs,ressize,To,Go, phi_c,timersetting,Tthermostat):
     
     """
     inputs            dictionary with input data from JSON
@@ -245,34 +295,40 @@ def HouseThermalModel(inputs,ressize,To,Go, phi_c,timersetting):
     
     Tthermostatsetpoint = inputs['Tthermostatsetpoint'] #°C to be updated with data from Strobe or distrib probability
     ThermostatDeadband  = inputs['ThermostatDeadband']  #°C
-    Tem_target          = inputs['Tem_target']          #°C
     Temittersetpoint    = inputs['Temittersetpoint']    #°C
     EmitterDeadband     = inputs['EmitterDeadband']     #°C
 
     typeofdwelling = inputs['dwelling_type']
 
     # Dwelling parameters
-    
-    A_s = dwellings[typeofdwelling]['A_s']    # m2 Global irradiance multiplier       
-    Hv  = dwellings[typeofdwelling]['Hv']    # W/K Thermal transfer coefficient representing ventilation heat loss between outside air and internal building thermal capacitance
+        
     Hob = dwellings[typeofdwelling]['Hob']   # W/K Thermal transfer coefficient between outside air and external building thermal capacitance
     Hbi = dwellings[typeofdwelling]['Hbi']   # W/K Thermal transfer coefficient between external building thermal capacitance and internal building thermal capacitance
-    Hem = dwellings[typeofdwelling]['Hem']   # W/K Heat transfer coefficient of heat emitters
     Cb  = dwellings[typeofdwelling]['Cb']    # J/K External building thermal capacitance (Building thermal mass)
     Ci  = dwellings[typeofdwelling]['Ci']    # J/K Internal building thermal capacitance (Indoor air thermal mass)
-    Cem = dwellings[typeofdwelling]['Cem']   # J/K Thermal capacitance of heat emitters (Heat emitter and cooler thermal masses)
+    A_s = dwellings[typeofdwelling]['A_s']   # m2  Global irradiance multiplier       
+    # Nvent = 1.0     # 1/h  Ventilation rate
+    # A_liv = 136.    # m2
+    # L_liv = 4.2     # m
+    Hv  = dwellings[typeofdwelling]['Hv']    # W/K Thermal transfer coefficient representing ventilation heat loss between outside air and internal building thermal capacitance
 
+    Tin_design = 20. # sizing temperatures
+    Tout_design = -2. # sizing temperatures
+    phi_design = (1/(1/Hob + 1/Hbi)+Hv)*(Tin_design-Tout_design)
+    Hem = phi_design/(Temittersetpoint-Tin_design)
+    mem = 14.*phi_design/1000.
+    Cem = mem*4200.
        
     # Temperatures inizialization
 
     Ti = min([max([19.,To[0]]),25.]) + random.random()*2. #°C
     Tem = Ti  #°C
-    Tem_target += EmitterDeadband #°C
+    Tem_target = Temittersetpoint + EmitterDeadband #°C
     Tb = max(16.,To[0])  + random.random()*2. #°C
 
     # Space heating vector inizialization
 
-    phi_h_space        = np.zeros(ressize)
+    phi_h_space = np.zeros(ressize)
     Tem_test =  np.zeros(ressize)
     
     
@@ -295,7 +351,7 @@ def HouseThermalModel(inputs,ressize,To,Go, phi_c,timersetting):
         Tem_test[i] = Tem
         
         if SpaceThermostatState == True  and Ti < (Tthermostatsetpoint + ThermostatDeadband) or \
-            SpaceThermostatState == False and Ti < (Tthermostatsetpoint - ThermostatDeadband):
+            SpaceThermostatState == False and Ti < (Tthermostatsetpoint - ThermostatDeadband): # Tthermostat[i]
                
             SpaceThermostatState = True
         else:
@@ -435,10 +491,103 @@ def HeatingTimer(inputs):
 
 def ElLoadHP(temp,phi_h_space):
     phi_hp= np.zeros(np.size(phi_h_space))
-    for i in range(np.size(phi_h_space)):
-        COP = 0.001*temp[i]**2 + 0.0471*temp[i] + 2.1259
-        phi_hp[i] = phi_h_space[i]/COP
+    for i in range(np.size(phi_h_space)):   
+        phi_hp[i] = phi_h_space[i]/COP_Tamb(temp[i])
     return phi_hp
 
 
+def COP_Tamb(Temp):
+    COP = 0.001*Temp**2 + 0.0471*Temp + 2.1259
+    return COP
+
+
+def AertsThermostatTemp(occupancy):
+    
+    """
+    Function that returns thermostat temperature setting based on occupancy.
+    20°C if someone is at home
+    15°C otherwise
+    
+    occupancy : numpy array, shape (n_scen, tenminutes)
+    DHW demands scenarios, sampled at a
+    10 minute time-step
+    
+    Tthermostat: numpy array, shape (nminutes)
+    Thermostat temperature setting, one minute timestep
+
+    """
+    
+    # Length of 1-min array based on 10-min array 
+    ntenmin = len(occupancy[0][0]) 
+    nmin = (ntenmin-1)*10+1 # strobe uses N+1 sized vectors
+    # Initializing thermostat Ts array
+    Tthermostat = np.zeros(nmin)
+    # Initializing resulting occupancy 
+    occupancy_tot = np.zeros(ntenmin)
+    
+    # occupancy_tot[i] = 1 if at least 1 person at home, otherwise 0
+    for i in range(len(occupancy[0])):
+        occupancy_tot = np.multiply(occupancy_tot,np.where(occupancy[0][i] >= 3,0,1))
+    
+    # Thermostat = 20. if someone at home, otherwise 15.
+    for i in range(len(occupancy_tot)-1):
+        for j in range(10):
+            if occupancy_tot[i] > 0:
+                Tthermostat[i*10+j]=20.
+            else:
+                Tthermostat[i*10+j]=15.
+    
+    # Last element would otherwise be 0.
+    Tthermostat[nmin-1] = Tthermostat[nmin-2] 
+    
+    return Tthermostat
+
+    
+def AertsThermostatTimer(ndays):
+    
+    timer_day = np.zeros(1440)
+    
+    for i in range(len(timer_day)):
+        if (360 <= i <= 1380):
+            timer_day[i] = 1
+    timer_year = np.tile(timer_day,ndays)
+    timer_year = np.append(timer_year,timer_year[len(timer_year)-1])
+    
+    return timer_year
+
+
+def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains):
+
+    # no timer setting
+    # thermostat T = 20°C always    
+
+    House = Zone(t_set_heating=20.)
+
+
+    # Rough estimation of solar gains based on data from Crest
+    # Could be improved
+    
+    typeofdwelling = inputs['dwelling_type'] 
+    if typeofdwelling == 'Freestanding':
+        A_s = 4.327106037
+    elif typeofdwelling == 'Semi-detached':
+        A_s = 4.862912117
+    elif typeofdwelling == 'Terraced':
+        A_s = 2.790283243
+    elif typeofdwelling == 'Apartment':
+        A_s = 1.5   
+    Qsolgains = irr * A_s
+    
+    Tin = max(16.,Tamb[0])  + random.random()*2. #°C
+
+    Qheat = np.zeros(nminutes)
+    
+    for i in range(nminutes):
+        
+        House.solve_energy(Qintgains[i], Qsolgains[i], Tamb[i], Tin)
+        Tin      = House.t_m_next
+        Qheat[i] = House.heating_demand
+    
+    return Qheat
+        
 

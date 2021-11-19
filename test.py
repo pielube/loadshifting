@@ -9,10 +9,12 @@ import matplotlib.pyplot as plt
 import strobe
 import ramp
 import json
+import time
 
+start_time = time.time()
 
 # Loading inputs:
-with open('inputs/loadshift_inputs.json') as f:
+with open('inputs/inputs.json') as f:
   inputs = json.load(f)
 
 """
@@ -20,9 +22,10 @@ Actual simulations
 """
 
 # Strobe
-result,textoutput = strobe.simulate_scenarios(1, inputs)
+result,textoutput = strobe.simulate_scenarios(1,inputs)
 
 n_scen = 0 # Working only with the first scenario
+
 
 # RAMP-mobility
 if inputs['EV']:
@@ -33,7 +36,7 @@ else:
 # Creating dataframe with the results 
 n_steps = np.size(result['StaticLoad'][n_scen,:])
 index = pd.date_range(start='2016-01-01 00:00', periods=n_steps, freq='1min')
-df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','ElectricalBoiler','HeatPumpPower','EVCharging'])
+df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging'])
 
 result_ramp.loc[df.index[-1],'EVCharging']=0
 #df.index.union(result_ramp.index)        # too slow
@@ -58,4 +61,5 @@ ax = df.loc['2016-01-06'].plot.area(lw=0)
 ax.set(ylabel = "Power [W]")
 plt.legend(loc='upper left')
 
+print("--- %s seconds ---" % (time.time() - start_time))
         
