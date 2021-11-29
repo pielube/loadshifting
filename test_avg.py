@@ -173,81 +173,89 @@ def HouseholdMembers(buildtype):
     
     return output
 
+text = []
 
-
-"""
-Loading inputs
-"""
-
-with open('inputs/example.json') as f:
-  inputs = json.load(f)
-  
-# People living in the dwelling
-# Taken from StRoBe list
-cond1 = 'members' not in inputs
-cond2 = 'members' in inputs and inputs['members'] == None
-if cond1 or cond2:
-    inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
-
-# Thermal parameters of the dwelling
-# Taken from Procebar .xls files
-
-procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'])
-inputs['HP'] = {**inputs['HP'],**procebinp}  
-  
-
-"""
-Running the models
-"""
-
-# Strobe
-# House thermal model + HP
-# DHW
-result,textoutput = strobe.simulate_scenarios(1,inputs)
-n_scen = 0 # Working only with the first scenario
-
-# RAMP-mobility
-if inputs['EV']['loadshift']:
-    result_ramp = ramp.EVCharging(inputs, result['occupancy'][n_scen])
-else:
-    result_ramp=pd.DataFrame()
-
-"""
-Creating dataframe with the results
-"""
- 
-n_steps = np.size(result['StaticLoad'][n_scen,:])
-index = pd.date_range(start='2015-01-01 00:00', periods=n_steps, freq='1min')
-df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging'])
-
-result_ramp.loc[df.index[-1],'EVCharging']=0
-#df.index.union(result_ramp.index)        # too slow
-
-for key in df.columns:
-    if key in result:
-        df[key] = result[key][n_scen,:]
-    elif key in result_ramp:
-        df[key] = result_ramp[key]* 1000
+for k in range(5):
+    
+    """
+    Loading inputs
+    """
+    
+    with open('inputs/example.json') as f:
+      inputs = json.load(f)
+      
+    # People living in the dwelling
+    # Taken from StRoBe list
+    cond1 = 'members' not in inputs
+    cond2 = 'members' in inputs and inputs['members'] == None
+    if cond1 or cond2:
+        inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
+    
+    # Thermal parameters of the dwelling
+    # Taken from Procebar .xls files
+    
+    procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'])
+    inputs['HP'] = {**inputs['HP'],**procebinp}  
+      
+    
+    """
+    Running the models
+    """
+    
+    # Strobe
+    # House thermal model + HP
+    # DHW
+    result,textoutput = strobe.simulate_scenarios(1,inputs)
+    n_scen = 0 # Working only with the first scenario
+    
+    # RAMP-mobility
+    if inputs['EV']['loadshift']:
+        result_ramp = ramp.EVCharging(inputs, result['occupancy'][n_scen])
     else:
-        df[key] = 0
+        result_ramp=pd.DataFrame()
+        
+    text.append(textoutput)
+    
+    """
+    Creating dataframe with the results
+    """
+     
+    n_steps = np.size(result['StaticLoad'][n_scen,:])
+    index = pd.date_range(start='2016-01-01 00:00', periods=n_steps, freq='1min')
+    df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging'])
+    
+    result_ramp.loc[df.index[-1],'EVCharging']=0
+    #df.index.union(result_ramp.index)        # too slow
+    
+    for key in df.columns:
+        if key in result:
+            df[key] = result[key][n_scen,:]
+        elif key in result_ramp:
+            df[key] = result_ramp[key]* 1000
+        else:
+            df[key] = 0
 
-"""
-Plotting
-"""
+# """
+# Plotting
+# """
 
-rng = pd.date_range(start='2015-08-09',end='2015-08-16',freq='min')
-ax = df.loc[rng].plot.area(lw=0)
-ax.set(ylabel = "Power [W]")
-plt.legend(loc='upper left')
+# rng = pd.date_range(start='2016-08-09',end='2016-08-16',freq='min')
+# ax = df.loc[rng].plot.area(lw=0)
+# ax.set(ylabel = "Power [W]")
+# plt.legend(loc='upper left')
 
-ax = df.loc['2015-08-06'].plot.area(figsize=(8,4),lw=0)
-ax.set(xlabel = 'Time [min]')
-ax.set(ylabel = "Power [W]")
-plt.legend(loc='upper left')
+# ax = df.loc['2016-08-06'].plot.area(figsize=(8,4),lw=0)
+# ax.set(xlabel = 'Time [min]')
+# ax.set(ylabel = "Power [W]")
+# plt.legend(loc='upper left')
 
 
 exectime = (time.time() - start_time)/60.
 print("{:.1f} minutes".format(exectime))
+
+for i in text:
+    print(i[9])
+    print(i[14])
 
 
         

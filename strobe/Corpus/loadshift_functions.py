@@ -562,9 +562,6 @@ def AertsThermostatTimer(ndays):
 
 def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains):
 
-    # no timer setting
-    # thermostat T = 20°C always    
-
     # Rough estimation of solar gains based on data from Crest
     # Could be improved
     
@@ -643,6 +640,15 @@ def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains):
         House.solve_energy(Qintgains[i], Qsolgains[i], Tamb[i], Tair)
         Tair      = House.t_air
         Qheat[i] = House.heating_demand
+        
+        # Heating season
+        if 60*24*151 < i < 60*24*244:
+            Qheat[i] = 0
+    
+    # Daily timer
+    timeryear = AertsThermostatTimer(inputs['ndays'])
+    Qheat = Qheat*timeryear
+        
     
     return Qheat, QheatHP
         
