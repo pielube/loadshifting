@@ -138,7 +138,7 @@ class Zone(object):
         # [ISO: E -27]
         b_ek = (1 - (ach_vent / (ach_tot)) * ventilation_efficiency)
         self.h_ve_adj = 1200 * b_ek * self.room_vol * \
-            (ach_tot / 3600)  # Conductance through ventilation [W/M]
+            (ach_tot / 60)  # Conductance through ventilation [W/M]
         # transmittance from the internal air to the thermal mass of the
         # zone
         self.h_tr_ms = 9.1 * self.mass_area
@@ -498,8 +498,8 @@ class Zone(object):
         # (C.4) in [C.3 ISO 13790]
         """
 
-        self.t_m_next = ((t_m_prev * ((self.c_m / 3600.0) - 0.5 * (self.h_tr_3 + self.h_tr_em))) +
-                         self.phi_m_tot) / ((self.c_m / 3600.0) + 0.5 * (self.h_tr_3 + self.h_tr_em))
+        self.t_m_next = ((t_m_prev * ((self.c_m / 60.0) - 0.5 * (self.h_tr_3 + self.h_tr_em))) +
+                         self.phi_m_tot) / ((self.c_m / 60.0) + 0.5 * (self.h_tr_3 + self.h_tr_em))
 
     def calc_phi_m_tot(self, t_out):
         """

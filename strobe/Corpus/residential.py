@@ -792,7 +792,7 @@ class Equipment(object):
                 prob = [[1 for x in range(nday*nbin)] for i in range(numOcc)] # activity 'None' always probability=1 
             elif act == 'Presence': # if appliance linked to presence (active occupants): probability =1 when ANYONE is present
                 prob = occy
-            else: # appliance linked to specific activity (e.g. "food")  
+            else: # appliance linked to specific activity (e.g. "food") 
                 # get activity probabilities for all occupants from DTMC file
                 actdata= [DTMC(clusterDict=clustersList[i]) for i in range(numOcc)] 
                 prob = occy   # just initiate correct size    
@@ -895,7 +895,7 @@ class Equipment(object):
                     r_appi, n_appi = stochastic_load(self, nday, dow, [clustersList[i]], [occ[i]])# we pass a list with one clusterDict
                     r_app = sum_dict(r_app, r_appi)
                     n_app += n_appi                
-            else: # other appliances (shared)               
+            else: # other appliances (shared)
                 r_app, n_app = stochastic_load(self, nday, dow, clustersList, occ)# we pass a list with all available clusterDicts, as given from plugloads
         else: # flow-> model is based on total presence: do only once.
             r_app, n_app = stochastic_flow(self, nday, dow, clustersList, occ) # we pass a list with one clusterDict, as given from DHW model
