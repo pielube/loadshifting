@@ -172,8 +172,7 @@ def HouseholdMembers(buildtype):
         finished = not set(output).isdisjoint(adults)
     
     return output
-
-
+  
 
 """
 Loading inputs

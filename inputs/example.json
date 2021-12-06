@@ -30,24 +30,18 @@
 "DHW": 
     {
     "loadshift": false,
-    "type": 1,
+    "type": "ElectricBoiler",
     "PowerElMax": 2000.0,
     "Ttarget": 53.0, 
     "Tcw": 10.0,     
     "Vcyl": 50.0,    
-    "Hloss": 0.5,
-    "prob_own":
-        {
-        "elboil": 0.226,
-        "HP": 0.007
-        }
-        
+    "Hloss": 0.5
     },
 
 "HP": 
     {
     "loadshift": true,
-    "model": 1,
+    "model": "5R1C",
     "dwelling_type": "Apartment",
     "Tthermostatsetpoint": 20.0, 
     "ThermostatDeadband": 2.0,   
@@ -64,15 +58,12 @@
     "ACH_vent": null,
     "ACH_infl": null,
     "VentEff": null,
-    "Ctot": null,
-    "prob_own": 0.02
+    "Ctot": null
     }, 
 
 "EV": 
     {
-    "loadshift": false,
-    "probown": 0.0
-    
+    "loadshift": false
     }
 
 }

@@ -66,23 +66,25 @@ def simulate_scenarios(n_scen,inputs):
     
     family = Household(**inputs)
 
-    # define arrays storing the scenarios:
+    # Define arrays storing the scenarios
+    # Total receptacle loads and lights
     elec = np.zeros((n_scen, nminutes))
-    
+    # Static demand and loadshifting appliances
     pstatic = np.zeros((n_scen, nminutes))
     ptd     = np.zeros((n_scen, nminutes))
     pdw     = np.zeros((n_scen, nminutes))
     pwm     = np.zeros((n_scen, nminutes))
-    
+    # Domestic hot water - Water consumption
     mDHW  = np.zeros((n_scen, nminutes))
-    
+    # Internal heat gains from receptacle load and lights
     Qrad = np.zeros((n_scen, nminutes))
     Qcon = np.zeros((n_scen, nminutes))
-
+    # Occupancy
     occupancy = []   # occupance has a time resolution of 10 min!
-    
+    # Space heating - Heat demand and electricity consumption
     Qspace = np.zeros((n_scen, nminutes))
     Wdot_hp = np.zeros((n_scen, nminutes))
+    # Domestic hot water - Electricity consumption
     Qeb= np.zeros((n_scen, nminutes))
 
     textoutput = []
@@ -90,22 +92,43 @@ def simulate_scenarios(n_scen,inputs):
     members = []
     
     for i in range(n_scen):
+        
+        
+        """ 
+        Receptacle loads, lights, occupancy, internal heat gains from apps and lights, water consumption 
+        Models used:
+        - Strobe
+        """
+        
         print("Generating scenario {}".format(i))
         family.simulate(year, ndays)
 
-        # aggregate scenarios:
+        # Total receptacle loads and lights
         elec[i, :] = family.P
-        
+        # Static part of the demand
+        # WM,TD and DW added later if not considered for load shifting
         pstatic[i, :] = family.Pst
-        ptd[i, :]     = family.Ptd
-        pdw[i, :]     = family.Pdw
-        pwm[i, :]     = family.Pwm
-        
+        # Washing machine
+        if inputs['appliances']['loadshift'] and 'WashingMachine' in inputs['appliances']['apps']:
+            ptd[i, :] = family.Ptd
+        else:
+            pstatic[i, :] = pstatic[i, :] + family.Ptd        
+        # Tumble dryer
+        if inputs['appliances']['loadshift'] and 'TumbleDryer' in inputs['appliances']['apps']:
+            pwm[i, :] = family.Pwm
+        else:
+            pstatic[i, :] = pstatic[i, :] + family.Pwm
+        # Dish washer
+        if inputs['appliances']['loadshift'] and 'DishWasher' in inputs['appliances']['apps']:
+            pdw[i, :] = family.Pdw
+        else:
+            pstatic[i, :] = pstatic[i, :] + family.Pdw            
+        # Domestic hot water consumption
         mDHW[i, :]  = family.mDHW
-        
+        # Internal heat gains from appliances (radiative and convective)
         Qrad[i,:] = family.QRad
         Qcon[i,:] = family.QCon
-        
+        # Occupancy
         occupancy.append(family.occ)
         
         textoutput += ['']
@@ -114,9 +137,52 @@ def simulate_scenarios(n_scen,inputs):
         
         members += family.members
         
-        # House heating model
+        # Annual load from appliances
+        E_app = int(np.sum(family.P)/60/1000)
+        print(' - Receptacle load (including lighting) is %s kWh' % str(E_app))
+        textoutput.append(' - Receptacle (plugs + lighting) load is %s kWh' % str(E_app))
         
-        if inputs['HP']['model'] == 0:
+        # Annual load from washing machine
+        E_wm = int(np.sum(family.Pwm)/60/1000)
+        print(' - Load from washing machine is %s kWh' % str(E_wm))
+        textoutput.append(' - Load from washing machine is %s kWh' % str(E_wm))
+        
+        # Annual load from dryer
+        E_td = int(np.sum(family.Ptd)/60/1000)
+        print(' - Load from tumble dryer is %s kWh' % str(E_td))
+        textoutput.append(' - Load from tumble dryer is %s kWh' % str(E_td))
+        
+        # Annual load from dish washer
+        E_dw = int(np.sum(family.Pdw)/60/1000)
+        print(' - Load from dish washer is %s kWh' % str(E_dw))
+        textoutput.append(' - Load from dish washer is %s kWh' % str(E_dw))
+        
+        
+        """
+        Electricity consumption for domestic hot water using electric boiler or HP
+        Models used:
+        - Simple electric boiler model or simple HP model (both with hot water tank)
+        """
+        
+        # Electric boiler with hot water tank
+        if inputs['DHW']['loadshift']:
+            Qeb[i,:] = DomesticHotWater(inputs,family.mDHW,Tamb,family.sh_day)
+            E_eb = int(sum(Qeb[i,:])/1000./60.)
+            print(' - Domestic hot water electricity consumption: ',E_eb,' kWh')
+            textoutput.append(' - Domestic hot water electricity consumption: ' + str(E_eb) +' kWh')
+        else:
+            Qeb[i,:] = 0
+            E_eb = 0
+        
+        
+        """
+        House thermal demand and heat pump electricity consumption
+        Models used:
+        - CREST or 5R1C
+        - Simple HP model
+        """
+        
+        if inputs['HP']['model'] == 'CREST':
             
             # Thermostat timer setting
             # 1) According to CREST
@@ -136,14 +202,14 @@ def simulate_scenarios(n_scen,inputs):
             print(' - Thermal demand for space heating is ',thermal_load,' kWh')
             textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
             
-        elif inputs['HP']['model'] == 1:
+        elif inputs['HP']['model'] == '5R1C':
         
             # R51C model
             Qspace[i,:],QheatHP = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon)
             thermal_load = int(sum(Qspace[i,:])/1000./60.)
             QheatHP = int(QheatHP)
             print(' - Heat pump size is ',QheatHP,' kW (heat)')
-            textoutput.append(' - Heat pump size is ' + str(QheatHP) +' kW (heat)')
+            textoutput.append(' - Heat pump size is ' + str(QheatHP)+ ' kW (heat)')
             print(' - Thermal demand for space heating is ',thermal_load,' kWh')
             textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
         
@@ -155,26 +221,6 @@ def simulate_scenarios(n_scen,inputs):
             textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')            
         
         
-        # Annual load from appliances
-        E_app = int(np.sum(family.P)/60/1000)
-        print(' - Receptacle load (including lighting) is %s kWh' % str(E_app))
-        textoutput.append(' - Receptacle (plugs + lighting) load is %s kWh' % str(E_app))
-        
-        # Annual load from dryer
-        E_td = int(np.sum(family.Ptd)/60/1000)
-        print(' - Load from tumble dryer is %s kWh' % str(E_td))
-        textoutput.append(' - Load from tumble dryer is %s kWh' % str(E_td))
-        
-        # Annual load from washing machine
-        E_wm = int(np.sum(family.Pwm)/60/1000)
-        print(' - Load from washing machine is %s kWh' % str(E_wm))
-        textoutput.append(' - Load from washing machine is %s kWh' % str(E_wm))
-        
-        # Annual load from dish washer
-        E_dw = int(np.sum(family.Pdw)/60/1000)
-        print(' - Load from dish washer is %s kWh' % str(E_dw))
-        textoutput.append(' - Load from dish washer is %s kWh' % str(E_dw))
-        
         # Heat pump electric load
         if inputs['HP']['loadshift']:
             Wdot_hp[i,:] = ElLoadHP(Tamb,Qspace[i,:])
@@ -185,17 +231,11 @@ def simulate_scenarios(n_scen,inputs):
             Wdot_hp[i,:] = 0
             E_hp = 0
         
-        # Electric boiler and hot water tank
-        if inputs['DHW']['loadshift']:
-            Qeb[i,:] = DomesticHotWater(inputs,family.mDHW,Tamb,family.sh_day)
-            E_eb = int(sum(Qeb[i,:])/1000./60.)
-            print(' - Domestic hot water electricity consumption: ',E_eb,' kWh')
-            textoutput.append(' - Domestic hot water electricity consumption: ' + str(E_eb) +' kWh')
-        else:
-            Qeb[i,:] = 0
-            E_eb = 0
-        
-        E_total = E_app + E_td + E_wm + E_dw + E_hp + E_eb
+
+        """
+        Total electricity demand
+        """
+        E_total = E_app + E_wm + E_td + E_dw + E_hp + E_eb
         print(' - Total annual load: ',E_total,' kWh')
         textoutput.append(' - Total annual load: ' + str(E_total) + ' kWh')   
         
@@ -253,7 +293,7 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
     resH = resM * 4200.       # from kg/s to W/K, cp = 4200. J/kg/K
     Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
 
-    if inputs['DHW']['type'] == 1:
+    if inputs['DHW']['type'] == 'ElectricBoiler':
         
         for i in range(np.size(mDHW)):
             
@@ -267,7 +307,7 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
             deltaTcyl = (tstep/Ccyl) * (Hloss*Tbath[j] - (Hloss+resH[i])*Tcyl + resH[i]*Tcw + phi_a[i])
             Tcyl += deltaTcyl
             
-    elif inputs['DHW']['type'] == 2:
+    elif inputs['DHW']['type'] == 'HeatPump':
         
         for i in range(np.size(mDHW)):
             
