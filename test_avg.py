@@ -18,7 +18,7 @@ start_time = time.time()
 Functions used by the launcher
 """
 
-def ProcebarExtractor(buildtype):
+def ProcebarExtractor(buildtype,wellinsulated):
     
     """
     Given the building type, input data required by the 5R1C model 
@@ -29,6 +29,7 @@ def ProcebarExtractor(buildtype):
     
     input:
     buildtype   str defining building type (according to Procebar types('Freestanding','Semi-detached','Terraced','Apartment'))
+    wellinsulated   bool if true only well insulated houses considered (according to column fitforHP in the excel file)
     
     output:
     output      dict with params needed by the 5R1C model
@@ -48,6 +49,10 @@ def ProcebarExtractor(buildtype):
     df.columns = df.columns.str.rstrip()
     
     df["Occurence"].replace({np.nan: 0, -1: 0}, inplace=True)
+    df['fitforHP'].replace({np.nan: 0, -1: 0}, inplace=True)
+
+    if wellinsulated:
+        df["Occurence"]=df["Occurence"]*df['fitforHP']
     totprob = df["Occurence"].sum()
     df["Occurence"] = df["Occurence"]/totprob
     
@@ -189,7 +194,7 @@ for k in range(5):
     cond1 = 'members' not in inputs
     cond2 = 'members' in inputs and inputs['members'] == None
     if cond1 or cond2:
-        inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
+        inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'],True)
     
     # Thermal parameters of the dwelling
     # Taken from Procebar .xls files
