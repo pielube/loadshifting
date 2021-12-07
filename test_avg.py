@@ -194,12 +194,12 @@ for k in range(5):
     cond1 = 'members' not in inputs
     cond2 = 'members' in inputs and inputs['members'] == None
     if cond1 or cond2:
-        inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'],True)
+        inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
     
     # Thermal parameters of the dwelling
     # Taken from Procebar .xls files
     
-    procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'])
+    procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'],True)
     inputs['HP'] = {**inputs['HP'],**procebinp}  
       
     
@@ -258,9 +258,17 @@ for k in range(5):
 exectime = (time.time() - start_time)/60.
 print("{:.1f} minutes".format(exectime))
 
+WM = []
+TD = []
+DW = []
+
 for i in text:
-    print(i[9])
-    print(i[14])
+    WMi = [int(word) for word in i[9].split()  if word.isdigit()]
+    WM.append(WMi[0])
+    TDi = [int(word) for word in i[10].split() if word.isdigit()]
+    TD.append(TDi[0])
+    DWi = [int(word) for word in i[11].split() if word.isdigit()]
+    DW.append(DWi[0])
 
 
         

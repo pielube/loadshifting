@@ -173,7 +173,8 @@ def simulate_scenarios(n_scen,inputs):
         else:
             Qeb[i,:] = 0
             E_eb = 0
-        
+            print(' - Domestic hot water electricity consumption: ',E_eb,' kWh')
+            textoutput.append(' - Domestic hot water electricity consumption: ' + str(E_eb) +' kWh')
         
         """
         House thermal demand and heat pump electricity consumption
@@ -181,45 +182,49 @@ def simulate_scenarios(n_scen,inputs):
         - CREST or 5R1C
         - Simple HP model
         """
-        
-        if inputs['HP']['model'] == 'CREST':
+        if inputs['HP']['loadshift']:
+            if inputs['HP']['model'] == 'CREST':
+                
+                # Thermostat timer setting
+                # 1) According to CREST
+                # timersetting = HeatingTimer(inputs)
+                # 2) No timer
+                # ressize = 527041 # should be defined once and for all not here
+                # timersetting = np.ones(ressize)
+                # 3) According to Aerts
+                timersetting = AertsThermostatTimer(ndays)
+                
+                # Thermostat temperature setting according to Aerts
+                # Look inside HouseThermalModel() if actually used, around line 310
+                Tthermostat  = AertsThermostatTemp(occupancy)
+    
+                Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting,Tthermostat)
+                thermal_load = int(sum(Qspace[i,:])/1000./60.)
+                print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+                textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
+                
+            elif inputs['HP']['model'] == '5R1C':
             
-            # Thermostat timer setting
-            # 1) According to CREST
-            # timersetting = HeatingTimer(inputs)
-            # 2) No timer
-            # ressize = 527041 # should be defined once and for all not here
-            # timersetting = np.ones(ressize)
-            # 3) According to Aerts
-            timersetting = AertsThermostatTimer(ndays)
+                # R51C model
+                Qspace[i,:],QheatHP = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon)
+                thermal_load = int(sum(Qspace[i,:])/1000./60.)
+                QheatHP = int(QheatHP)
+                print(' - Heat pump size is ',QheatHP,' kW (heat)')
+                textoutput.append(' - Heat pump size is ' + str(QheatHP)+ ' kW (heat)')
+                print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+                textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
             
-            # Thermostat temperature setting according to Aerts
-            # Look inside HouseThermalModel() if actually used, around line 310
-            Tthermostat  = AertsThermostatTemp(occupancy)
-
-            Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting,Tthermostat)
-            thermal_load = int(sum(Qspace[i,:])/1000./60.)
-            print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
-            
-        elif inputs['HP']['model'] == '5R1C':
-        
-            # R51C model
-            Qspace[i,:],QheatHP = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon)
-            thermal_load = int(sum(Qspace[i,:])/1000./60.)
-            QheatHP = int(QheatHP)
-            print(' - Heat pump size is ',QheatHP,' kW (heat)')
-            textoutput.append(' - Heat pump size is ' + str(QheatHP)+ ' kW (heat)')
-            print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
-        
+            else:
+                Qspace[i,:] = 0
+                thermal_load = 0
+                print('WARNING: wrong house thermal model option - Thermal demand forced to be null')
+                print(' - Thermal demand for space heating is ',thermal_load,' kWh')
+                textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')            
         else:
             Qspace[i,:] = 0
             thermal_load = 0
-            print('WARNING: wrong house thermal model option - Thermal demand forced to be null')
             print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')            
-        
+            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
         
         # Heat pump electric load
         if inputs['HP']['loadshift']:
@@ -230,6 +235,8 @@ def simulate_scenarios(n_scen,inputs):
         else:
             Wdot_hp[i,:] = 0
             E_hp = 0
+            print(' - Heat pump consumption: ',E_hp,' kWh')
+            textoutput.append(' - Heat pump consumption: ' + str(E_hp) + ' kWh')
         
 
         """
