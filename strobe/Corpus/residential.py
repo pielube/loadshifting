@@ -819,23 +819,18 @@ class Equipment(object):
                         n_eq_dur += 1 # add to counter for number of minutes used in year
                     else: # if nobody was using it
                         P[tl] += self.standby_power # assign stand-by power
-                        
-                        
+   
                     ### uliege ###
                     # usage of wet appliances correction
                     actions = ['washing','drying','dishes']
                     washcyc = np.array([2.2,1.7,1.6,1.3,1.3]) # ncycles per week per person for 1,2,3,4,5 occupants
                     corrfactarr = washcyc/2.2 # correction factor
-                    
-                    
                     # per occupant, check if they will want to change the state of the appliance
                     for i in range(numOcc): 
                         # check if this appliance is being used by occupant i: time left[i]>0
                         if left[i] > 0:
                             left[i] += -1   # count time down until cycle passed (for this occupant)          
                         else: # if it was not used by this occupant: left[i] <= 0
-                        
-                        
                             ### uliege ###
                             # usage of wet appliances correction
                             corrfact = 1.
@@ -844,8 +839,6 @@ class Equipment(object):
                                     corrfact = corrfactarr[i]
                                 else:
                                     corrfact = 1.3/2.2
-                                    
-                                    
                             # check if there is a state change in the appliance for this occupant
                             if random.random() < prob[i][to] * corrfact * self.cal: # if random number below calibration factor cal* probability of activity: start appliance
                                 left[i] = random.gauss(len_cycle, len_cycle/10) # start a cycle of random  duration for this occupant

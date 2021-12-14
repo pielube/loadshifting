@@ -1,22 +1,14 @@
 
-"""Simulate demand scenarios at building level, for specific household."""
+"""Functions to read input data"""
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import strobe
-import ramp
-import json
-import time
 import random
 from strobe.Data.Households import households
+import datetime
 
 
-start_time = time.time()
 
-"""
-Functions used by the launcher
-"""
 
 def ProcebarExtractor(buildtype,wellinsulated):
     
@@ -177,98 +169,59 @@ def HouseholdMembers(buildtype):
         finished = not set(output).isdisjoint(adults)
     
     return output
+  
 
-text = []
+def yearlyprices(scenario,timeslots,prices):
 
-for k in range(5):
+    endday = datetime.datetime.strptime('1900-01-02 00:00:00',"%Y-%m-%d %H:%M:%S")
+
+    HSdayhours = []
+    HSdaytariffs = []
+    CSdayhours = []
+    CSdaytariffs = []
     
-    """
-    Loading inputs
-    """
+    for i in timeslots['HSday']:
+        starthour = datetime.datetime.strptime(i[0],'%H:%M:%S')
+        HSdayhours.append(starthour)
     
-    with open('inputs/example.json') as f:
-      inputs = json.load(f)
-      
-    # People living in the dwelling
-    # Taken from StRoBe list
-    cond1 = 'members' not in inputs
-    cond2 = 'members' in inputs and inputs['members'] == None
-    if cond1 or cond2:
-        inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
+    for i in range(len(HSdayhours)):
+        start = HSdayhours[i]
+        end = HSdayhours[i+1] if i < len(HSdayhours)-1 else endday
+        delta = end - start
+        for j in range(60*int(delta.seconds/3600)):
+            price = prices[scenario][timeslots['HSday'][i][1]]/1000.
+            HSdaytariffs.append(price)
     
-    # Thermal parameters of the dwelling
-    # Taken from Procebar .xls files
+    for i in timeslots['CSday']:
+        starthour = datetime.datetime.strptime(i[0],'%H:%M:%S')
+        CSdayhours.append(starthour)
     
-    procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'],True)
-    inputs['HP'] = {**inputs['HP'],**procebinp}  
-      
+    for i in range(len(CSdayhours)):
+        start = CSdayhours[i]
+        end = CSdayhours[i+1] if i < len(CSdayhours)-1 else endday
+        delta = end - start
+        for j in range(60*int(delta.seconds/3600)):
+            price = prices[scenario][timeslots['CSday'][i][1]]/1000.
+            CSdaytariffs.append(price)
     
-    """
-    Running the models
-    """
+    startyear = datetime.datetime.strptime('2015-01-01 00:00:00',"%Y-%m-%d %H:%M:%S")
+    HSstart = datetime.datetime.strptime(timeslots['HSstart'],"%Y-%m-%d %H:%M:%S")
+    CSstart = datetime.datetime.strptime(timeslots['CSstart'],"%Y-%m-%d %H:%M:%S")
+    endyear = datetime.datetime.strptime('2016-01-01 00:00:00',"%Y-%m-%d %H:%M:%S")
     
-    # Strobe
-    # House thermal model + HP
-    # DHW
-    result,textoutput = strobe.simulate_scenarios(1,inputs)
-    n_scen = 0 # Working only with the first scenario
+    ytariffs = []
     
-    # RAMP-mobility
-    if inputs['EV']['loadshift']:
-        result_ramp = ramp.EVCharging(inputs, result['occupancy'][n_scen])
-    else:
-        result_ramp=pd.DataFrame()
-        
-    text.append(textoutput)
+    deltaCS1 = HSstart - startyear
+    deltaHS  = CSstart - HSstart
+    deltaCS2 = endyear - CSstart
     
-    """
-    Creating dataframe with the results
-    """
-     
-    n_steps = np.size(result['StaticLoad'][n_scen,:])
-    index = pd.date_range(start='2015-01-01 00:00', periods=n_steps, freq='1min')
-    df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging'])
+    for i in range(deltaCS1.days):
+        ytariffs.extend(CSdaytariffs)
+    for i in range(deltaHS.days):
+        ytariffs.extend(HSdaytariffs)
+    for i in range(deltaCS2.days):
+        ytariffs.extend(CSdaytariffs)
     
-    result_ramp.loc[df.index[-1],'EVCharging']=0
-    #df.index.union(result_ramp.index)        # too slow
-    
-    for key in df.columns:
-        if key in result:
-            df[key] = result[key][n_scen,:]
-        elif key in result_ramp:
-            df[key] = result_ramp[key]* 1000
-        else:
-            df[key] = 0
-
-# """
-# Plotting
-# """
-
-# rng = pd.date_range(start='2016-08-09',end='2016-08-16',freq='min')
-# ax = df.loc[rng].plot.area(lw=0)
-# ax.set(ylabel = "Power [W]")
-# plt.legend(loc='upper left')
-
-# ax = df.loc['2016-08-06'].plot.area(figsize=(8,4),lw=0)
-# ax.set(xlabel = 'Time [min]')
-# ax.set(ylabel = "Power [W]")
-# plt.legend(loc='upper left')
-
-
-exectime = (time.time() - start_time)/60.
-print("{:.1f} minutes".format(exectime))
-
-WM = []
-TD = []
-DW = []
-
-for i in text:
-    WMi = [int(word) for word in i[9].split()  if word.isdigit()]
-    WM.append(WMi[0])
-    TDi = [int(word) for word in i[10].split() if word.isdigit()]
-    TD.append(TDi[0])
-    DWi = [int(word) for word in i[11].split() if word.isdigit()]
-    DW.append(DWi[0])
-
-
-        
+    out = np.asarray(ytariffs)
+            
+    return out

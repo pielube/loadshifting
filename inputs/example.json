@@ -4,12 +4,12 @@
 "year": 2015,
 "ndays": 365,
 
-"members": null,
+"members": ["Retired"],
 
 "appliances": 
     {
-    "loadshift": false,
-    "apps": null,
+    "loadshift": true,
+    "apps": ["WashingMachine","TumbleDryer","DishWasher"],
     "prob_own":
         {
         "Hob": 0.751,
