@@ -8,6 +8,7 @@ import strobe
 import ramp
 import json
 import time
+import random
 from preprocess import ProcebarExtractor,HouseholdMembers,yearlyprices
 
 
@@ -52,25 +53,6 @@ else:
 exectime = (time.time() - start_time)/60.
 print("Time to run the models: {:.1f} minutes".format(exectime))
 
-"""
-Creating dataframe with the results
-"""
- 
-n_steps = np.size(result['StaticLoad'][n_scen,:])
-index = pd.date_range(start='2015-01-01 00:00', periods=n_steps, freq='1min')
-df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging'])
-
-result_ramp.loc[df.index[-1],'EVCharging']=0
-#df.index.union(result_ramp.index)        # too slow
-
-for key in df.columns:
-    if key in result:
-        df[key] = result[key][n_scen,:]
-    elif key in result_ramp:
-        df[key] = result_ramp[key]* 1000
-    else:
-        df[key] = 0
-
 
 """
 Load shifting for the appliances
@@ -87,7 +69,10 @@ prices    = econ['prices']
 yprices = yearlyprices(scenario,timeslots,prices)
 
 # Occupancy
-occ = result['occupancy'][0][0]
+occ = np.ones(len(result['occupancy'][0][0]))
+for i in range(len(inputs['members'])):
+    result['occupancy'][0][i] = [1 if a==1 else 0 for a in result['occupancy'][0][i]]
+    occ = np.multiply(occ,result['occupancy'][0][i])
 occ = occ[:-1].copy()
 occupancy = np.zeros(len(result['StaticLoad'][0,:]))
 for i in range(len(occ)):
@@ -99,10 +84,11 @@ occupancy[-1] = occupancy[-2]
 admtimewin = np.where(yprices <= prices[scenario]['hollow']/1000,1.,0.)
 admtimewin = np.append(admtimewin,yprices[-1])
 admtimewin = admtimewin*occupancy
-#  admtimewin = [1 if a >= 1 else 0 for a in admtimewin]
 
+# Probability of load being shifted
+probshift = 1.
 
-def strategy1(app,admtimewin):
+def strategy1(app,admtimewin,probshift):
     
     app_s  = np.roll(app,1)
     starts = np.where(app-app_s> 1)[0]
@@ -111,57 +97,98 @@ def strategy1(app,admtimewin):
     app_n = np.ones(len(app))
     
     for i in range(len(starts)):
-         #if admtimewin[starts[i]] == 0 and random.random()<0.5:
-        if admtimewin[starts[i]] == 0:
+        if admtimewin[starts[i]] == 0 and random.random()<0.5:
             non_zeros = np.nonzero(admtimewin)[0] # array of indexes of non 0 elements
             distances = np.abs(non_zeros-starts[i]) # array of distances btw non 0 elem and ref
             closest_idx = np.where(distances == np.min(distances))[0]
             newstart = non_zeros[closest_idx][0]
             cyclen = ends[i]-starts[i]
             newend = newstart + cyclen
-            app_n[newstart:newend] = app[starts[i]:ends[i]]
-        else:
-            app_n[starts[i]:ends[i]] = app[starts[i]:ends[i]]
+            if newend > len(app)-1:
+                newend = len(app)-1
+                cyclelen = newend-newstart
+                app_n[newstart:newend] = app[starts[i]:starts[i]+cyclelen]
+            else:
+                app_n[newstart:newend] = app[starts[i]:ends[i]]
+        # else:
+        #     app_n[starts[i]:ends[i]] = app[starts[i]:ends[i]]
             
     return app_n
             
 startshift = time.time()
 
+result_new = result.copy()
+
 for app in inputs['appliances']['apps']:
+    app_n = strategy1(result[app][0,:],admtimewin,probshift)
+    result[app+'Shift'] = app_n
     print(sum(result[app][0,:])/60./1000.)
-    app_n = strategy1(result[app][0,:],admtimewin)
-    result[app][0,:] = app_n
-    print(sum(result[app][0,:])/60./1000.)
+    print(sum(result_new[app][0,:])/60./1000.)
+
 
 execshift = (time.time() - startshift)
 print("Time to shift the appliances: {:.1f} seconds".format(execshift))
 
 
 """
+Creating dataframe with the results
+"""
+
+n_steps = np.size(result['StaticLoad'][n_scen,:])
+index = pd.date_range(start='2015-01-01 00:00', periods=n_steps, freq='1min')
+
+# Dataframe of original results
+
+df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging','TumbleDryerShift','DishWasherShift','WashingMachineShift'])
+result_ramp.loc[df.index[-1],'EVCharging']=0
+
+for key in df.columns:
+    if key in result:
+        if key in ['TumbleDryerShift','DishWasherShift','WashingMachineShift']:
+            df[key] = result[key]
+        else:
+            df[key] = result[key][n_scen,:]
+    elif key in result_ramp:
+        df[key] = result_ramp[key]* 1000
+    else:
+        df[key] = 0
+
+"""
 Quick plotting
 """
 
-rng = pd.date_range(start='2015-08-09',end='2015-08-16',freq='min')
-ax = df.loc[rng].plot.area(lw=0)
-ax.set(ylabel = "Power [W]")
+# Week
+rng = pd.date_range(start='2015-08-02',end='2015-08-09',freq='min')
+ax0 = df.loc[rng].plot.area(lw=0)
+ax0.set(ylabel = "Power [W]")
 plt.legend(loc='upper left')
 
-day = '2015-08-14'
+# Day
+day = '2015-08-07'
 
 rngyear = pd.date_range(start='2015-01-01 00:00:00',end='2016-01-01 00:00:00',freq='T')
 dfprices = pd.DataFrame(admtimewin,index=rngyear)
 
 ax = df.loc[day].plot.area(figsize=(8,4),lw=0)
+
 ax1=ax.twinx()
 ax1.spines['right'].set_position(('axes', 1.0))
-dfprices.loc[day].plot(ax=ax1, color='black')
-ax.set(xlabel = 'Time [min]')
+dfprices.loc[day].plot(ax=ax1, color='black',legend=False)
+
 ax.set(ylabel = "Power [W]")
-plt.legend(loc='upper left')
 
-# hour = '2015-08-11 17:10:00'
-# df['WashingMachine'].loc[hour]
+# Custom
 
+day2 = '2015-08-07'
 
+rngyear = pd.date_range(start='2015-01-01 00:00:00',end='2016-01-01 00:00:00',freq='T')
+dfprices2 = pd.DataFrame(admtimewin,index=rngyear)
+
+ax2 = df.loc[day2].plot.area(y=['WashingMachine','WashingMachineShift'],figsize=(8,4),lw=0,stacked=False)
+ax3 = ax2.twinx()
+ax3.spines['right'].set_position(('axes', 1.0))
+dfprices2.loc[day].plot(ax=ax3, color='black',legend=False)
+
+ax2.set(ylabel = "Power [W]")
 
         
