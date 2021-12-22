@@ -9,6 +9,9 @@ import json
 import time
 from preprocess import ProcebarExtractor,HouseholdMembers
 import os
+import pickle
+from sklearn.metrics import r2_score
+
 
 
 
@@ -36,7 +39,9 @@ for ii in range(3):
     # Taken from Procebar .xls files
     
     procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'],True)
-    inputs['HP'] = {**inputs['HP'],**procebinp}  
+    inputs['HP'] = {**inputs['HP'],**procebinp}
+    
+    results = []
   
     for jj in range(10):
         
@@ -78,39 +83,74 @@ for ii in range(3):
             else:
                 df[key] = 0
         
-        """
-        Saving results
-        """
-        
-        path = r'.\simulations\firstsim'
-        if not os.path.exists(path):
-            os.makedirs(path)
-        name = names[ii]+'_sim'+str(jj+1)+'.pkl'
-        file = os.path.join(path,name)
-        df.to_pickle(file)
-    
-        """
-        Saving results for prosumpy
-        """
-    
-        df = df.sum(axis=1)
-        # Resampling at 15 min
-        df = df.to_frame()
-        df = df.resample('15Min').mean()
-        # Extracting ref year used in the simulation
-        df.index = pd.to_datetime(df.index)
-        year = df.index.year[0]
-        # Remove last row if is from next year
-        nye = pd.Timestamp(str(year+1)+'-01-01 00:00:00')
-        df = df.drop(nye)
-        # save
-        name = 'prosumpy'+names[ii]+'_sim'+str(jj+1)+'.pkl'
-        file = os.path.join(path,name)
-        df.to_pickle(file)
-        
         exectime = (time.time() - start_time)/60.
         print('Simulation: '+names[ii]+' Run: '+str(jj+1))
         print(' It took {:.1f} minutes'.format(exectime))
+        
+        results.append(df)
+    
+    df_tot = results[0]
+    df_tot = df_tot.sum(axis=1)
+    df_tot = df_tot.to_frame()
+    df_tot.columns=[str(1)]
+    for kk in range(len(results)-1):
+        df = results[kk+1]
+        df = df.sum(axis=1)
+        df = df.to_frame()
+        df.columns=[str(kk+2)]
+        df_tot = df_tot.join(df)
+    
+    # Calculating mean demand
+    
+    df_mean = df_tot.mean(axis=1)
+    df_mean = df_mean.to_frame()
+ 
+    # Calculating most representative curve
+    # as the curve minimizing its R2 wrt the mean curve    
+ 
+    bestr2 = -float('inf')
+    bestr2_index = 0
+
+    for ll in range(len(results)):
+        r2 = (r2_score(df_mean[0], df_tot.iloc[:,ll]))
+        print(r2)
+        if r2 > bestr2:
+            bestr2 = r2
+            bestr2_index = ll
+    
+    print('For '+names[ii]+' best R2 index: '+str(ll))
+        
+    """
+    Saving results
+    """
+    
+    path = r'.\simulations\firstsim'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    name = names[ii]+'.pkl' #names[ii]+'_sim'+str(jj+1)+'.pkl'
+    file = os.path.join(path,name)
+    with open(file, 'wb') as b:
+        pickle.dump(results)
+    
+    """
+    Saving results for prosumpy
+    """
+
+    df = df_tot[str(bestr2_index+1)]#df.sum(axis=1)
+    # Resampling at 15 min
+    df = df.to_frame()
+    df = df.resample('15Min').mean()
+    # Extracting ref year used in the simulation
+    df.index = pd.to_datetime(df.index)
+    year = df.index.year[0]
+    # Remove last row if is from next year
+    nye = pd.Timestamp(str(year+1)+'-01-01 00:00:00')
+    df = df.drop(nye)
+    # save
+    name = 'prosumpy'+names[ii]+'.pkl'
+    file = os.path.join(path,name)
+    df.to_pickle(file)
+    
 
 
 
