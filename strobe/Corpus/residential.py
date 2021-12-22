@@ -808,6 +808,13 @@ class Equipment(object):
             tl = -1 # time counter for load (1min)
             left = [-1 for i in range(numOcc)] # time counter for appliance duration per occupant -> start as not used: -1
             
+            nwm = 0
+            nwmlen = 0
+            ntd = 0
+            ntdlen = 0
+            ndw = 0
+            ndwlen = 0
+            
             for doy, step in itertools.product(range(nday), range(nbin)): # loop over 10min steps in year
                 dow_i = dow[doy] # day of week
                 to += 1
@@ -842,8 +849,27 @@ class Equipment(object):
                             # check if there is a state change in the appliance for this occupant
                             if random.random() < prob[i][to] * corrfact * self.cal: # if random number below calibration factor cal* probability of activity: start appliance
                                 left[i] = random.gauss(len_cycle, len_cycle/10) # start a cycle of random  duration for this occupant
+                                if act == 'washing':
+                                    nwm += 1
+                                    nwmlen += left[i]
+                                elif act == 'drying':
+                                    ntd += 1
+                                    ntdlen += left[i]
+                                elif act == 'dishes':
+                                    ndw += 1
+                                    ndwlen += left[i]
+            
+            if act == 'washing':
+                print('wm: '+str(nwm))
+                print('wm: '+str(nwmlen))
+            elif act == 'drying':
+                print('td: '+str(ntd))
+                print('td: '+str(ntdlen))
+            elif act == 'dishes':
+                print('dw: '+str(ndw))
+                print('dw: '+str(ndwlen))
 
-                            
+
             r_eq = {'P':P, 'Q':Q, 'QRad':P*self.frad, 'QCon':P*self.fconv,}
             
            # n_eq is used in calibration process for value of 'cal'

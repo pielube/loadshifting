@@ -1,0 +1,69 @@
+{
+	
+"name": "2f_machine0",
+"year": 2015,
+"ndays": 365,
+
+"members": null,
+
+"appliances": 
+    {
+    "loadshift": true,
+    "apps": ["WashingMachine","TumbleDryer","DishWasher"],
+    "prob_own":
+        {
+        "Hob": 0.751,
+        "Microwave": 0.900,
+        "PC": 0.800,
+        "TV1":0.950,
+        "TumbleDryer": 0.600,
+        "DishWasher": 0.660,
+        "WashingMachine": 0.930,
+        "WasherDryer": 0.0,
+        "FridgeFreezer": 0.640,
+        "Refrigerator": 0.610,
+        "ChestFreezer": 0.560,
+        "UprightFreezer": 0.0
+        } 
+    },
+
+"DHW": 
+    {
+    "loadshift": false,
+    "type": "ElectricBoiler",
+    "PowerElMax": 2000.0,
+    "Ttarget": 53.0, 
+    "Tcw": 10.0,     
+    "Vcyl": 50.0,    
+    "Hloss": 0.5
+    },
+
+"HP": 
+    {
+    "loadshift": false,
+    "model": "5R1C",
+    "dwelling_type": "Freestanding",
+    "Tthermostatsetpoint": 20.0, 
+    "ThermostatDeadband": 2.0,   
+    "Temittersetpoint": 40.0,    
+    "EmitterDeadband": 5.0,      
+    "HeatPumpThermalPower": null,
+    "Aglazed": null,
+    "Aopaque": null,
+    "Afloor": null,
+    "volume": null,
+    "Atotal": null,
+    "Uwalls": null,
+    "Uwindows": null,
+    "ACH_vent": null,
+    "ACH_infl": null,
+    "VentEff": null,
+    "Ctot": null
+    }, 
+
+"EV": 
+    {
+    "loadshift": false
+    }
+
+}
