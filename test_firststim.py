@@ -42,6 +42,7 @@ for ii in range(3):
     inputs['HP'] = {**inputs['HP'],**procebinp}
     
     results = []
+    occupancy = []
   
     for jj in range(10):
         
@@ -88,6 +89,7 @@ for ii in range(3):
         print(' It took {:.1f} minutes'.format(exectime))
         
         results.append(df)
+        occupancy.append(result['occupancy'][n_scen])
     
     df_tot = results[0]
     df_tot = df_tot.sum(axis=1)
@@ -121,7 +123,7 @@ for ii in range(3):
     print('For '+names[ii]+' best R2 index: '+str(ll))
         
     """
-    Saving results
+    Saving results and occupancy
     """
     
     path = r'.\simulations\firstsim'
@@ -131,25 +133,11 @@ for ii in range(3):
     file = os.path.join(path,name)
     with open(file, 'wb') as b:
         pickle.dump(results)
-    
-    """
-    Saving results for prosumpy
-    """
-
-    df = df_tot[str(bestr2_index+1)]#df.sum(axis=1)
-    # Resampling at 15 min
-    df = df.to_frame()
-    df = df.resample('15Min').mean()
-    # Extracting ref year used in the simulation
-    df.index = pd.to_datetime(df.index)
-    year = df.index.year[0]
-    # Remove last row if is from next year
-    nye = pd.Timestamp(str(year+1)+'-01-01 00:00:00')
-    df = df.drop(nye)
-    # save
-    name = 'prosumpy'+names[ii]+'.pkl'
+        
+    name = names[ii]+'_occ.pkl'
     file = os.path.join(path,name)
-    df.to_pickle(file)
+    with open(file, 'wb') as b:
+        pickle.dump(occupancy)
     
 
 
