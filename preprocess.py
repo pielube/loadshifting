@@ -171,7 +171,9 @@ def HouseholdMembers(buildtype):
     return output
   
 
-def yearlyprices(scenario,timeslots,prices):
+def yearlyprices(scenario,timeslots,prices,stepperhour):
+    
+    stepperhour = int(stepperhour)
 
     endday = datetime.datetime.strptime('1900-01-02 00:00:00',"%Y-%m-%d %H:%M:%S")
 
@@ -188,7 +190,7 @@ def yearlyprices(scenario,timeslots,prices):
         start = HSdayhours[i]
         end = HSdayhours[i+1] if i < len(HSdayhours)-1 else endday
         delta = end - start
-        for j in range(60*int(delta.seconds/3600)):
+        for j in range(stepperhour*int(delta.seconds/3600)):
             price = prices[scenario][timeslots['HSday'][i][1]]/1000.
             HSdaytariffs.append(price)
     
@@ -200,7 +202,7 @@ def yearlyprices(scenario,timeslots,prices):
         start = CSdayhours[i]
         end = CSdayhours[i+1] if i < len(CSdayhours)-1 else endday
         delta = end - start
-        for j in range(60*int(delta.seconds/3600)):
+        for j in range(stepperhour*int(delta.seconds/3600)):
             price = prices[scenario][timeslots['CSday'][i][1]]/1000.
             CSdaytariffs.append(price)
     

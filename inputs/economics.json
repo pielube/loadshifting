@@ -57,7 +57,16 @@
                  "hollow": 41.01,
                  "heel": 20.50,
                  "capacity": 4.65
-                 }
+                 },
+        "test":
+                {
+                 "fixed": 0.0,
+                 "peak": 330.70,
+                 "full": 289.00,
+                 "hollow": 247.30,
+                 "heel": 205.60,
+                 "capacity": 0.00
+                }
          }
 
 }
