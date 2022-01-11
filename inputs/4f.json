@@ -1,10 +1,10 @@
 {
 	
-"name": "test",
+"name": "Freestanding",
 "year": 2015,
 "ndays": 365,
 
-"members": ["FTE","PTE","School","U12"],
+"members": ,
 
 "appliances": 
     {
@@ -30,7 +30,7 @@
 "DHW": 
     {
     "loadshift": true,
-    "type": 1,
+    "type": "ElectricBoiler",
     "PowerElMax": 2000.0,
     "Ttarget": 53.0, 
     "Tcw": 10.0,     
@@ -42,8 +42,8 @@
     {
     "loadshift": true,
     "model": "5R1C",
-    "dwelling_type": "Semi-detached",
-    "Tthermostatsetpoint": 19.0, 
+    "dwelling_type": "Apartment",
+    "Tthermostatsetpoint": 20.0, 
     "ThermostatDeadband": 2.0,   
     "Temittersetpoint": 40.0,    
     "EmitterDeadband": 5.0,      
@@ -63,7 +63,7 @@
 
 "EV": 
     {
-    "loadshift": false
+    "loadshift": true
     }
 
 }

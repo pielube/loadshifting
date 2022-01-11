@@ -18,8 +18,8 @@ for ii in range(3):
     Loading inputs
     """
     
-    path = r'.\inputs\firstsim'
-    names = ['1f_machine0','2f_machine0','4f_machine0']
+    path = r'.\inputs'
+    names = ['1f','2f','4f']
     name = names[ii]+'.json'
     file = os.path.join(path,name)
     with open(file) as f:
@@ -92,9 +92,10 @@ for ii in range(3):
     Saving results and occupancy
     """
     
-    path = r'.\simulations\firstsim'
+    path = r'.\simulations'
     if not os.path.exists(path):
         os.makedirs(path)
+        
     name = names[ii]+'.pkl'
     file = os.path.join(path,name)
     with open(file, 'wb') as b:

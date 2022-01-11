@@ -1,10 +1,10 @@
 {
 	
-"name": "2f_machine0",
+"name": "Terraced",
 "year": 2015,
 "ndays": 365,
 
-"members": null,
+"members": ,
 
 "appliances": 
     {
@@ -29,7 +29,7 @@
 
 "DHW": 
     {
-    "loadshift": false,
+    "loadshift": true,
     "type": "ElectricBoiler",
     "PowerElMax": 2000.0,
     "Ttarget": 53.0, 
@@ -40,9 +40,9 @@
 
 "HP": 
     {
-    "loadshift": false,
+    "loadshift": true,
     "model": "5R1C",
-    "dwelling_type": "Terraced",
+    "dwelling_type": "Apartment",
     "Tthermostatsetpoint": 20.0, 
     "ThermostatDeadband": 2.0,   
     "Temittersetpoint": 40.0,    
@@ -63,7 +63,7 @@
 
 "EV": 
     {
-    "loadshift": false
+    "loadshift": true
     }
 
 }
