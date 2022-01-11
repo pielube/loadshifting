@@ -67,7 +67,7 @@ with open('inputs/economics.json') as g:
 scenario  = 'CRC2080'
 timeslots = econ['timeslots']
 prices    = econ['prices']
-yprices = yearlyprices(scenario,timeslots,prices)
+yprices = yearlyprices(scenario,timeslots,prices,60)
 admprices = np.where(yprices <= prices[scenario]['hollow']/1000,1.,0.)
 admprices = np.append(admprices,yprices[-1])
 
@@ -95,53 +95,95 @@ admtimewin = admprices*admcustom*occupancy
 # Probability of load being shifted
 probshift = 1.
 
+
 def strategy1(app,admtimewin,probshift):
-    
-    totlen = 0.
+   
+    ncycshift = 0
+    ncycnotshift = 0
+    maxshift = 0
+    totshift = 0
     
     app_s  = np.roll(app,1)
-    starts = np.where(app-app_s> 1)[0]
-    print(str(len(starts)))
+    starts   = np.where(app-app_s>1)[0]
     ends   = np.where(app-app_s<-1)[0]
-    print(str(len(ends)))
     
-    app_n = np.ones(len(app))
+    app_n = np.zeros(len(app))
     
     for i in range(len(starts)):
-        if admtimewin[starts[i]] == 0 and random.random() <= probshift:
-            non_zeros = np.nonzero(admtimewin)[0] # array of indexes of non 0 elements
-            distances = np.abs(non_zeros-starts[i]) # array of distances btw non 0 elem and ref
-            closest_idx = np.where(distances == np.min(distances))[0]
-            newstart = non_zeros[closest_idx][0]
-            cyclen = ends[i]-starts[i]
-            newend = newstart + cyclen
-            if newend > len(app)-1:
-                newend = len(app)-1
-                cyclen = newend-newstart
-                app_n[newstart:newend] = app[starts[i]:starts[i]+cyclen]
-                totlen = totlen + cyclen
+        
+        if admtimewin[starts[i]] == 1:
+            app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
+        
+    for i in range(len(starts)):
+        
+        if admtimewin[starts[i]] == 0:
+            
+            ncycshift += 1
+            
+            if random.random() > probshift:
+                app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
             else:
-                app_n[newstart:newend] = app[starts[i]:ends[i]]
-                totlen = totlen + cyclen
-        else:
-            app_n[starts[i]:ends[i]] = app[starts[i]:ends[i]]
-            cyclen = ends[i]-starts[i]
-            totlen = totlen+ cyclen
+                non_zeros = np.nonzero(admtimewin)[0] # array of indexes of non 0 elements
+                distances = np.abs(non_zeros-starts[i]) # array of distances btw non 0 elem and ref           
+                closest_idx = np.where(distances == np.min(distances))[0]
+                newstart = non_zeros[closest_idx][0]
+                cyclen = ends[i]-starts[i]
+                newend = newstart + cyclen
+                
+                while any(app_n[newstart:newend]):
+                    non_zeros = np.delete(non_zeros,closest_idx)
+                    if np.size(non_zeros)==0:
+                        newstart = starts[i]
+                        newend = ends[i]
+                        ncycnotshift += 1
+                        break
+                    distances = np.abs(non_zeros-starts[i])
+                    closest_idx = np.where(distances == np.min(distances))[0]
+                    newstart = non_zeros[closest_idx][0]
+                    cyclen = ends[i]-starts[i]
+                    newend = newstart + cyclen
+                           
+                if newend > len(app)-1:
+                    newend = len(app)-1
+                    cyclen = newend-newstart
+                    app_n[newstart:newend] += app[starts[i]:starts[i]+cyclen]
+                else:
+                    app_n[newstart:newend] += app[starts[i]:ends[i]]
             
-    print("cycle length: "+str(totlen))
-    return app_n
-            
+            maxshift = max(maxshift,abs(newstart-starts[i])/60.)
+            totshift += abs(newstart-starts[i])
+    
+    avgshift = totshift/len(starts)/60.
+    app_n=np.where(app_n==0,1,app_n)
+    ncyc = len(starts)
+    ncycshift = ncycshift - ncycnotshift
+    
+    if ncycnotshift > 0:
+        val = np.sort(np.unique(app_n))
+        if np.size(val) > 2:
+            indexes = np.where(app_n==val[-1])[0]
+            app_n[indexes]=val[-2]
+                
+    return app_n,ncyc,ncycshift,maxshift,avgshift,ncycnotshift
+
+
 startshift = time.time()
 
-result_new = result.copy()
 for app in inputs['appliances']['apps']:
-    print(app)
-    app_n = strategy1(result[app][0,:],admtimewin,probshift)
+    print("---"+str(app)+"---")
+    app_n,ncyc,ncycshift,maxshift,avgshift,cycnotshift = strategy1(result[app][0,:],admtimewin,probshift)
+    
     result[app+'Shift'] = app_n
-    result_new[app] = app_n
-    print(sum(result[app][0,:])/60./1000.)
-    print(sum(result[app+'Shift'])/60./1000.)
-    print(sum(result_new[app])/60./1000.)
+    
+    conspre  = sum(result[app][0,:])/60./1000.
+    conspost = sum(result[app+'Shift'])/60./1000.
+    print("Original consumption: {:.2f}".format(conspre))
+    print("Number of cycles: {:}".format(ncyc))
+    print("Number of cycles shifted: {:}".format(ncycshift))
+    print("Consumption after shifting (check): {:.2f}".format(conspost))
+    print("Max shift: {:.2f} hours".format(maxshift))
+    print("Avg shift: {:.2f} hours".format(avgshift))
+    print("Unable to shift {:} cycles".format(cycnotshift))
 
 execshift = (time.time() - startshift)
 print("Time to shift the appliances: {:.1f} seconds".format(execshift))
@@ -267,6 +309,7 @@ columns = [ystd,yshift]
 
 for i in range(2):
     saveforprosumpy(df,columns[i],names[i])
+    
 
 
 
