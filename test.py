@@ -78,10 +78,12 @@ for i in range(len(admprices)-60):
         admcustom[i] = 0
     
 # Adimissibile time windows according to occupancy
-occ = np.ones(len(result['occupancy'][0][0]))
+
+occ = np.zeros(len(result['occupancy'][0][0]))
 for i in range(len(inputs['members'])):
     result['occupancy'][0][i] = [1 if a==1 else 0 for a in result['occupancy'][0][i]]
-    occ = np.multiply(occ,result['occupancy'][0][i])
+    occ += result['occupancy'][0][i]
+occ = [1 if a >=1 else 0 for a in occ] 
 occ = occ[:-1].copy()
 occupancy = np.zeros(len(result['StaticLoad'][0,:]))
 for i in range(len(occ)):
