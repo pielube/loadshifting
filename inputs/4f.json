@@ -42,7 +42,7 @@
     {
     "loadshift": true,
     "model": "5R1C",
-    "dwelling_type": "Apartment",
+    "dwelling_type": "Freestanding",
     "Tthermostatsetpoint": 20.0, 
     "ThermostatDeadband": 2.0,   
     "Temittersetpoint": 40.0,    
