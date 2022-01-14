@@ -33,7 +33,7 @@ def ProcebarExtractor(buildtype,wellinsulated):
     # Getting random (weighted) house thermal parameters
     # Getting corresponding reference geometry
                 
-    filename1 = r'inputs\Building Stock arboresence_SG_130118_EME.xls'
+    filename1 = r'inputs/Building Stock arboresence_SG_130118_EME.xls'
     sheets1 = ['Freestanding','Semi-detached','Terraced','Apartment']
     data1 = pd.read_excel (filename1,sheet_name=sheets1,header=0)
         
@@ -55,7 +55,7 @@ def ProcebarExtractor(buildtype,wellinsulated):
     # Opening geometry excel file
     # Getting geometry parameters based on reference geometry just obtained
     
-    filename2 = r'inputs\Arborescence_geometry_SG_130118.xls'
+    filename2 = r'inputs/Arborescence_geometry_SG_130118.xls'
     sheets2 = [101,102,103,104,201,202,203,204,301,302,303,304,401,402,403,404]
     sheets2 = [str(i) for i in sheets2]
     data2 = pd.read_excel (filename2,sheet_name=sheets2)

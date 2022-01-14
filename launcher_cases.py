@@ -18,7 +18,7 @@ for ii in range(3):
     Loading inputs
     """
     
-    path = r'.\inputs'
+    path = r'./inputs'
     names = ['1f','2f','4f']
     name = names[ii]+'.json'
     file = os.path.join(path,name)
@@ -92,7 +92,7 @@ for ii in range(3):
     Saving results and occupancy
     """
     
-    path = r'.\simulations'
+    path = r'./simulations'
     if not os.path.exists(path):
         os.makedirs(path)
         
