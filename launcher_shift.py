@@ -6,6 +6,8 @@ import json
 import time
 import pickle
 from temp_functions import yearlyprices,mostrapcurve, run,strategy1
+from prosumpy import dispatch_max_sc_withsd,print_analysis
+
 
 
 """
@@ -29,15 +31,16 @@ Functions:
     
 """
 
-inputs = {'CapacityPV': 0.,
+inputs = {'CapacityPV': 10.,
           'CapacityBattery': 0.}
 
-pvpeak = 0. #kW ##########rivedere
+pvpeak = 10. #kW 
+# pv.values[:] = 0
+
 pvfile = r'./simulations/pv.pkl'
 pvadim = pd.read_pickle(pvfile)
 pv = pvadim * pvpeak # kW
 pv = pv.iloc[:,0]
-pv.values[:] = 0
 
 
 name = '1f.pkl'
@@ -159,6 +162,62 @@ file = os.path.join(path,name)
 with open(file, 'wb') as b:
     pickle.dump(result,b)
 
+"""
+Load shifting for DHW whit PV panels
+Strategy 2
+"""
+
+# demand2 = demands[index]
+
+# columnsnotshift = ['StaticLoad','TumbleDryer','DishWasher','WashingMachine','HeatPumpPower','EVCharging']
+# demand2_notshift = demand2[columns]
+# demand2_notshift = demand2_notshift.sum(axis=1)
+# demand2_notshift = demand2_notshift/1000. # W to kW
+# demand2_notshift = demand2_notshift.to_frame()
+# demand2_notshift = demand2_notshift.resample('15Min').mean() # resampling at 15 min
+# demand2_notshift.index = pd.to_datetime(demand2_notshift.index)
+# year = demand2_notshift.index.year[0] # extracting ref year used in the simulation
+# nye = pd.Timestamp(str(year+1)+'-01-01 00:00:00') # remove last row if is from next year
+# demand2_notshift = demand2_notshift.drop(nye)
+# demand2_notshift = demand2_notshift.iloc[:,0]
+
+# demand2_dhw = demand2['DomesticHotWater']
+# # demand2_dhw = demand2_dhw.sum(axis=1)
+# demand2_dhw = demand2_dhw/1000. # W to kW
+# demand2_dhw = demand2_dhw.to_frame()
+# demand2_dhw = demand2_dhw.resample('15Min').mean() # resampling at 15 min
+# demand2_dhw.index = pd.to_datetime(demand2_dhw.index)
+# year = demand2_dhw.index.year[0] # extracting ref year used in the simulation
+# nye = pd.Timestamp(str(year+1)+'-01-01 00:00:00') # remove last row if is from next year
+# demand2_dhw = demand2_dhw.drop(nye)
+# demand2_dhw = demand2_dhw.iloc[:,0]
 
 
+# pv2 = []
+# for i in range(len(pv)):
+#     pvres = max(pv[i]-demand2_notshift[i],0)
+#     pv2.append(pvres)
+    
+# pv2 = pd.Series(pv2)
+# pv2.index = pv.index    
+
+# with open('inputs/example.json') as f:
+#   inputs2 = json.load(f)
+
+# Ccyl = inputs2['DHW']['Vcyl'] * 1000. /1000. * 4200. # J/K
+# capacity = Ccyl*(inputs2['DHW']['Ttarget']-inputs2['DHW']['Tcw'])/3600./1000. # kWh
+
+# # Troom = 15. #°C
+# # selfdis = inputs2['DHW']['Hloss']/1000.*timestep*(inputs2['DHW']['Ttarget']-Troom) # kW
+  
+# param_tech2 = {'BatteryCapacity':  capacity,
+#               'BatteryEfficiency': 1.,
+#               'MaxPower': inputs2['DHW']['PowerElMax'],
+#               'InverterEfficiency': 1.,
+#               'timestep': .25,
+#               'SelfDisLin': 0.,
+#               'SelfDisFix':0.}
+
+# outs = dispatch_max_sc_withsd(pv2,demand2_dhw,param_tech2,return_series=False)
+# print_analysis(pv2, demand2_dhw, param_tech2, outs)
 
