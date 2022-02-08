@@ -214,103 +214,157 @@ for key in df.columns:
     else:
         df[key] = 0
 
-"""
-Quick plotting
-"""
 
-ystd = ['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging']
-yshift = ['StaticLoad','TumbleDryerShift','DishWasherShift','WashingMachineShift','DomesticHotWater','HeatPumpPower','EVCharging']
 
-# Week
-rng = pd.date_range(start='2015-08-02',end='2015-08-09',freq='min')
-ax0 = df.loc[rng].plot.area(y=yshift,lw=0)
-ax0.set(ylabel = "Power [W]") 
-plt.legend(loc='upper left')
 
-# Day
-day = '2015-12-31'
 
-rngyear = pd.date_range(start='2015-01-01 00:00:00',end='2016-01-01 00:00:00',freq='T')
-dfprices = pd.DataFrame(admtimewin,index=rngyear)
-ax = df.loc[day].plot.area(y=yshift,figsize=(8,4),lw=0,ylim=[0,6250])
+import os
+import numpy as np
+import pandas as pd
+import plotly.io as pio
+import plotly.graph_objects as go
+pio.renderers.default='browser'
 
-ax1=ax.twinx()
-ax1.spines['right'].set_position(('axes', 1.0))
-dfprices.loc[day].plot(ax=ax1, color='black',legend=False)
 
-ax.set(ylabel = "Power [W]")
 
-# # Custom
+# PV
+pvpeak = 10.
+pvfile = r'./simulations/pv.pkl'
+pvadim = pd.read_pickle(pvfile)
+pv = pvadim * pvpeak # kW
 
-# day2 = '2015-08-07'
+
+# Plot
+rng = pd.date_range(start='2015-07-17',end='2015-07-24',freq='15min')
+
+df =  df.loc[rng]/1000.
+ymax = max(np.max(pv.iloc[:,0][rng]),np.max(df.sum(axis=1)))*1.2
+ymax = int(ymax)+1
+
+cols = list(df.columns)
+colors = ['#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A', '#19D3F3', '#FF6692', '#B6E880', '#FF97FF', '#FECB52']
+traces = []
+marker=dict(color='goldenrod' )
+trace = go.Scatter(x=pv.loc[rng].index,y=pv.loc[rng][0],marker=marker,fill='tonexty',name='PV')
+traces.append(trace)
+for i in range(len(cols)):
+    col = cols[i]
+    color = colors[i]
+    marker=dict(color=color)
+    trace = go.Bar(x=df.index,y=df[col],name=col,marker=marker,yaxis='y2')
+    traces.append(trace)
+
+layout = go.Layout(yaxis2=dict(overlaying='y'),barmode='stack',legend={'traceorder':'normal'})
+fig = go.Figure(data=traces,layout=layout)
+fig.update_yaxes(range = [0,ymax])
+
+fig.show()
+
+
+
+
+
+
+
+
+
+# """
+# Quick plotting
+# """
+
+# ystd = ['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging']
+# yshift = ['StaticLoad','TumbleDryerShift','DishWasherShift','WashingMachineShift','DomesticHotWater','HeatPumpPower','EVCharging']
+
+# # Week
+# rng = pd.date_range(start='2015-08-02',end='2015-08-09',freq='min')
+# ax0 = df.loc[rng].plot.area(y=yshift,lw=0)
+# ax0.set(ylabel = "Power [W]") 
+# plt.legend(loc='upper left')
+
+# # Day
+# day = '2015-12-31'
 
 # rngyear = pd.date_range(start='2015-01-01 00:00:00',end='2016-01-01 00:00:00',freq='T')
-# dfprices2 = pd.DataFrame(admtimewin,index=rngyear)
+# dfprices = pd.DataFrame(admtimewin,index=rngyear)
+# ax = df.loc[day].plot.area(y=yshift,figsize=(8,4),lw=0,ylim=[0,6250])
 
-# ax2 = df.loc[day2].plot.area(y=['WashingMachine','WashingMachineShift'],figsize=(8,4),lw=0,stacked=False)
-# ax3 = ax2.twinx()
-# ax3.spines['right'].set_position(('axes', 1.0))
-# dfprices2.loc[day].plot(ax=ax3, color='black',legend=False)
+# ax1=ax.twinx()
+# ax1.spines['right'].set_position(('axes', 1.0))
+# dfprices.loc[day].plot(ax=ax1, color='black',legend=False)
 
-# ax2.set(ylabel = "Power [W]")
+# ax.set(ylabel = "Power [W]")
 
-# Admissible time windows
+# # # Custom
 
-day3 = '2015-12-31'
+# # day2 = '2015-08-07'
 
-dftimewin = pd.DataFrame(index=index,columns=['occupancy','prices','custom','total'])
-dftimewin['occupancy'] = occupancy
-dftimewin['prices'] = admprices
-dftimewin['custom'] = admcustom
-dftimewin['total'] = admtimewin
+# # rngyear = pd.date_range(start='2015-01-01 00:00:00',end='2016-01-01 00:00:00',freq='T')
+# # dfprices2 = pd.DataFrame(admtimewin,index=rngyear)
 
-# y = ['occupancy','prices','custom','total']
-y = ['prices']
-ax4 = dftimewin.loc[day3].plot(y = y)
-# ax4 = dftimewin.loc[day3].plot.area(lw=0)
+# # ax2 = df.loc[day2].plot.area(y=['WashingMachine','WashingMachineShift'],figsize=(8,4),lw=0,stacked=False)
+# # ax3 = ax2.twinx()
+# # ax3.spines['right'].set_position(('axes', 1.0))
+# # dfprices2.loc[day].plot(ax=ax3, color='black',legend=False)
 
-"""
-Saving results for prosumpy
-"""
+# # ax2.set(ylabel = "Power [W]")
 
-# Aggregating electricity consumptions in one demand
+# # Admissible time windows
 
-def saveforprosumpy(df,cols,name):
-    df = df[cols].sum(axis=1)
-    # Resampling at 15 min
-    df = df.to_frame()
-    df = df.resample('15Min').mean()
-    # Extracting ref year used in the simulation
-    df.index = pd.to_datetime(df.index)
-    year = df.index.year[0]
-    # # If ref year is leap remove 29 febr
-    # leapyear = calendar.isleap(year)
-    # if leapyear:
-    #     start_leap = str(year)+'-02-29 00:00:00'
-    #     stop_leap = str(year)+'-02-29 23:45:00'
-    #     daterange_leap = pd.date_range(start_leap,stop_leap,freq='15min')
-    #     df = df.drop(daterange_leap)
-    # Remove last row if is from next year
-    nye = pd.Timestamp(str(year+1)+'-01-01 00:00:00')
-    df = df.drop(nye)
-    # # New reference year 2015, to be used with TMY from pvlib
-    # start_ref = '2015-01-01 00:00:00'
-    # end_ref = '2015-12-31 23:45:00'
-    # daterange_ref = pd.date_range(start_ref,end_ref,freq='15min')
-    # df = df.set_index(daterange_ref)
-    # Saving
-    newpath = r'.\simulations'
-    if not os.path.exists(newpath):
-        os.makedirs(newpath)
-    filename = 'run_'+name+'.pkl'
-    filename = os.path.join(newpath,filename)
-    df.to_pickle(filename)
+# day3 = '2015-12-31'
+
+# dftimewin = pd.DataFrame(index=index,columns=['occupancy','prices','custom','total'])
+# dftimewin['occupancy'] = occupancy
+# dftimewin['prices'] = admprices
+# dftimewin['custom'] = admcustom
+# dftimewin['total'] = admtimewin
+
+# # y = ['occupancy','prices','custom','total']
+# y = ['prices']
+# ax4 = dftimewin.loc[day3].plot(y = y)
+# # ax4 = dftimewin.loc[day3].plot.area(lw=0)
+
+# """
+# Saving results for prosumpy
+# """
+
+# # Aggregating electricity consumptions in one demand
+
+# def saveforprosumpy(df,cols,name):
+#     df = df[cols].sum(axis=1)
+#     # Resampling at 15 min
+#     df = df.to_frame()
+#     df = df.resample('15Min').mean()
+#     # Extracting ref year used in the simulation
+#     df.index = pd.to_datetime(df.index)
+#     year = df.index.year[0]
+#     # # If ref year is leap remove 29 febr
+#     # leapyear = calendar.isleap(year)
+#     # if leapyear:
+#     #     start_leap = str(year)+'-02-29 00:00:00'
+#     #     stop_leap = str(year)+'-02-29 23:45:00'
+#     #     daterange_leap = pd.date_range(start_leap,stop_leap,freq='15min')
+#     #     df = df.drop(daterange_leap)
+#     # Remove last row if is from next year
+#     nye = pd.Timestamp(str(year+1)+'-01-01 00:00:00')
+#     df = df.drop(nye)
+#     # # New reference year 2015, to be used with TMY from pvlib
+#     # start_ref = '2015-01-01 00:00:00'
+#     # end_ref = '2015-12-31 23:45:00'
+#     # daterange_ref = pd.date_range(start_ref,end_ref,freq='15min')
+#     # df = df.set_index(daterange_ref)
+#     # Saving
+#     newpath = r'.\simulations'
+#     if not os.path.exists(newpath):
+#         os.makedirs(newpath)
+#     filename = 'run_'+name+'.pkl'
+#     filename = os.path.join(newpath,filename)
+#     df.to_pickle(filename)
     
-names = ['noshift','shift']
-columns = [ystd,yshift]
+# names = ['noshift','shift']
+# columns = [ystd,yshift]
 
-for i in range(2):
-    saveforprosumpy(df,columns[i],names[i])
+# for i in range(2):
+#     saveforprosumpy(df,columns[i],names[i])
     
 
 

@@ -26,7 +26,7 @@ casesarr = [1,2,3,4,5,6,7,8,9,
             71,73,75,77,78,79,
             80,82]
 
-index = 0
+index = 0 
 
 for jjj in casesarr:
     
@@ -131,7 +131,7 @@ for jjj in casesarr:
     demand_ref = demand_ref.drop(nye)
     demand_ref = demand_ref.iloc[:,0]
     demand_ref = demand_ref.to_numpy()
-    ydemand = np.sum(demand_ref)
+    ydemand = np.sum(demand_ref)/4
     
     # PV production
     pvpeak = ydemand/950. if ydemand/950. < 10. else 10. #kW
