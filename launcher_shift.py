@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import json
 import time
-from temp_functions import yearlyprices,mostrapcurve, run,strategy1,writetoexcel
+from temp_functions import yearlyprices,mostrapcurve, run,strategy1,writetoexcel,shift_appliance
 from prosumpy import dispatch_max_sc_withsd,print_analysis
 
 
@@ -271,7 +271,8 @@ for jjj in casesarr:
                 admtimewin = admtimewin + adm*occupancy
             
             print("---"+str(app)+"---")
-            app_n,ncyc,ncycshift,maxshift,avgshift,cycnotshift,enshift = strategy1(demands[index][app],admtimewin,probshift)
+            app_n,ncyc,ncycshift,enshift = shift_appliance(demands[index][app],admtimewin,probshift,max_shift=24*60)
+            #app_n,ncyc,ncycshift,maxshift,avgshift,cycnotshift,enshift = strategy1(demands[index][app],admtimewin,probshift)
         
             demands[index].insert(len(demands[index].columns),app+'Shift', app_n,True)
             
@@ -280,10 +281,10 @@ for jjj in casesarr:
             print("Original consumption: {:.2f}".format(conspre))
             print("Number of cycles: {:}".format(ncyc))
             print("Number of cycles shifted: {:}".format(ncycshift))
-            print("Consumption after shifting (check): {:.2f}".format(conspost))
-            print("Max shift: {:.2f} hours".format(maxshift))
-            print("Avg shift: {:.2f} hours".format(avgshift))
-            print("Unable to shift {:} cycles".format(cycnotshift))
+            #print("Consumption after shifting (check): {:.2f}".format(conspost))
+            #print("Max shift: {:.2f} hours".format(maxshift))
+            #print("Avg shift: {:.2f} hours".format(avgshift))
+            #print("Unable to shift {:} cycles".format(cycnotshift))
             
             totenshift += enshift/60./1000.
             
