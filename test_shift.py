@@ -12,6 +12,11 @@ from temp_functions import strategy1,shift_appliance
 
 with open('examples/shiftinputs.pkl', 'rb') as handle:
     (app,admtimewin,probshift) = pickle.load(handle)
+    
+# adding non-constant consumption in starts 2,3 and 5 (for testing purposes)
+app[2201:2221] = app[2201:2221] /2
+app[2438:2448] = app[2438:2448] /2
+app[3502:3522] = app[3502:3522] /2
 
 time1 = time.time()
 
