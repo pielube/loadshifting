@@ -464,6 +464,109 @@ def strategy1(app,admtimewin,probshift):
 
 
 
+def shift_appliance(app,admtimewin,probshift,max_shift=None,verbose=False):
+    '''
+    This function shifts the duty duty cycles of a particular appliances according
+    to a vector of admitted time windows.
+
+    Parameters
+    ----------
+    app : numpy.array
+        Original appliance consumption vector to be shifted
+    admtimewin : numpy.array
+        Vector of admitted time windows, where load should be shifted.
+    probshift : float
+        Probability (between 0 and 1) of a given cycle to be shifted
+    max_shift : int
+        Maximum number of time steps over which a duty cycle can be shifted
+    verbose : bool
+        Print messages or not. The default is False.
+
+    Returns
+    -------
+    tuple with the shifted appliance load, the total number of duty cycles and 
+    the number of shifted cycles
+
+    '''
+    ncycshift = 0                   # initialize the counter of shifted duty cycles
+    if max_shift is None:
+        max_shift = 24*60                    # maximmum time over which load can be shifted
+    
+    #remove offset from consumption vector:
+    offset = app.min()
+    app = app - offset
+    
+    # Define the shifted consumption vector for the appliance:
+    app_n = np.full(len(app),offset)
+    
+    # Shift the app consumption vector by one time step:
+    app_s  = np.roll(app,1)
+    
+    # locate all the points whit a start or a shutdown
+    starting_times = (app-app_s>1) * (app_s==0)
+    stopping_times = (app-app_s<-1) * (app==0)
+    
+    # List the indexes of all start-ups and shutdowns
+    starts   = np.where(starting_times)[0]
+    ends   = np.where(stopping_times)[0]
+    means = (( starts + ends)/2 ).astype('int')
+    
+    # Define the indexes of each admitted time window
+    admtimewin_s = np.roll(admtimewin,1)
+    adm_starts   = np.where(admtimewin-admtimewin_s>0.1)[0]
+    adm_ends   = np.where(admtimewin-admtimewin_s<-0.1)[0]
+    adm_means = (( adm_starts + adm_ends)/2 ).astype('int')
+    admtimewin_j = np.zeros(len(app),dtype='int')
+    
+    for j in range(len(adm_starts)):            # create a time vector with the index number of the current time window
+        admtimewin_j[adm_starts[j]:adm_ends[j]] = j
+    
+    #Change the time window array to boolean
+    if admtimewin.dtype != 'bool':
+        admtimewin = (admtimewin == 1)    
+    
+    # For all activations events:
+    for i in range(len(starts)):
+        length = ends[i]- starts[i]
+        
+        if admtimewin[starts[i]] and admtimewin[ends[i]]:           # if the whole activation length is within the admitted time windows
+            app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
+            j = admtimewin_j[starts[i]]
+            admtimewin[adm_starts[j]:adm_ends[j]] = False       # make the whole time window unavailable for further shifting
+            adm_means[j] = -max_shift -999999
+            
+        else:     # if the activation length is outside admitted windows
+            if random.random() > probshift:
+                app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
+            else:
+                j_min = np.argmin(np.abs(adm_means-means[i]))          # find the closest admissible time window
+                if np.abs(adm_means[j_min]-means[i]) > max_shift:     # The closest time window is too far away, no shifting possible
+                    app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
+                else:
+                    ncycshift += 1                                      # increment the counter of shifted cycles
+                    delta = (adm_ends[j_min] - adm_starts[j_min]) - length
+                    if delta < 0:                                        # if the admissible window is smaller than the activation length
+                        t_start = int(adm_starts[j_min] - length/2)
+                        app_n[t_start:t_start+length] += app[starts[i]:ends[i]] 
+                    else:
+                        delay = random.randrange(1+int(delta/2))             # dandomize the activation time within the allowed window
+                        app_n[adm_starts[j_min]+delay:adm_starts[j_min]+delay+length] += app[starts[i]:ends[i]]
+                    admtimewin[adm_starts[j_min]:adm_ends[j_min]] = False       # make the whole time window unavailable for further shifting
+                    adm_means[j_min] = -max_shift -999999  
+    
+    app = app + offset
+    enshift = np.abs(app_n - app).sum()/2
+    
+    if verbose: 
+        if np.abs(app_n.sum() - app.sum())/app.sum() > 0.01:    # check that the total consumption is unchanged
+            print('WARNING: the total shifted consumption is ' + str(app_n.sum()) + ' while the original consumption is ' + str(app.sum()))
+        print(str(len(starts)) + ' duty cycles detected. ' + str(ncycshift) + ' cycles shifted in time')
+        print('Total shifted energy : {:.2f}% of the total load'.format(enshift/app.sum()*100))
+
+    return app_n,len(starts),ncycshift,enshift
+
+
+
 def writetoexcel(file,sheet,results,row):
     
     df = pd.read_excel(file,sheet_name=sheet,header=0,index_col=0)
