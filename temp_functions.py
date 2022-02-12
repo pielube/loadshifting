@@ -7,6 +7,8 @@ import datetime
 import matplotlib.pyplot as plt
 import numpy_financial as npf
 import random
+from strobe.RC_BuildingSimulator import Zone
+
 
     
     
@@ -23,7 +25,7 @@ def EconomicAnalysis(E,EconomicVar,Inv,ElPrices,timestep,demand_ref):
     :array demand: Energy consumption in the reference case
     :return: List comprising the Profitability Ratio and the system LCOE
     '''
-    
+        
     # Defining output dictionnary
     out = {}
     
@@ -447,6 +449,16 @@ def strategy1(app,admtimewin,probshift):
         if np.size(val) > 2:
             indexes = np.where(app_n==val[-1])[0]
             app_n[indexes]=val[-2]
+    
+    conspre  = sum(app)/60./1000.
+    conspost = sum(app_n)/60./1000.
+    print("Original consumption: {:.2f}".format(conspre))
+    print("Number of cycles: {:}".format(ncyc))
+    print("Number of cycles shifted: {:}".format(ncycshift))
+    print("Consumption after shifting (check): {:.2f}".format(conspost))
+    print("Max shift: {:.2f} hours".format(maxshift))
+    print("Avg shift: {:.2f} hours".format(avgshift))
+    print("Unable to shift {:} cycles".format(ncycnotshift))
                 
     return app_n,ncyc,ncycshift,maxshift,avgshift,ncycnotshift,enshift
 
@@ -498,9 +510,128 @@ def writetoexcel(file,sheet,results,row):
     df.at[row,'PI [-]'] = results['PI'] 
     
     df.to_excel(file,sheet_name=sheet)
+    
 
 
 
+
+def AdmTimeWinShift(app,admtimewin,probshift):
+   
+    ncycshift = 0
+    ncycnotshift = 0
+    maxshift = 0
+    totshift = 0
+    enshift = 0.
+    
+    app_s  = np.roll(app,1)
+    starts   = np.where(app-app_s>1)[0]
+    ends   = np.where(app-app_s<-1)[0]
+    
+    app_n = np.zeros(len(app))
+    
+    for i in range(len(starts)):
+        
+        if admtimewin[starts[i]] == 1:
+            app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
+        
+    for i in range(len(starts)):
+        
+        if admtimewin[starts[i]] == 0:
+            
+            if random.random() > probshift:
+                app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
+            else:
+                
+                ncycshift += 1
+                
+                non_zeros = np.nonzero(admtimewin)[0] # array of indexes of non 0 elements
+                distances = np.abs(non_zeros-starts[i]) # array of distances btw non 0 elem and ref           
+                closest_idx = np.where(distances == np.min(distances))[0]
+                newstart = non_zeros[closest_idx][0]
+                cyclen = ends[i]-starts[i]
+                newend = newstart + cyclen
+                
+                while any(app_n[newstart:newend]):
+                    non_zeros = np.delete(non_zeros,closest_idx)
+                    if np.size(non_zeros)==0:
+                        newstart = starts[i]
+                        newend = ends[i]
+                        ncycnotshift += 1
+                        break
+                    distances = np.abs(non_zeros-starts[i])
+                    closest_idx = np.where(distances == np.min(distances))[0]
+                    newstart = non_zeros[closest_idx][0]
+                    cyclen = ends[i]-starts[i]
+                    newend = newstart + cyclen
+                           
+                if newend > len(app)-1:
+                    newend = len(app)-1
+                    cyclen = newend-newstart
+                    app_n[newstart:newend] += app[starts[i]:starts[i]+cyclen]
+                else:
+                    app_n[newstart:newend] += app[starts[i]:ends[i]]
+            
+            enshift += np.sum(app_n[newstart:newend])
+            maxshift = max(maxshift,abs(newstart-starts[i])/60.)
+            totshift += abs(newstart-starts[i])
+    
+    avgshift = totshift/len(starts)/60.
+    app_n=np.where(app_n==0,1,app_n)
+    ncyc = len(starts)
+    ncycshift = ncycshift - ncycnotshift
+    
+    if ncycnotshift > 0:
+        val = np.sort(np.unique(app_n))
+        if np.size(val) > 2:
+            indexes = np.where(app_n==val[-1])[0]
+            app_n[indexes]=val[-2]
+    
+    conspre  = sum(app)/60./1000.
+    conspost = sum(app_n)/60./1000.
+    print("Original consumption: {:.2f}".format(conspre))
+    print("Number of cycles: {:}".format(ncyc))
+    print("Number of cycles shifted: {:}".format(ncycshift))
+    print("Consumption after shifting (check): {:.2f}".format(conspost))
+    print("Max shift: {:.2f} hours".format(maxshift))
+    print("Avg shift: {:.2f} hours".format(avgshift))
+    print("Unable to shift {:} cycles".format(ncycnotshift))
+                
+    return app_n,enshift
+
+
+
+def HPSizing(inputs,fracmaxP):
+
+    if inputs['HP']['HeatPumpThermalPower'] == None:
+        # Heat pump sizing
+        # External T = -10°C, internal T = 21°C
+        House = Zone(window_area=inputs['HP']['Aglazed'],
+                     walls_area=inputs['HP']['Aopaque'],
+                     floor_area=inputs['HP']['Afloor'],
+                     room_vol=inputs['HP']['volume'],
+                     total_internal_area=inputs['HP']['Atotal'],
+                     u_walls=inputs['HP']['Uwalls'],
+                     u_windows=inputs['HP']['Uwindows'],
+                     ach_vent=inputs['HP']['ACH_vent']/60,
+                     ach_infl=inputs['HP']['ACH_infl']/60,
+                     ventilation_efficiency=inputs['HP']['VentEff'],
+                     thermal_capacitance=inputs['HP']['Ctot'],
+                     t_set_heating=21.,
+                     max_heating_power=float('inf'))
+        Tair = 21.
+        House.solve_energy(0.,0.,-10.,Tair)
+        QheatHP = House.heating_demand*fracmaxP
+
+        
+    else:
+        # Heat pump size given as an input
+        QheatHP = inputs['HP']['HeatPumpThermalPower']
+    
+    return QheatHP
+
+def COP_Tamb(Temp):
+    COP = 0.001*Temp**2 + 0.0471*Temp + 2.1259
+    return COP
 
 
     
