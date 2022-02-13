@@ -7,7 +7,7 @@
 		 "WetAppBool": false, 
          "WetAppManBool": false,
          "WetAppAutoBool": false,
-         "PVBool": false,
+         "PVBool": true,
          "BattBool": false,
          "DHWBool": true,
          "HeatingBool": true,
