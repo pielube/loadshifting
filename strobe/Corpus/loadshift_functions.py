@@ -206,7 +206,7 @@ def simulate_scenarios(n_scen,inputs):
             elif inputs['HP']['model'] == '5R1C':
             
                 # R51C model
-                Qspace[i,:],QheatHP = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon)
+                Qspace[i,:],QheatHP = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,occupancy[0])
                 thermal_load = int(sum(Qspace[i,:])/1000./60.)
                 QheatHP = int(QheatHP)
                 print(' - Heat pump size is ',QheatHP,' kW (heat)')
@@ -607,7 +607,7 @@ def AertsThermostatTimer(ndays):
 
 
 
-def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains):
+def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains,occupancys):
 
     # Rough estimation of solar gains based on data from Crest
     # Could be improved
@@ -641,7 +641,7 @@ def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains):
                      max_heating_power=float('inf'))
         Tair = 21.
         House.solve_energy(0.,0.,-10.,Tair)
-        QheatHP = House.heating_demand
+        QheatHP = House.heating_demand*0.8
         # Ttemp = House.t_m_next this should be the T that would be reached with no heating
         # Tair = House.t_air # T actually reached in the house (in this case should be = to initial Tair)
         
@@ -676,26 +676,62 @@ def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains):
                     ventilation_efficiency=inputs['HP']['VentEff'],
                     thermal_capacitance=inputs['HP']['Ctot'],
                     t_set_heating=inputs['HP']['Tthermostatsetpoint'],
-                    max_heating_power=inputs['HP']['HeatPumpThermalPower'])  
+                    max_heating_power=QheatHP)  
             
+    n10min = int(nminutes/10.)
+    n1min  = nminutes
+    
+    occ = np.zeros(n10min)
+    for i in range(len(occupancys)):
+        singlehouseholdocc = [1 if a==1 else 0 for a in occupancys[i][:-1]]
+        occ += singlehouseholdocc
+    occ = [1 if a >=1 else 0 for a in occ]    
+    occupancy = np.zeros(n1min)
+    for i in range(n10min):
+        for j in range(10):
+            occupancy[i*10+j] = occ[i]
 
+    Tset = [20. if a == 1 else 15. for a in occupancy] # °C
+    Tset = np.array(Tset)
     Tair = max(16.,Tamb[0])  + random.random()*2. #°C
     Qheat = np.zeros(nminutes)
+    
+    Tinside = np.zeros(nminutes)
 
     for i in range(nminutes):
+        
+        House = Zone(window_area=inputs['HP']['Aglazed'],
+            walls_area=inputs['HP']['Aopaque'],
+            floor_area=inputs['HP']['Afloor'],
+            room_vol=inputs['HP']['volume'],
+            total_internal_area=inputs['HP']['Atotal'],
+            u_walls=inputs['HP']['Uwalls'],
+            u_windows=inputs['HP']['Uwindows'],
+            ach_vent=inputs['HP']['ACH_vent']/60,
+            ach_infl=inputs['HP']['ACH_infl']/60,
+            ventilation_efficiency=inputs['HP']['VentEff'],
+            thermal_capacitance=inputs['HP']['Ctot'],
+            t_set_heating=Tset[i],
+            max_heating_power=QheatHP)
         
         House.solve_energy(Qintgains[i], Qsolgains[i], Tamb[i], Tair)
         Tair      = House.t_air
         Qheat[i] = House.heating_demand
         
+        Tinside[i] = Tair
+        
         # Heating season
         if 60*24*151 < i < 60*24*244:
             Qheat[i] = 0
     
-    # Daily timer
-    timeryear = AertsThermostatTimer(inputs['ndays'])
-    Qheat = Qheat*timeryear
-        
+    Twhenon    = Tinside*occupancy # °C
+    Twhenon_hs = Twhenon[np.r_[0:60*24*151,60*24*244:-1]] # °C
+    whenon     = np.nonzero(Twhenon_hs)
+    Twhenon_hs_mean = np.mean(Twhenon_hs[whenon]) # °C
+    Twhenon_hs_min  = np.min(Twhenon_hs[whenon])  # °C
+    Twhenon_hs_max  = np.max(Twhenon_hs[whenon])  # °C
+    
+    print('Average T: {:.2f}°C'.format(Twhenon_hs_mean))
     
     return Qheat, QheatHP
         

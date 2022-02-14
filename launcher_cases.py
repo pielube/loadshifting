@@ -12,14 +12,14 @@ import os
 import pickle
 
 
-for ii in range(3):
+for ii in range(1):
     
     """
     Loading inputs
     """
     
     path = r'./inputs'
-    names = ['1f','2f','4f']
+    names = ['4f']# ['1f','2f','4f']
     name = names[ii]+'.json'
     file = os.path.join(path,name)
     with open(file) as f:
@@ -31,17 +31,17 @@ for ii in range(3):
     cond2 = 'members' in inputs and inputs['members'] == None
     if cond1 or cond2:
         inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
-
-    # Thermal parameters of the dwelling
-    # Taken from Procebar .xls files
-    
-    procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'],True)
-    inputs['HP'] = {**inputs['HP'],**procebinp}
     
     results = []
     occupancy = []
-  
-    for jj in range(10):
+    input_data = []
+
+    for jj in range(1):
+               
+        # Thermal parameters of the dwelling
+        # Taken from Procebar .xls files
+        procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'],True)
+        inputs['HP'] = {**inputs['HP'],**procebinp}
         
         start_time = time.time()
     
@@ -87,9 +87,10 @@ for ii in range(3):
         
         results.append(df)
         occupancy.append(result['occupancy'][n_scen])
+        input_data.append(inputs)
         
     """
-    Saving results and occupancy
+    Saving results, occupancy, and inputs
     """
     
     path = r'./simulations'
@@ -105,7 +106,11 @@ for ii in range(3):
     file = os.path.join(path,name)
     with open(file, 'wb') as b:
         pickle.dump(occupancy,b)
-    
+        
+    name = names[ii]+'_inputs.pkl'
+    file = os.path.join(path,name)
+    with open(file, 'wb') as b:
+        pickle.dump(input_data,b)    
 
 
 

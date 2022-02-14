@@ -67,9 +67,9 @@ thresholdprice = casesjson[namecase]['thresholdprice']
 
 pvfile = r'./simulations/pv.pkl'
 pvadim = pd.read_pickle(pvfile) # kW/kWp
-#TODO fix pvadim where generated
-pvadim = [a if a > 0.01 else 0. for a in pvadim[0].to_numpy(dtype='float64')] # kW/kWp
-pvadim = pd.Series(data=pvadim,index=pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')) # kW/kWp
+# #TODO fix pvadim where generated
+# pvadim = [a if a > 0.01 else 0. for a in pvadim[0].to_numpy(dtype='float64')] # kW/kWp
+# pvadim = pd.Series(data=pvadim,index=pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')) # kW/kWp
 
 # Demands
 
@@ -111,11 +111,9 @@ param_tech = {'BatteryCapacity': battcapacity, # kWh
 
 # Inputs used to generate demands
 
-path = r'./inputs'
-name = casesjson[namecase]['house']+'.json'
+name = house+'_inputs.pkl'
 file = os.path.join(path,name)
-with open(file) as f:
-  inputs2 = json.load(f)    
+inputs = pd.read_pickle(file) 
 
 # Economic parameteres
 
@@ -353,9 +351,9 @@ if DHWBool:
     
         # equivalent battery
         # TODO check these entries
-        Vcyl = inputs2['DHW']['Vcyl'] # litres
-        Ttarget = inputs2['DHW']['Ttarget'] # °C
-        PowerDHWMax = inputs2['DHW']['PowerElMax']/1000. # kW
+        Vcyl = inputs[index]['DHW']['Vcyl'] # litres
+        Ttarget = inputs[index]['DHW']['Ttarget'] # °C
+        PowerDHWMax = inputs[index]['DHW']['PowerElMax']/1000. # kW
 
         Tmin = 45. # °C
         Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
@@ -397,10 +395,8 @@ if DHWBool:
    
 
 # TODO
-# - save info on building, as extracted from Procebar
 # - save T inside house if needed to check how shift affects it
-# - revise temperature setpoint in the demand simulation
-#   here T set could recalculated (as now) or saved as dem, occ, etc.
+# - T setpoint could be saved as done for dem, occ, etc., here recalculated
 # - harmonize ambient data used in all simulations
 #   use TMY obtained from PVGIS everywhere
 # - add fraction of max power when sizing HP
@@ -409,12 +405,6 @@ if DHWBool:
 if HeatingBool:
     
     print('--- Shifting house heating ---')
-
-    # Thermal parameters of the dwelling
-    # Taken from Procebar xls file
-    # WRONG: data should be saved when running 10 cases and loaded here
-    procebinp = ProcebarExtractor(inputs2['HP']['dwelling_type'],True)
-    inputs2['HP'] = {**inputs2['HP'],**procebinp}  
     
     # ambient data
     datapath = r'./strobe/Data'
@@ -427,16 +417,16 @@ if HeatingBool:
     Qintgains = demands[index]['InternalGains'][:-1].to_numpy() # W
 
     # T setpoint based on occupancy
-    Tset = [20. if a == 1 else 20. for a in occupancy] # °C
+    Tset = [20. if a == 1 else 15. for a in occupancy] # °C
     
     # Heat pump sizing
-    fracmaxP = 1.
-    QheatHP = HPSizing(inputs2,fracmaxP) # W
+    fracmaxP = 0.8
+    QheatHP = HPSizing(inputs[index],fracmaxP) # W
     
     if PVBool: # strategy based on enhancing self-consumption
         
         # Heat shifted
-        Qshift,Tin_shift = HouseHeatingShiftSC(inputs2,n1min,temp,irr,Qintgains,QheatHP,pv_1min,Tset) # W, °C
+        Qshift,Tin_shift = HouseHeatingShiftSC(inputs[index],n1min,temp,irr,Qintgains,QheatHP,pv_1min,Tset) # W, °C
         
         # T analysis
         Twhenon    = Tin_shift*occupancy # °C

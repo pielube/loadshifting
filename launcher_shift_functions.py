@@ -217,13 +217,13 @@ def HouseHeatingShiftSC(inputs,nminutes,Tamb,irr,Qintgains,QheatHP,pv,Tset):
                 ach_infl=inputs['HP']['ACH_infl']/60,
                 ventilation_efficiency=inputs['HP']['VentEff'],
                 thermal_capacitance=inputs['HP']['Ctot'],
-                t_set_heating=Tset[0], #inputs['HP']['Tthermostatsetpoint'],
+                t_set_heating=Tset[0],
                 max_heating_power=QheatHP)
             
     Tair = max(16.,Tamb[0])  + random.random()*2. #°C
     Qheat = np.zeros(nminutes)
     Tinside = np.zeros(nminutes)
-    Tsetold = Tset[0] #inputs['HP']['Tthermostatsetpoint']
+    Tsetold = Tset[0]
 
     for i in range(nminutes):
         
@@ -234,9 +234,9 @@ def HouseHeatingShiftSC(inputs,nminutes,Tamb,irr,Qintgains,QheatHP,pv,Tset):
         else:
             
             if pv[i] > 0.:
-                Tset_ts = 25.
+                Tset_ts = 23.
             else:
-                Tset_ts = Tset[i] #inputs['HP']['Tthermostatsetpoint']
+                Tset_ts = Tset[i]
                 
             if Tset_ts != Tsetold:
                 
