@@ -9,6 +9,7 @@ from temp_functions import yearlyprices,HPSizing,COP_Tamb
 from launcher_shift_functions import MostRapCurve,AdmTimeWinShift,HouseHeatingShiftSC,ResultsAnalysis,WriteResToExcel
 from preprocess import ProcebarExtractor,HouseholdMembers
 from temp_functions import shift_appliance
+from pv import pvgis_hist
 
 
 start_time = time.time()
@@ -65,12 +66,11 @@ thresholdprice = casesjson[namecase]['thresholdprice']
 
 # Adimensional PV curve
 
-pvfile = r'./simulations/pv.pkl'
-pvadim = pd.read_pickle(pvfile) # kW/kWp
-# #TODO fix pvadim where generated
-# pvadim = [a if a > 0.01 else 0. for a in pvadim[0].to_numpy(dtype='float64')] # kW/kWp
-# pvadim = pd.Series(data=pvadim,index=pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')) # kW/kWp
+with open('inputs/pv.json','r') as file:
+    config_pv = json.load(file)
+pvadim = pvgis_hist(config_pv)  
 
+#%%
 # Demands
 
 name = house+'.pkl'
