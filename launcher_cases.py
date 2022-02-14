@@ -70,7 +70,7 @@ for ii in range(3):
         
         # Dataframe of original results
         
-        df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging'])
+        df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging','InternalGains'])
         result_ramp.loc[df.index[-1],'EVCharging']=0
         
         for key in df.columns:

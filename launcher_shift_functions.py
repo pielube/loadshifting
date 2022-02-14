@@ -160,7 +160,7 @@ def AdmTimeWinShift(app,admtimewin,probshift):
                 else:
                     app_n[newstart:newend] += app[starts[i]:ends[i]]
             
-            enshift += np.sum(app_n[newstart:newend])
+            enshift += np.sum(app_n[newstart:newend])/60.
             maxshift = max(maxshift,abs(newstart-starts[i])/60.)
             totshift += abs(newstart-starts[i])
     
