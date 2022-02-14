@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 import pvlib
+from temp_functions import cache_func
 
 
 # Geographic location - Liège
@@ -113,6 +114,7 @@ def pvlib_detailed(coordinates):
     
     return ac_15min, losses
 
+@cache_func
 def pvgis_hist(inputs):
     """
     PV production taken from PVGIS data

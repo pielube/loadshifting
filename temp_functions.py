@@ -4,14 +4,61 @@ import pandas as pd
 from statistics import mean
 from prosumpy import dispatch_max_sc,print_analysis
 import datetime
-import matplotlib.pyplot as plt
 import numpy_financial as npf
 import random
 from strobe.RC_BuildingSimulator import Zone
+import os
+import pickle
+import time
+import json
+from typing import Dict, Any      # for the dictionnary hashing funciton
+import hashlib  # for the dictionnary hashing funciton
 
 
+
+def dict_hash(dictionary: Dict[str, Any]) -> str:
+    """MD5 hash of a dictionary."""
+    dhash = hashlib.md5()
+    # We need to sort arguments so {'a': 1, 'b': 2} is
+    # the same as {'b': 2, 'a': 1}
+    encoded = json.dumps(dictionary, sort_keys=True).encode()
+    dhash.update(encoded)
+    return dhash.hexdigest()
     
+def cache_func(func):
+    '''
+    Decorator function that saves the output of a function into a pickle file in 
+    the /cache directory and reloads it at the next function calls.
+    For the results to be reloaded, the parameters of the function should be 
+    exactly the same. 
+    To remain computationally efficient, the function inputs should not contain
+    heavy data such as numpy arrays of pandas dataframes.
     
+    @author: Sylvain Quoilin
+    '''
+    def timed(*args, **kwargs):
+        # generating hash for the current config:   
+        dhash = dict_hash({'list':args,'dict':kwargs})
+        folder = os.path.join('cache',func.__name__)
+        filename = os.path.join(folder, dhash)
+        # create cache directory if not present
+        if not os.path.isdir('cache'):
+            os.mkdir('cache')
+        if not os.path.isdir(folder):
+            os.mkdir(folder)
+        if os.path.isfile(filename):
+            #results = pd.read_pickle('data.p')           # temporary file to speed up things
+            print('Function "' + func.__name__ + '": Reading previous (cached) simulation data with hash ' + dhash)
+            return pickle.load(open(filename,'rb'))
+        else:
+            print('Function "' + func.__name__ + '": No previous (cached) simulation found with hash ' + dhash)     
+            ts = time.time()
+            result = func(*args, **kwargs)
+            te = time.time()
+            print('    Function run in {:.2f} seconds'.format(te - ts))
+            pickle.dump(result,open(filename,"wb"))   
+            return result
+    return timed    
     
     
 
