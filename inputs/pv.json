@@ -4,5 +4,6 @@
 "losses": 13, 
 "tilt": 35, 
 "azimuth": 0, 
-"year": 2015
+"year": 2015,
+"TMY": true
 }

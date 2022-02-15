@@ -9,7 +9,7 @@ from temp_functions import cache_func
 # Geographic location - Liège
 # Weather -  TMY (2006-2016)
 coordinates = (50.6,5.6,'Europe/Brussels',60,'Etc/GMT-2')
-surface_tilt = 38
+surface_tilt = 35.
 
 
 def pvlib_detailed(coordinates,surface_tilt):
@@ -133,7 +133,7 @@ def pvlib_detailed(coordinates,surface_tilt):
     
     return ac_15min,losses,dc_peak['p_mp']
 
-@cache_func
+# @cache_func
 def pvgis_hist(inputs):
     """
     PV production taken from PVGIS data
@@ -202,12 +202,12 @@ if __name__ == "__main__":
     ac_15min, losses, dc_peak = pvlib_detailed(coordinates,surface_tilt)
     
     inp_test = {'location':coordinates,
-               'Ppeak': dc_peak/1000.,
-               'losses':losses,
-               'tilt': surface_tilt,
-               'azimuth':0,
-               'year':2015,
-               'TMY': True}
+                'Ppeak': dc_peak/1000.,
+                'losses':losses,
+                'tilt': surface_tilt,
+                'azimuth':0,
+                'year':2015,
+                'TMY': True}
     
     pv_15min = pvgis_hist(inp_test)
     
@@ -229,7 +229,7 @@ if __name__ == "__main__":
     inp_save = {'location':coordinates,
                 'Ppeak': 1.0,
                 'losses': 14.,
-                'tilt':surface_tilt,
+                'tilt':35.,
                 'azimuth':0,
                 'year':2015,
                 'TMY': True}
