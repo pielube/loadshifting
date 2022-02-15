@@ -308,7 +308,7 @@ for jjj in casesarr:
     
     
     # Saving results to excel
-    file = 'test'+house+'.xlsx'
+    file = 'simulations/test'+house+'.xlsx'
     writetoexcel(file,sheet,results,row)
 
 exectime = (time.time() - start_time)/60.

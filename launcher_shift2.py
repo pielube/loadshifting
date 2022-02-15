@@ -6,10 +6,10 @@ import json
 import time
 from prosumpy import dispatch_max_sc,print_analysis
 from temp_functions import yearlyprices,HPSizing,COP_Tamb
-from launcher_shift_functions import MostRapCurve,AdmTimeWinShift,HouseHeatingShiftSC,ResultsAnalysis,WriteResToExcel
-from preprocess import ProcebarExtractor,HouseholdMembers
+from launcher_shift_functions import MostRepCurve,HouseHeatingShiftSC,ResultsAnalysis,WriteResToExcel
 from temp_functions import shift_appliance
 from pv import pvgis_hist
+from demands import compute_demand
 
 
 start_time = time.time()
@@ -27,6 +27,8 @@ casesarr = [12]
 """
 1) Reading inputs that define the case to be simulated
 """
+
+N = 2                              # Number of stochastic simulations to be run for the demand curves
 
 jjj = 12
     
@@ -65,28 +67,22 @@ thresholdprice = casesjson[namecase]['thresholdprice']
 """
 
 # Adimensional PV curve
-
 with open('inputs/pv.json','r') as file:
     config_pv = json.load(file)
 pvadim = pvgis_hist(config_pv)  
 
 #%%
 # Demands
+with open('inputs/' + house+'.json') as f:
+  inputs = json.load(f)
+demands = compute_demand(inputs,N)
 
-name = house+'.pkl'
-path = r'./simulations'
-file = os.path.join(path,name)
-demands = pd.read_pickle(file) # W
 
-# Occupancy
-
-name = house+'_occ.pkl'
-file = os.path.join(path,name)
-occupancys = pd.read_pickle(file)
+#%%
 
 # Various array sizes and timesteps used throughout the code
 
-n1min  = np.size(demands[0]['StaticLoad'])-1
+n1min  = np.size(demands['results'][0]['StaticLoad'])-1
 n10min = int(n1min/10)
 n15min = int(n1min/15)
 stepperh_1min = 60 # 1/h
@@ -108,12 +104,6 @@ param_tech = {'BatteryCapacity': battcapacity, # kWh
               'MaxPower': 7., # kW
               'InverterEfficiency': 1., # -
               'timestep': 0.25} # h
-
-# Inputs used to generate demands
-
-name = house+'_inputs.pkl'
-file = os.path.join(path,name)
-inputs = pd.read_pickle(file) 
 
 # Economic parameteres
 
@@ -146,15 +136,14 @@ yprices_15min = yearlyprices(scenario,timeslots,prices,stepperh_15min) # €/kWh
 
 
 """
-3) Most rapresentative curve
+3) Most representative curve
 """
 
-print('--- Selecting most representative curve ---')
+idx = MostRepCurve(demands['results'],columns,yprices_15min,ts_15min,EconomicVar)
 
-index = MostRapCurve(demands,columns,yprices_15min,ts_15min,EconomicVar)
-
-print('Curve index: {:}'.format(index))
-
+# Inputs relative to the most representative curve:
+inputs = demands['input_data'][idx]
+print('Most representative curve index: {:}'.format(idx))
 
 """
 4) Demand
@@ -164,7 +153,7 @@ print('Curve index: {:}'.format(index))
 # Meaning 15 min timestep and in kW
 # Selecting only techs (columns) of the case of interest
 
-demand_pspy = demands[index][columns]/1000. # kW
+demand_pspy = demands['results'][idx][columns]/1000. # kW
 demand_pspy = demand_pspy.resample('15Min').mean()[:-1] # kW
 
 # Reference demand
@@ -184,8 +173,8 @@ demand_pspy.insert(len(demand_pspy.columns),'TotalReference',demand_ref,True)
 # 1 min timestep
 
 occ = np.zeros(n10min)
-for i in range(len(occupancys[index])):
-    singlehouseholdocc = [1 if a==1 else 0 for a in occupancys[index][i][:-1]]
+for i in range(len(demands['occupancy'][idx])):
+    singlehouseholdocc = [1 if a==1 else 0 for a in demands['occupancy'][idx][i][:-1]]
     occ += singlehouseholdocc
 occ = [1 if a >=1 else 0 for a in occ]    
 occupancy = np.zeros(n1min)
@@ -213,7 +202,7 @@ if PVBool:
     pv_15min_res = [a if a>0 else 0 for a in (pv_15min.to_numpy() - dem_15min_noshift.to_numpy())] # kW
     pv_15min_res = pd.Series(data=pv_15min_res,index=index15min) # kW
     # 1 min timestep array
-    demnoshift = demands[index][TechsNoShift].sum(axis=1)[:-1].to_numpy()/1000. # kW
+    demnoshift = demands['results'][idx][TechsNoShift].sum(axis=1)[:-1].to_numpy()/1000. # kW
     pv_1min_res = [a if a>0. else 0. for a in pv_1min-demnoshift] # kW 
     pv_1min_res = np.array(pv_1min_res) # kW
     
@@ -257,7 +246,7 @@ if WetAppBool:
     probshift = 1. 
     
     # Wet app demands to be shifted, 1 min timestep
-    demshift = demands[index][WetAppShift][:-1] # W
+    demshift = demands['results'][idx][WetAppShift][:-1] # W
 
     """
     Admissible time windows
@@ -317,9 +306,8 @@ if WetAppBool:
     
         # Calling function to shift the app
         print("---"+str(app)+"---")
-        app_n,enshift = AdmTimeWinShift(demands[index][app],admtimewin,probshift) # W, Wh
-        # TODO uniform way of computing total energy shifted
-        # totenshift += enshift/1000. # kWh
+        #app_n,enshift = AdmTimeWinShift(demands['results'][idx][app],admtimewin,probshift) # W, Wh
+        app_n,ncyc,ncycshift,enshift = shift_appliance(demands[idx][app],admtimewin,probshift,max_shift=24*60)
         
         # Resizing shifted array
         app_n_series = pd.Series(data=app_n,index=index1min) # W
@@ -351,9 +339,9 @@ if DHWBool:
     
         # equivalent battery
         # TODO check these entries
-        Vcyl = inputs[index]['DHW']['Vcyl'] # litres
-        Ttarget = inputs[index]['DHW']['Ttarget'] # °C
-        PowerDHWMax = inputs[index]['DHW']['PowerElMax']/1000. # kW
+        Vcyl = inputs['DHW']['Vcyl'] # litres
+        Ttarget = inputs['DHW']['Ttarget'] # °C
+        PowerDHWMax = inputs['DHW']['PowerElMax']/1000. # kW
 
         Tmin = 45. # °C
         Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
@@ -414,19 +402,19 @@ if HeatingBool:
     irr = np.delete(irr,-1) # W/m2
     
     # internal gains
-    Qintgains = demands[index]['InternalGains'][:-1].to_numpy() # W
+    Qintgains = demands['results'][idx]['InternalGains'][:-1].to_numpy() # W
 
     # T setpoint based on occupancy
     Tset = [20. if a == 1 else 15. for a in occupancy] # °C
     
     # Heat pump sizing
     fracmaxP = 0.8
-    QheatHP = HPSizing(inputs[index],fracmaxP) # W
+    QheatHP = HPSizing(inputs,fracmaxP) # W
     
     if PVBool: # strategy based on enhancing self-consumption
         
         # Heat shifted
-        Qshift,Tin_shift = HouseHeatingShiftSC(inputs[index],n1min,temp,irr,Qintgains,QheatHP,pv_1min,Tset) # W, °C
+        Qshift,Tin_shift = HouseHeatingShiftSC(inputs,n1min,temp,irr,Qintgains,QheatHP,pv_1min,Tset) # W, °C
         
         # T analysis
         Twhenon    = Tin_shift*occupancy # °C
@@ -536,7 +524,7 @@ outs = ResultsAnalysis(capacities,pv_15min,demand_ref,demand_final,yprices_15min
 outs['el_shifted'] = 0. 
 
 # Saving results to excel
-file = 'test'+house+'.xlsx'
+file = 'simulations/test'+house+'.xlsx'
 WriteResToExcel(file,sheet,outs,row)
 
 

@@ -31,7 +31,7 @@ from temp_functions import EconomicAnalysis
 
 
     
-def MostRapCurve(demands,columns,ElPrices,timestep,EconomicVar):
+def MostRepCurve(demands,columns,ElPrices,timestep,EconomicVar):
     
     """
     Choosing most representative curve among a list of demand curves
