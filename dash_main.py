@@ -7,9 +7,11 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import plotly.figure_factory as ff
 import pandas as pd
+import os,json
 
 from dash_components import household_components,heating_components,ev_components,pv_components
 import defaults
+from demands import compute_demand
 
 #%% Build the app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MINTY], title="Load Shifting")
@@ -110,9 +112,8 @@ app.layout = dbc.Container(
                     is_open=False
                 ),
                 html.Hr(),
-                dcc.Markdown("##### Commands"),
                 dbc.Button(
-                    "Analyze",
+                    "Simulation",
                     id="analyze", color="primary", style={"margin": "5px"}),
                 html.Div(id="text_week", children='Afficher la semaine n°:'),
                 dcc.Slider(
@@ -133,11 +134,12 @@ app.layout = dbc.Container(
                 ),
                 html.Div(id="text_week2", children=''),
                 html.Hr(),
-                dcc.Markdown("##### Aerodynamic Performance"),
-                dbc.Spinner(
-                    html.P(id='text_output'),
-                    color="primary",
-                )
+                dcc.Markdown("##### Résultats de simulation"),
+                dcc.Loading(
+                    id="loading-1",
+                    type="default",
+                    children=html.Div(id="simulation_output")
+                ),
 
             ], width=3),
             dbc.Col([
@@ -264,29 +266,135 @@ last_analyze_timestamp = None
 n_clicks_last = 0
 
 #%% The callback to the main simulation
+
+# List of states to be considered in the functions:
+statelist = ['week','dropdown_house']
+
+
 @app.callback(
-#    Output("display", "figure"),
-    Output("text_output", "children"),
+    Output("display1", "figure"),
+    Output("week", "disabled"),
+    Output("simulation_output", "children"),
 #    Output("coordinates_output", "children"),
     [
         Input('analyze', 'n_clicks'),
 #        Input("height_slider_input", "value"),
 #        Input("streamline_density_slider_input", "value"),
-    ] 
+    ],
+    [State(component_id=state, component_property= 'value') for state in statelist],
 )
-def display_graph(n_clicks):
-    ### Figure out if a button was pressed
+def display_graph(n_clicks,week,dropdown_house):
+    '''
+    We need as many arguments to the function as there are inputs and states
+    Inputs trigger a callback 
+    States are used as parameters but do not trigger a callback
+    '''
     global n_clicks_last
     if n_clicks is None:
         n_clicks = 0
-
     analyze_button_pressed = n_clicks > n_clicks_last
     n_clicks_last = n_clicks
+    
+    path = r'./inputs'
+        
+    """
+    Loading inputs
+    """
+    filename = dropdown_house +'.json'
+    file = os.path.join(path,filename)
+    with open(file) as f:
+      inputs = json.load(f)
+    N = 1
+      
+    demands = compute_demand(inputs,N)
+    global load
+    load = demands['results'][0]
 
-    text_output = 'coucou!'
+    # #update inputs with user-defined values
+    # inputs['appliances']['apps'] = []
+    # if 'wm' in checklist_apps:
+    #     inputs['appliances']['apps'].append("WashingMachine")
+    # if 'td' in checklist_apps:
+    #     inputs['appliances']['apps'].append("TumbleDryer")        
+    # if 'dw' in checklist_apps:
+    #     inputs['appliances']['apps'].append("DishWasher")    
+    # if 'hp' in checklist_apps:
+    #     inputs['HP']['loadshift'] = True
+    # else:
+    #     inputs['HP']['loadshift'] = False
+    # if 'eb' in checklist_apps:
+    #     inputs['DHW']['loadshift'] = True
+    # else:
+    #     inputs['DHW']['loadshift'] = False
+    # if 'ev' in checklist_apps:
+    #     inputs['EV']['loadshift'] = True
+    # else:
+    #     inputs['EV']['loadshift'] = False
+        
+    # inputs['members'] = []
+    # inputs['members'] += ['FTE' for i in range(dropdown_FTE)]
+    # inputs['members'] += ['Retired' for i in range(dropdown_Retired)]
+    # inputs['members'] += ['Unemployed' for i in range(dropdown_Unemployed)]
+    # inputs['members'] += ['School' for i in range(dropdown_School)]
+    
+    # # If given, HP size imposed, otherwise automatic sizing
+    # inputs['HP']['HeatPumpThermalPower'] = int(input_hp_power)
+    
+    # inputs['DHW']['Vcyl'] = int(input_boiler_volume)
+    # inputs['DHW']['Ttarget'] = int(input_boiler_temperature)
+    
 
-#    return fig, text_output, [coordinates_output]
-    return text_output
+    n_middle = int(len(load)/2)
+    idx = load.index[(load.index.isocalendar().week==week) & (load.index.isocalendar().year==load.index.isocalendar().year[n_middle])]
+    fig = go.Figure()
+    for key in load:
+        fig.add_trace(go.Scatter(
+            name = key,
+            x = idx,
+            y = load.loc[idx,key],
+            stackgroup='one',
+            mode='none'               # this remove the lines
+           ))
+
+    fig.update_layout(title = 'Consommation',
+                      xaxis_title = 'Dates',
+                      yaxis_title = 'Puissance en W'
+                      )
+    totext = []
+    for x in ['coucou','tout le monde']:
+        totext.append(x)
+        totext.append(html.Br())   
+    
+    return fig,False,totext     # Number of returns must be equal to the number of outputs
+
 
 if __name__ == '__main__':
     app.run_server(debug=False)
+
+
+
+### Update the plot with a different week
+@app.callback(
+    Output("display1", "figure"),
+    [Input("week", "value")]
+)
+def update_plot(week):
+    n_middle = int(len(load)/2)
+    idx = load.index[(load.index.isocalendar().week==week) & (load.index.isocalendar().year==load.index.isocalendar().year[n_middle])]
+    fig = go.Figure()
+    for key in load:
+        fig.add_trace(go.Scatter(
+            name = key,
+            x = idx,
+            y = load.loc[idx,key],
+            stackgroup='one',
+            mode='none'               # this remove the lines
+           ))
+
+    fig.update_layout(title = 'Consommation',
+                      xaxis_title = 'Dates',
+                      yaxis_title = 'Puissance en W'
+                      )
+    return fig
+
+

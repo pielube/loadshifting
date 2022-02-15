@@ -7,11 +7,11 @@ import defaults
 household_components = [
     html.Div(id='text_house_type', children='Type de logement:'),
     dcc.Dropdown( id = 'dropdown_house',
-                    options = [ {'label':'4 Façades', 'value': '4'}, 
-                               {'label':'3 Façades', 'value': '3'},
-                               {'label':'2 Façades', 'value': '2'},
-                               {'label':'Appartement', 'value': 'flat'}],
-                    value = '4'),
+                    options = [ {'label':'4 Façades', 'value': '4f'}, 
+                               {'label':'3 Façades', 'value': '3f'},
+                               {'label':'2 Façades', 'value': '2f'},
+                               {'label':'Appartement', 'value': '1f'}],
+                    value = '4f'),
 
     html.Hr(),
     html.Div(id='text_appliances', children='Equipements électrodomestiques'),
