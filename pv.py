@@ -133,7 +133,7 @@ def pvlib_detailed(coordinates,surface_tilt):
     
     return ac_15min,losses,dc_peak['p_mp']
 
-# @cache_func
+@cache_func
 def pvgis_hist(inputs):
     """
     PV production taken from PVGIS data
