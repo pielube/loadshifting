@@ -122,17 +122,18 @@ app.layout = dbc.Container(
                     max=52,
                     step=1,
                     value=1,
-                    # marks={
-                    #         1: '1',
-                    #         10: '10',
-                    #         20: '20',
-                    #         30: '30',
-                    #         40: '40',
-                    #         50: '50'},
+                    marks={
+                            1: '1',
+                            10: '10',
+                            20: '20',
+                            30: '30',
+                            40: '40',
+                            52: '52'},
                     tooltip={"placement": "top", "always_visible": False},
                     disabled = True
                 ),
                 html.Div(id="text_week2", children=''),
+                html.Br(),
                 html.Hr(),
                 dcc.Markdown("##### Résultats de simulation"),
                 dcc.Loading(
@@ -373,7 +374,7 @@ if __name__ == '__main__':
 
 
 
-### Update the plot with a different week
+### Update the plot with a different week. TODO: understand why this does not work
 @app.callback(
     Output("display1", "figure"),
     [Input("week", "value")]
