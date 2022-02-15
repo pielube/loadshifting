@@ -13,7 +13,7 @@ from temp_functions import cache_func
 
 
 @cache_func
-def compute_demand(inputs,N):
+def compute_demand(inputs,N,members= None,thermal_parameters=None):
     '''
     Function that generates the stochastic time series for
     - The occupancy profiles
@@ -35,21 +35,25 @@ def compute_demand(inputs,N):
         Contains, for each simulation, the demand curves, the occupancy profile and the input data.
 
     '''
-    # People living in the dwelling
-    # Taken from StRoBe list
-    cond1 = 'members' not in inputs
-    cond2 = 'members' in inputs and inputs['members'] == None
-    if cond1 or cond2:
-        inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
     
     out = {'results':[],'occupancy':[],'input_data':[]}
 
-    for jj in range(N):          # run the simultion N times and append the results to the list
+    for jj in range(N):          # run the simulation N times and append the results to the list
+    
+        # People living in the dwelling
+        # taken from strobe list
+        if members is not None:
+            inputs['members'] = members
+        else:
+            inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
                
         # Thermal parameters of the dwelling
         # Taken from Procebar .xls files
-        procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'],True)
-        inputs['HP'] = {**inputs['HP'],**procebinp}
+        if thermal_parameters is not None:
+            inputs['HP'] = {**thermal_parameters,**procebinp}
+        else:
+            procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'],True)
+            inputs['HP'] = {**inputs['HP'],**procebinp}
         
         """
         Running the models

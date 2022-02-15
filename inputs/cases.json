@@ -1,20 +1,17 @@
 {
 "case12": {
-	     "house": "4f",
-         "sheet": "4F",
-         "columns": ["StaticLoad","TumbleDryer","DishWasher","WashingMachine","DomesticHotWater","HeatPumpPower"],
-		 "TechsShift": [],
-		 "WetAppBool": false, 
-         "WetAppManBool": false,
-         "WetAppAutoBool": false,
-         "PVBool": true,
-         "BattBool": false,
-         "DHWBool": true,
-         "HeatingBool": true,
-         "EVBool": false,
-         "row": 11,
-         "FixedControl": 0.0,
-         "AnnualControl": 0.0,
-         "thresholdprice": "hollow"
-         }
+	       "house": "4f",
+           "sheet": "4F",
+		   "row": 11,
+           "columns": ["StaticLoad","TumbleDryer","DishWasher","WashingMachine","DomesticHotWater","HeatPumpPower"],
+		   "TechsShift": [],
+		   "WetAppBool": false, 
+           "WetAppManBool": false,
+           "WetAppAutoBool": false,
+           "PVBool": true,
+           "BattBool": false,
+           "DHWBool": true,
+           "HeatingBool": true,
+           "EVBool": false
+           }
 }

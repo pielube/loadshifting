@@ -6,6 +6,8 @@
 
 "members": null,
 
+"thermal_parameters": null,
+
 "appliances": 
     {
     "loadshift": true,
@@ -47,18 +49,7 @@
     "ThermostatDeadband": 2.0,   
     "Temittersetpoint": 40.0,    
     "EmitterDeadband": 5.0,      
-    "HeatPumpThermalPower": null,
-    "Aglazed": null,
-    "Aopaque": null,
-    "Afloor": null,
-    "volume": null,
-    "Atotal": null,
-    "Uwalls": null,
-    "Uwindows": null,
-    "ACH_vent": null,
-    "ACH_infl": null,
-    "VentEff": null,
-    "Ctot": null
+    "HeatPumpThermalPower": null
     }, 
 
 "EV": 
