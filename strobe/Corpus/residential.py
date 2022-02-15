@@ -48,47 +48,39 @@ def CustomAppOwnership(inputs,dict_appliances):
     variable directly
     '''
     
-
     # Updating not load shifting related app ownerhisps
     
-    dict_appliances["Hob"]["owner"]            = inputs["AppOwnership"]["Hob"]
-    dict_appliances["Microwave"]["owner"]      = inputs["AppOwnership"]["Microwave"]  
-    dict_appliances["PC"]["owner"]             = inputs["AppOwnership"]["PC"]   
-    dict_appliances["TV1"]["owner"]            = inputs["AppOwnership"]["TV1"]    
-    dict_appliances["TumbleDryer"]["owner"]    = inputs["AppOwnership"]["TumbleDryer"]
-    dict_appliances["DishWasher"]["owner"]     = inputs["AppOwnership"]["DishWasher"] 
-    dict_appliances["WashingMachine"]["owner"] = inputs["AppOwnership"]["WashingMachine"] 
-    dict_appliances["WasherDryer"]["owner"]    = inputs["AppOwnership"]["WasherDryer"] 
-    dict_appliances['Refrigerator']['owner']   = inputs["AppOwnership"]["Refrigerator"]  
-    dict_appliances['FridgeFreezer']['owner']  = inputs["AppOwnership"]["FridgeFreezer"] 
-    dict_appliances['ChestFreezer']['owner']   = inputs["AppOwnership"]["ChestFreezer"]  
-    dict_appliances['UprightFreezer']['owner'] = inputs["AppOwnership"]["UprightFreezer"]
+    dict_appliances["Hob"]["owner"]            = inputs["appliances"]["prob_own"]["Hob"]
+    dict_appliances["Microwave"]["owner"]      = inputs["appliances"]["prob_own"]["Microwave"]  
+    dict_appliances["PC"]["owner"]             = inputs["appliances"]["prob_own"]["PC"]   
+    dict_appliances["TV1"]["owner"]            = inputs["appliances"]["prob_own"]["TV1"]    
+    dict_appliances["TumbleDryer"]["owner"]    = inputs["appliances"]["prob_own"]["TumbleDryer"]
+    dict_appliances["DishWasher"]["owner"]     = inputs["appliances"]["prob_own"]["DishWasher"] 
+    dict_appliances["WashingMachine"]["owner"] = inputs["appliances"]["prob_own"]["WashingMachine"] 
+    dict_appliances["WasherDryer"]["owner"]    = inputs["appliances"]["prob_own"]["WasherDryer"] 
+    dict_appliances['Refrigerator']['owner']   = inputs["appliances"]["prob_own"]["Refrigerator"]  
+    dict_appliances['FridgeFreezer']['owner']  = inputs["appliances"]["prob_own"]["FridgeFreezer"] 
+    dict_appliances['ChestFreezer']['owner']   = inputs["appliances"]["prob_own"]["ChestFreezer"]  
+    dict_appliances['UprightFreezer']['owner'] = inputs["appliances"]["prob_own"]["UprightFreezer"]
 
 
-    # Forcing appliances to be considered for load shifting
-    # TODO: if not forced probability must remain unchanged, not 0
-    #       but they should not be considered in the final load shifting df
+    # Forcing appliances to be there is necessary for load shifting
    
-    if 'appliances' not in inputs:
+    if not inputs['appliances']['loadshift']:
         return
-    if "appliances" in inputs and inputs['appliances'] == None:
+    if 'apps' not in inputs['appliances']:
+        return
+    if 'apps' in inputs and inputs['appliances']['apps'] == None:
         return
         
-    if "TumbleDryer" in inputs['appliances']:
+    if "TumbleDryer" in inputs['appliances']['apps']:
         dict_appliances["TumbleDryer"]["owner"] = 1.0
-    else:
-        dict_appliances["TumbleDryer"]["owner"] = 0.0
         
-    if "DishWasher" in inputs['appliances']:
+    if "DishWasher" in inputs['appliances']['apps']:
         dict_appliances["DishWasher"]["owner"] = 1.0
-    else:
-        dict_appliances["DishWasher"]["owner"] = 0.0
         
-    if "WashingMachine" in inputs['appliances']:
+    if "WashingMachine" in inputs['appliances']['apps']:
         dict_appliances["WashingMachine"]["owner"] = 1.0
-    else:
-        dict_appliances["WashingMachine"]["owner"] = 0.0
-        
 
 
 
@@ -800,7 +792,7 @@ class Equipment(object):
                 prob = [[1 for x in range(nday*nbin)] for i in range(numOcc)] # activity 'None' always probability=1 
             elif act == 'Presence': # if appliance linked to presence (active occupants): probability =1 when ANYONE is present
                 prob = occy
-            else: # appliance linked to specific activity (e.g. "food")  
+            else: # appliance linked to specific activity (e.g. "food") 
                 # get activity probabilities for all occupants from DTMC file
                 actdata= [DTMC(clusterDict=clustersList[i]) for i in range(numOcc)] 
                 prob = occy   # just initiate correct size    
@@ -827,18 +819,31 @@ class Equipment(object):
                         n_eq_dur += 1 # add to counter for number of minutes used in year
                     else: # if nobody was using it
                         P[tl] += self.standby_power # assign stand-by power
-                        
+   
+                    ### uliege ###
+                    # usage of wet appliances correction
+                    actions = ['washing','drying','dishes']
+                    washcyc = np.array([2.2,1.7,1.6,1.3,1.3]) # ncycles per week per person for 1,2,3,4,5 occupants
+                    corrfactarr = washcyc/2.2 # correction factor
                     # per occupant, check if they will want to change the state of the appliance
                     for i in range(numOcc): 
                         # check if this appliance is being used by occupant i: time left[i]>0
                         if left[i] > 0:
                             left[i] += -1   # count time down until cycle passed (for this occupant)          
-                        else: # if it was not used by this occupant: left[i] <= 0 
+                        else: # if it was not used by this occupant: left[i] <= 0
+                            ### uliege ###
+                            # usage of wet appliances correction
+                            corrfact = 1.
+                            if act in actions:
+                                if i <= 4:
+                                    corrfact = corrfactarr[i]
+                                else:
+                                    corrfact = 1.3/2.2
                             # check if there is a state change in the appliance for this occupant
-                            if random.random() < prob[i][to] * self.cal: # if random number below calibration factor cal* probability of activity: start appliance
+                            if random.random() < prob[i][to] * corrfact * self.cal: # if random number below calibration factor cal* probability of activity: start appliance
                                 left[i] = random.gauss(len_cycle, len_cycle/10) # start a cycle of random  duration for this occupant
 
-                            
+
             r_eq = {'P':P, 'Q':Q, 'QRad':P*self.frad, 'QCon':P*self.fconv,}
             
            # n_eq is used in calibration process for value of 'cal'
@@ -903,7 +908,7 @@ class Equipment(object):
                     r_appi, n_appi = stochastic_load(self, nday, dow, [clustersList[i]], [occ[i]])# we pass a list with one clusterDict
                     r_app = sum_dict(r_app, r_appi)
                     n_app += n_appi                
-            else: # other appliances (shared)               
+            else: # other appliances (shared)
                 r_app, n_app = stochastic_load(self, nday, dow, clustersList, occ)# we pass a list with all available clusterDicts, as given from plugloads
         else: # flow-> model is based on total presence: do only once.
             r_app, n_app = stochastic_flow(self, nday, dow, clustersList, occ) # we pass a list with one clusterDict, as given from DHW model

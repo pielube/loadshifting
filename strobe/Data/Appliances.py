@@ -364,7 +364,7 @@ set_appliances = \
     "frad": 0.0, 
     "cycle_power": 1130.61224489796, 
     "cal": 0.04603964569480809, 
-    "standby_power": 0, 
+    "standby_power": 1, 
     "owner": 0.335, 
     "cycle_n": 241.476395726831, 
     "fconv": 0.25, 

@@ -23,6 +23,8 @@ import pickle
 from typing import Dict, Any      # for the dictionnary hashing funciton
 import hashlib  # for the dictionnary hashing funciton
 
+from preprocess import ProcebarExtractor
+
 def dict_hash(dictionary: Dict[str, Any]) -> str:
     """MD5 hash of a dictionary."""
     dhash = hashlib.md5()
@@ -41,14 +43,14 @@ def simulate_load(inputs):
     n_scen = 0 # Working only with the first scenario
     
     # RAMP-mobility
-    if inputs['EV']:
+    if inputs['EV']['loadshift']:
         result_ramp = ramp.EVCharging(inputs, result['occupancy'][n_scen])
     else:
         result_ramp=pd.DataFrame()
     
     # Creating dataframe with the results 
     n_steps = np.size(result['StaticLoad'][n_scen,:])
-    index = pd.date_range(start='2016-01-01 00:00', periods=n_steps, freq='1min')
+    index = pd.date_range(start='2015-01-01 00:00', periods=n_steps, freq='1min')
     df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging'])
     
     result_ramp.loc[df.index[-1],'EVCharging']=0
@@ -180,29 +182,29 @@ def simulate_button(N,checklist_apps,dropdown_FTE,dropdown_Unemployed,dropdown_S
     print(todisplay)
     
     # Reading JSON
-    with open('inputs/loadshift_inputs.json') as f:
+    with open('inputs/example.json') as f:
         inputs = json.load(f)
 
     #update inputs with user-defined values
-    inputs['appliances'] = []
+    inputs['appliances']['apps'] = []
     if 'wm' in checklist_apps:
-        inputs['appliances'].append("WashingMachine")
+        inputs['appliances']['apps'].append("WashingMachine")
     if 'td' in checklist_apps:
-        inputs['appliances'].append("TumbleDryer")        
+        inputs['appliances']['apps'].append("TumbleDryer")        
     if 'dw' in checklist_apps:
-        inputs['appliances'].append("DishWasher")    
+        inputs['appliances']['apps'].append("DishWasher")    
     if 'hp' in checklist_apps:
-        inputs['HeatPump'] = True
+        inputs['HP']['loadshift'] = True
     else:
-        inputs['HeatPump'] = False
+        inputs['HP']['loadshift'] = False
     if 'eb' in checklist_apps:
-        inputs['DomesticHotWater'] = True
+        inputs['DHW']['loadshift'] = True
     else:
-        inputs['DomesticHotWater'] = False
+        inputs['DHW']['loadshift'] = False
     if 'ev' in checklist_apps:
-        inputs['EV'] = True
+        inputs['EV']['loadshift'] = True
     else:
-        inputs['EV'] = False
+        inputs['EV']['loadshift'] = False
         
     inputs['members'] = []
     inputs['members'] += ['FTE' for i in range(dropdown_FTE)]
@@ -210,17 +212,22 @@ def simulate_button(N,checklist_apps,dropdown_FTE,dropdown_Unemployed,dropdown_S
     inputs['members'] += ['Unemployed' for i in range(dropdown_Unemployed)]
     inputs['members'] += ['School' for i in range(dropdown_School)]
     
-    inputs['HeatPumpThermalPower'] = int(input_hp_power)
-    inputs['Vcyl'] = int(input_boiler_volume)
-    inputs['Ttarget'] = int(input_boiler_temperature)
+    # If given, HP size imposed, otherwise automatic sizing
+    inputs['HP']['HeatPumpThermalPower'] = int(input_hp_power)
+    
+    inputs['DHW']['Vcyl'] = int(input_boiler_volume)
+    inputs['DHW']['Ttarget'] = int(input_boiler_temperature)
     
     map_building_types = {
-        '4': "Detached",
+        '4': "Freestanding",
         '3': "Semi-detached",
         '2': "Terraced",
-        'flat': "Improved terraced"
+        'flat': "Apartment"
         }
-    inputs['dwelling_type'] = map_building_types[dropdown_house]
+    inputs['HP']['dwelling_type'] = map_building_types[dropdown_house]
+    
+    procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'],True)
+    inputs['HP'] = {**inputs['HP'],**procebinp}  
     
     # generating hash for the current config:        
     filename = 'cache/' + dict_hash(inputs)
@@ -241,7 +248,7 @@ def simulate_button(N,checklist_apps,dropdown_FTE,dropdown_Unemployed,dropdown_S
     #                   ])    
 
 #    fig = px.area(load, load.index)
-    idx = load.index[(load.index.month==n_month) & (load.index.year==2016)]
+    idx = load.index[(load.index.month==n_month) & (load.index.year==2015)]
     fig = go.Figure()
     for key in load:
         fig.add_trace(go.Scatter(
