@@ -14,72 +14,73 @@ from demands import compute_demand
 
 start_time = time.time()
 
-# Reading cases to be simulated
-path_cases = r'./inputs'
-name_cases = 'cases.json'
-file_cases = os.path.join(path_cases,name_cases)
-with open(file_cases) as f:
-  casesjson = json.load(f)
 
-# Selecting 
-casesarr = [12]
+#%%
 
-"""
-1) Reading inputs that define the case to be simulated
-"""
-
-N = 2                              # Number of stochastic simulations to be run for the demand curves
-
-jjj = 12
-    
+N = 2 # Number of stochastic simulations to be run for the demand curves
+jjj = 12  
 namecase = 'case'+str(jjj)
 
 print('###########################')
 print('        Case'+str(jjj))
 print('###########################')
 
-house          = casesjson[namecase]['house']
-sheet          = casesjson[namecase]['sheet']
-columns        = casesjson[namecase]['columns'] 
-TechsShift     = casesjson[namecase]['TechsShift']
+
+#%%
+# Case description
+with open('inputs/cases.json','r') as f:
+    cases = json.load(f)
+
+house          = cases[namecase]['house']
+sheet          = cases[namecase]['sheet']
+row            = cases[namecase]['row']
+columns        = cases[namecase]['columns'] 
+TechsShift     = cases[namecase]['TechsShift']
 WetAppShift    = [x for x in TechsShift if x in ['TumbleDryer','DishWasher','WashingMachine']]
 TechsNoShift   = [x for x in columns if x not in TechsShift]
+WetAppBool     = cases[namecase]['WetAppBool']
+WetAppManBool  = cases[namecase]['WetAppManBool']
+WetAppAutoBool = cases[namecase]['WetAppAutoBool']
+PVBool         = cases[namecase]['PVBool']
+BattBool       = cases[namecase]['BattBool']
+DHWBool        = cases[namecase]['DHWBool']
+HeatingBool    = cases[namecase]['HeatingBool']
+EVBool         = cases[namecase]['EVBool']
 
-WetAppBool     = casesjson[namecase]['WetAppBool']
-WetAppManBool  = casesjson[namecase]['WetAppManBool']
-WetAppAutoBool = casesjson[namecase]['WetAppAutoBool']
-PVBool         = casesjson[namecase]['PVBool']
-BattBool       = casesjson[namecase]['BattBool']
-DHWBool        = casesjson[namecase]['DHWBool']
-HeatingBool    = casesjson[namecase]['HeatingBool']
-EVBool         = casesjson[namecase]['EVBool']
-
-
-row            = casesjson[namecase]['row']
-FixedControl   = casesjson[namecase]['FixedControl']
-AnnualControl  = casesjson[namecase]['AnnualControl']
-
-thresholdprice = casesjson[namecase]['thresholdprice']
-
-
-"""
-2) Putting all inputs required together
-"""
-
+#%%
 # Adimensional PV curve
-with open('inputs/pv.json','r') as file:
-    config_pv = json.load(file)
+with open('inputs/pv.json','r') as f:
+    config_pv = json.load(f)
+
 pvadim = pvgis_hist(config_pv)  
 
 #%%
 # Demands
 with open('inputs/' + house+'.json') as f:
   inputs = json.load(f)
-demands = compute_demand(inputs,N)
 
+demands = compute_demand(inputs,N,inputs['members'],inputs['thermal_parameters'])
 
 #%%
+# Economic parameters
+with open('inputs/econ_param.json','r') as f:
+    econ_param = json.load(f)
 
+FixedControl   = econ_param[namecase]['FixedControlCost']
+AnnualControl  = econ_param[namecase]['AnnualControlCost']
+thresholdprice = econ_param[namecase]['thresholdprice']
+
+#%%
+# PV and battery technology parameters
+with open('inputs/pvbatt_param.json','r') as f:
+    pvbatt_param = json.load(f)
+
+#%%
+# Time of use tariffs
+with open('inputs/tariffs.json','r') as f:
+    tariffs = json.load(f)
+
+#%%
 # Various array sizes and timesteps used throughout the code
 
 n1min  = np.size(demands['results'][0]['StaticLoad'])-1
@@ -91,55 +92,20 @@ ts_15min = 0.25 # h
 index1min  = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='T')
 index15min = pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')
 
-# PV and battery capacities and parameters initialization
-
-pvpeak = 0. # kW
-battcapacity = 0. # kWh
-
-capacities = {'CapacityPV': pvpeak, # kW
-              'CapacityBattery': battcapacity} # kWh
-
-param_tech = {'BatteryCapacity': battcapacity, # kWh
-              'BatteryEfficiency': 0.9, # -
-              'MaxPower': 7., # kW
-              'InverterEfficiency': 1., # -
-              'timestep': 0.25} # h
-
-# Economic parameteres
-
-with open(r'./inputs/economics.json') as f:
-  econ = json.load(f)
-
-scenario = 'test'
-prices = econ['prices']
-timeslots = econ['timeslots']
-
-EconomicVar = {'WACC': 0.05,          # weighted average cost of capital
-               'net_metering': False, # type of tarification scheme
-               'time_horizon': 20,    # years economic analysis
-               'C_grid_fixed':prices[scenario]['fixed'], # € annual fixed grid costs
-               'C_grid_kW': prices[scenario]['capacity'], # €/kW annual grid cost per kW 
-               'P_FtG': 40.} # €/MWh electricity price to sell to the grid
-
-Inv = {'FixedPVCost':0, # €
-        'PVCost_kW':1500, #€/kWp
-        'FixedBatteryCost':0, # €
-        'BatteryCost_kWh':600, # €/kWh
-        'PVLifetime':20, # years
-        'BatteryLifetime':10, # years
-        'OM':0.015, # eur/year/eur of capex (both for PV and battery)
-        'FixedControlCost': FixedControl, # €
-        'AnnualControlCost': AnnualControl} # €/year
-
+#%%
 # Electricity prices array - 15 min timestep
+scenario = econ_param[namecase]['scenario']
+timeslots = tariffs['timeslots']
+prices = tariffs['prices']
 yprices_15min = yearlyprices(scenario,timeslots,prices,stepperh_15min) # €/kWh
 
+#%%
 
 """
 3) Most representative curve
 """
 
-idx = MostRepCurve(demands['results'],columns,yprices_15min,ts_15min,EconomicVar)
+idx = MostRepCurve(demands['results'],columns,yprices_15min,ts_15min,econ_param[namecase])
 
 # Inputs relative to the most representative curve:
 inputs = demands['input_data'][idx]
@@ -211,7 +177,7 @@ else:
     pv_15min = pd.Series(data=pv_15min,index=index15min) # kW
 
 # Update PV capacity
-capacities['CapacityPV'] = pvpeak # kWp
+pvbatt_param['PVCapacity'] = pvpeak # kWp
 
 
 """
@@ -219,13 +185,9 @@ capacities['CapacityPV'] = pvpeak # kWp
 """
 
 if BattBool:
-    battcapacity = 10. # kWh
+    pvbatt_param['BatteryCapacity'] = 10. # kWh
 else:
-    battcapacity = 0. # kWh
-
-# Update battery capacity
-param_tech['BatteryCapacity'] = battcapacity # kWh
-capacities['CapacityBattery'] = battcapacity # kWh
+    pvbatt_param['BatteryCapacity'] = 0. # kWh
 
 
 """
@@ -508,7 +470,7 @@ if BattBool:
 #   - fixed and capacity-related tariffs
 
 demand_final = pd.Series(data=demand_final,index=index15min)
-outs = ResultsAnalysis(capacities,pv_15min,demand_ref,demand_final,yprices_15min,prices,scenario,EconomicVar,Inv)
+outs = ResultsAnalysis(pvbatt_param['PVCapacity'],pvbatt_param['BatteryCapacity'],pv_15min,demand_ref,demand_final,yprices_15min,prices,scenario,econ_param[namecase])
 
 
 """
@@ -526,8 +488,6 @@ outs['el_shifted'] = 0.
 # Saving results to excel
 file = 'simulations/test'+house+'.xlsx'
 WriteResToExcel(file,sheet,outs,row)
-
-
 
 
 exectime = (time.time() - start_time)/60.

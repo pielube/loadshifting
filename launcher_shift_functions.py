@@ -31,7 +31,7 @@ from temp_functions import EconomicAnalysis
 
 
     
-def MostRepCurve(demands,columns,ElPrices,timestep,EconomicVar):
+def MostRepCurve(demands,columns,ElPrices,timestep,econ_param):
     
     """
     Choosing most representative curve among a list of demand curves
@@ -49,8 +49,8 @@ def MostRepCurve(demands,columns,ElPrices,timestep,EconomicVar):
     
     # Technology parameters required by economic analysis
     # PV and battery forced to be 0
-    inputs = {'CapacityPV': 0.,
-              'CapacityBattery': 0.}
+    inputs = {'PVCapacity': 0.,
+              'BatteryCapacity': 0.}
     
     # Technology costs required economic analysis
     # Not relevant
@@ -93,7 +93,7 @@ def MostRepCurve(demands,columns,ElPrices,timestep,EconomicVar):
         inputs['SC'] = outputs['inv2load']
         inputs['FromBattery'] = outputs['store2inv']
         
-        out = EconomicAnalysis(inputs,EconomicVar,Inv,ElPrices,timestep,inputs['Load'])
+        out = EconomicAnalysis(inputs,econ_param,ElPrices,timestep,inputs['Load'])
         results.append(out['ElBill'])
     
     meanelbill = mean(results)
@@ -265,7 +265,7 @@ def HouseHeatingShiftSC(inputs,nminutes,Tamb,irr,Qintgains,QheatHP,pv,Tset):
 
 
 
-def ResultsAnalysis(capacities,pv,demand_ref,demand,ElPrices,prices,scenario,EconomicVar,Inv):
+def ResultsAnalysis(pv_capacity,batt_capacity,pv,demand_ref,demand,ElPrices,prices,scenario,econ_param):
     
     # Running prosumpy to get SC and SSR
     # All shifting must have already been modelled, including battery
@@ -284,8 +284,8 @@ def ResultsAnalysis(capacities,pv,demand_ref,demand,ElPrices,prices,scenario,Eco
 
     Epspy = {}
     
-    Epspy['CapacityPV']      = capacities['CapacityPV']
-    Epspy['CapacityBattery'] = capacities['CapacityBattery']
+    Epspy['PVCapacity']      = pv_capacity
+    Epspy['BatteryCapacity'] = batt_capacity
     Epspy['ACGeneration'] = pv.to_numpy()
     Epspy['Load']         = demand.to_numpy()
     Epspy['ToGrid']       = res_pspy['inv2grid']
@@ -297,7 +297,7 @@ def ResultsAnalysis(capacities,pv,demand_ref,demand,ElPrices,prices,scenario,Eco
     
     timestep = 0.25
     
-    res_EA = EconomicAnalysis(Epspy,EconomicVar,Inv,ElPrices,timestep,demand_ref)
+    res_EA = EconomicAnalysis(Epspy,econ_param,ElPrices,timestep,demand_ref)
     
     # Preparing function outputs
     
@@ -313,8 +313,8 @@ def ResultsAnalysis(capacities,pv,demand_ref,demand,ElPrices,prices,scenario,Eco
     consreffull   = np.sum(demand_ref*full)*timestep
     consrefpeak   = np.sum(demand_ref*peak)*timestep
 
-    out['CapacityPV']      = res_EA['CapacityPV'] 
-    out['CapacityBattery'] = res_EA['CapacityBattery'] 
+    out['PVCapacity']      = res_EA['PVCapacity'] 
+    out['BatteryCapacity'] = res_EA['BatteryCapacity'] 
     
     out['CostPV']      = res_EA['CostPV']
     out['CostBattery'] = res_EA['CostBattery']
@@ -363,8 +363,8 @@ def WriteResToExcel(file,sheet,results,row):
     
     df = pd.read_excel(file,sheet_name=sheet,header=0,index_col=0)
     
-    df.at[row,'PV [kWp]'] = results['CapacityPV']
-    df.at[row,'Battery [kWh]'] = results['CapacityBattery']
+    df.at[row,'PV [kWp]'] = results['PVCapacity']
+    df.at[row,'Battery [kWh]'] = results['BatteryCapacity']
     
     df.at[row,'Investissement PV [€]'] = results['CostPV'] 
     df.at[row,'Investissement Battery [€]'] = results['CostBattery']
