@@ -6,7 +6,7 @@ import json
 import time
 from prosumpy import dispatch_max_sc,print_analysis
 from temp_functions import yearlyprices,HPSizing,COP_Tamb
-from launcher_shift_functions import MostRepCurve,HouseHeatingShiftSC,ResultsAnalysis,WriteResToExcel
+from launcher_shift_functions import MostRepCurve,DHWShiftTariffs,HouseHeatingShiftSC,ResultsAnalysis,WriteResToExcel
 from temp_functions import shift_appliance
 from pv import pvgis_hist
 from demands import compute_demand
@@ -293,52 +293,55 @@ if DHWBool:
 
     print('--- Shifting domestic hot water ---')
 
-    
-    if PVBool: # strategy based on enhancing self-consumption
-       
-        # demand of domestic hot water (to be used with battery equivalent approach)
-        demand_dhw = demand_pspy['DomesticHotWater'] # kW
-    
-        # equivalent battery
-        # TODO check these entries
-        Vcyl = inputs['DHW']['Vcyl'] # litres
-        Ttarget = inputs['DHW']['Ttarget'] # °C
-        PowerDHWMax = inputs['DHW']['PowerElMax']/1000. # kW
+    # demand of domestic hot water (to be used with battery equivalent approach)
+    demand_dhw = demand_pspy['DomesticHotWater'] # kW
 
-        Tmin = 45. # °C
-        Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
-        capacity = Ccyl*(Ttarget-Tmin)/3600./1000. # kWh
-          
-        param_tech_dhw = {'BatteryCapacity': capacity,
-                          'BatteryEfficiency': 1.,
-                          'MaxPower': PowerDHWMax,
-                          'InverterEfficiency': 1.,
-                          'timestep': .25,
-                          'SelfDisLin': 0., # not used right now
-                          'SelfDisFix':0.}  # not used right now
-    
+    # equivalent battery
+    # TODO check these entries
+    Vcyl = inputs['DHW']['Vcyl'] # litres
+    Ttarget = inputs['DHW']['Ttarget'] # °C
+    PowerDHWMax = inputs['DHW']['PowerElMax']/1000. # kW
+
+    Tmin = 45. # °C
+    Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
+    capacity = Ccyl*(Ttarget-Tmin)/3600./1000. # kWh
+      
+    param_tech_dhw = {'BatteryCapacity': capacity,
+                      'BatteryEfficiency': 1.,
+                      'MaxPower': PowerDHWMax,
+                      'InverterEfficiency': 1.,
+                      'timestep': .25,
+                      'SelfDisLin': 0., # not used right now
+                      'SelfDisFix':0.}  # not used right now
+        
+    if PVBool: # strategy based on enhancing self-consumption
+
         # prosumpy
         outs = dispatch_max_sc(pv_15min_res,demand_dhw,param_tech_dhw,return_series=False)
         demand_dhw_shift = outs['inv2load']+outs['grid2load'] # kW
         demand_dhw_shift = demand_dhw_shift.astype('float64') # kW
-    
-        # updating demand dataframe
-        demand_pspy.insert(len(demand_pspy.columns),'DomesticHotWaterShift',demand_dhw_shift,True) # kW
-        
-        # check on shifting
-        conspre  = np.sum(demand_pspy['DomesticHotWater'])/4. # kWh
-        conspost = np.sum(demand_pspy['DomesticHotWaterShift'])/4. # kWh
-        print("Original consumption: {:.2f} kWh".format(conspre))
-        print("Consumption after shifting (check): {:.2f} kWh".format(conspost))
         
         # updating residual pv
         pv_15min_res = [a if a>0 else 0 for a in (pv_15min_res.to_numpy()-demand_dhw_shift)] # kW
         pv_15min_res = pd.Series(data=pv_15min_res,index=index15min) # kW
         pv_1min_res  = pv_15min_res.resample('T').pad().reindex(index1min,method='nearest').to_numpy() # kW 
         
-    #else: # strategy based on tariffs
-        # TODO (function as in prosumpy but based on el price)
-
+    else: # strategy based on tariffs
+        
+        # prosumpy inspired tariffs based function
+        outs = DHWShiftTariffs(demand_dhw, yprices_15min, thresholdprice, param_tech_dhw, return_series=False)
+        demand_dhw_shift = outs['grid2load']+outs['grid2store'] # kW
+        demand_dhw_shift = demand_dhw_shift.astype('float64')   # kW
+        
+    # updating demand dataframe
+    demand_pspy.insert(len(demand_pspy.columns),'DomesticHotWaterShift',demand_dhw_shift,True) # kW
+    
+    # check on shifting
+    conspre  = np.sum(demand_pspy['DomesticHotWater'])/4. # kWh
+    conspost = np.sum(demand_pspy['DomesticHotWaterShift'])/4. # kWh
+    print("Original consumption: {:.2f} kWh".format(conspre))
+    print("Consumption after shifting (check): {:.2f} kWh".format(conspost))
+        
 """
 8C) Load shifting - House heating
 """ 
