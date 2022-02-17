@@ -188,6 +188,68 @@ def AdmTimeWinShift(app,admtimewin,probshift):
     return app_n,enshift
 
 
+def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
+    
+    """ Tariffs-based battery dispatch algorithm.
+    Battery is charged when energy price is below the threshold limit and as long as it is not fully charged.
+    It is discharged as soon as the energy price is over the threshold limit and as long as it is not fully discharged.
+
+    Arguments:
+        demand (pd.Series): Vector of household consumption, kW
+        prices (pd.Series): Vector of energy prices, €/kW
+        thresholdprice (float): Price under which energy is bought to be stored in the battery, €/kW
+        param (dict): Dictionary with the simulation parameters:
+                timestep (float): Simulation time step (in hours)
+                BatteryCapacity: Available battery capacity (i.e. only the the available DOD), kWh
+                MaxPower: Maximum battery charging or discharging powers (assumed to be equal), kW
+        return_series(bool): if True then the return will be a dictionary of series. Otherwise it will be a dictionary of ndarrays.
+                        It is reccommended to return ndarrays if speed is an issue (e.g. for batch runs).
+    Returns:
+        dict: Dictionary of Time series
+
+    """
+
+    bat_size_e_adj = param['BatteryCapacity']
+    bat_size_p_adj = param['MaxPower']
+    timestep = param['timestep']
+    
+    # We work with np.ndarrays as they are much faster than pd.Series
+    Nsteps = len(demand)
+    LevelOfCharge = np.zeros(Nsteps)
+    grid2store = np.zeros(Nsteps)
+    store2load = np.zeros(Nsteps)
+
+    admprices = np.where(prices <= thresholdprice,1,0)   
+    demand1 = demand.to_numpy()
+
+    LevelOfCharge[0] = bat_size_e_adj / 2.
+    
+    for i in range(1,Nsteps):
+        
+        if admprices[i] == 1: # low prices
+            if LevelOfCharge[i-1] < bat_size_e_adj:  # if battery is full
+                grid2store[i] = min((bat_size_e_adj - LevelOfCharge[i-1]) / timestep, bat_size_p_adj-demand[i])
+            LevelOfCharge[i] =  LevelOfCharge[i-1]+grid2store[i]*timestep
+                
+        else: # high prices
+            store2load[i] = min((LevelOfCharge[i-1] / timestep),demand[i],bat_size_p_adj)
+            LevelOfCharge[i] =  LevelOfCharge[i-1]-store2load[i]*timestep
+
+    grid2load = demand - store2load
+
+    out = {'grid2store': grid2store,
+           'grid2load': grid2load,
+           'store2load': store2load,
+           'LevelOfCharge': LevelOfCharge}
+    
+    if return_series:
+        out_pd = {}
+        for k, v in out.items():  # Create dictionary of pandas series with same index as the input demand
+            out_pd[k] = pd.Series(v, index=demand.index)
+        out = out_pd
+        
+    return out
+
 
 def HouseHeatingShiftSC(inputs,nminutes,Tamb,irr,Qintgains,QheatHP,pv,Tset):
 
