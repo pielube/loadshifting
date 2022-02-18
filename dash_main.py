@@ -346,7 +346,8 @@ def display_graph(n_clicks,week,dropdown_house):
     
 
     n_middle = int(len(load)/2)
-    idx = load.index[(load.index.isocalendar().week==week) & (load.index.isocalendar().year==load.index.isocalendar().year[n_middle])]
+    year = load.index.isocalendar().year[n_middle]
+    idx = load.index[(load.index.isocalendar().week==week) & (load.index.isocalendar().year==year)]
     fig = go.Figure()
     for key in load:
         fig.add_trace(go.Scatter(

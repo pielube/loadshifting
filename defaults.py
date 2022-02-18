@@ -23,3 +23,9 @@ pv_power = 4000
 #battery
 bat_cap = 14
 bat_power = 4
+
+#DHW
+T_min_dhw = 45
+
+# Probability of load shifting for a particular appliance [0,1]:
+probshift = 1

@@ -10,6 +10,7 @@ from launcher_shift_functions import MostRepCurve,DHWShiftTariffs,HouseHeatingSh
 from temp_functions import shift_appliance
 from pv import pvgis_hist
 from demands import compute_demand
+import defaults
 
 
 start_time = time.time()
@@ -48,11 +49,9 @@ HeatingBool    = cases[namecase]['HeatingBool']
 EVBool         = cases[namecase]['EVBool']
 
 #%%
-# Adimensional PV curve
-with open('inputs/pv.json','r') as f:
-    config_pv = json.load(f)
-
-pvadim = pvgis_hist(config_pv)  
+# PV and battery technology parameters
+with open('inputs/pvbatt_param.json','r') as f:
+    pvbatt_param = json.load(f)
 
 #%%
 # Demands
@@ -70,10 +69,6 @@ FixedControl   = econ_param[namecase]['FixedControlCost']
 AnnualControl  = econ_param[namecase]['AnnualControlCost']
 thresholdprice = econ_param[namecase]['thresholdprice']
 
-#%%
-# PV and battery technology parameters
-with open('inputs/pvbatt_param.json','r') as f:
-    pvbatt_param = json.load(f)
 
 #%%
 # Time of use tariffs
@@ -101,8 +96,12 @@ yprices_15min = yearlyprices(scenario,timeslots,prices,stepperh_15min) # €/kWh
 
 #%%
 
+# Adimensional PV curve
+pvadim = pvgis_hist(pvbatt_param['pv'])  
+
+
 """
-3) Most representative curve
+3) Most representative demand curve
 """
 
 idx = MostRepCurve(demands['results'],columns,yprices_15min,ts_15min,econ_param[namecase])
@@ -177,17 +176,15 @@ else:
     pv_15min = pd.Series(data=pv_15min,index=index15min) # kW
 
 # Update PV capacity
-pvbatt_param['PVCapacity'] = pvpeak # kWp
+pvbatt_param['pv']['Ppeak'] = pvpeak # kWp
 
 
 """
 7) Battery size
 """
 
-if BattBool:
-    pvbatt_param['BatteryCapacity'] = 10. # kWh
-else:
-    pvbatt_param['BatteryCapacity'] = 0. # kWh
+if not BattBool:
+    pvbatt_param['battery']['BatteryCapacity'] = 0. # kWh
 
 
 """
@@ -202,11 +199,7 @@ else:
 if WetAppBool:
     
     print('--- Shifting wet appliances ---')
-
-    # Probability of load being shifted
-    # TODO add to cases inputs?
-    probshift = 1. 
-    
+   
     # Wet app demands to be shifted, 1 min timestep
     demshift = demands['results'][idx][WetAppShift][:-1] # W
 
@@ -268,8 +261,7 @@ if WetAppBool:
     
         # Calling function to shift the app
         print("---"+str(app)+"---")
-        #app_n,enshift = AdmTimeWinShift(demands['results'][idx][app],admtimewin,probshift) # W, Wh
-        app_n,ncyc,ncycshift,enshift = shift_appliance(demands[idx][app],admtimewin,probshift,max_shift=24*60)
+        app_n,ncyc,ncycshift,enshift = shift_appliance(demands[idx][app],admtimewin,defaults.probshift,max_shift=24*60)
         
         # Resizing shifted array
         app_n_series = pd.Series(data=app_n,index=index1min) # W
@@ -302,7 +294,7 @@ if DHWBool:
     Ttarget = inputs['DHW']['Ttarget'] # °C
     PowerDHWMax = inputs['DHW']['PowerElMax']/1000. # kW
 
-    Tmin = 45. # °C
+    Tmin = defaults.T_min_dhw # °C
     Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
     capacity = Ccyl*(Ttarget-Tmin)/3600./1000. # kWh
       
@@ -473,7 +465,7 @@ if BattBool:
 #   - fixed and capacity-related tariffs
 
 demand_final = pd.Series(data=demand_final,index=index15min)
-outs = ResultsAnalysis(pvbatt_param['PVCapacity'],pvbatt_param['BatteryCapacity'],pv_15min,demand_ref,demand_final,yprices_15min,prices,scenario,econ_param[namecase])
+outs = ResultsAnalysis(pvbatt_param['pv']['Ppeak'],pvbatt_param['battery']['BatteryCapacity'],pv_15min,demand_ref,demand_final,yprices_15min,prices,scenario,econ_param[namecase])
 
 
 """
