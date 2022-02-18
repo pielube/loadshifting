@@ -3,6 +3,7 @@ import random
 import numpy as np
 import pandas as pd
 from statistics import mean
+from itertools import chain
 
 from prosumpy import dispatch_max_sc
 from strobe.RC_BuildingSimulator import Zone
@@ -27,8 +28,6 @@ from temp_functions import EconomicAnalysis
 # - add description of all functions
 # - comment all functions
 # - change name of this file
-
-
 
     
 def MostRepCurve(demands,columns,ElPrices,timestep,econ_param):
@@ -101,7 +100,6 @@ def MostRepCurve(demands,columns,ElPrices,timestep,econ_param):
     index = min(range(len(var)), key=var.__getitem__)
         
     return index
-
 
 
 def AdmTimeWinShift(app,admtimewin,probshift):
@@ -251,7 +249,7 @@ def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
     return out
 
 
-def HouseHeatingShiftSC(inputs,nminutes,Tamb,irr,Qintgains,QheatHP,pv,Tset):
+def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,heatseas_end):
 
     # Rough estimation of solar gains based on data from Crest
     # Could be improved
@@ -279,52 +277,35 @@ def HouseHeatingShiftSC(inputs,nminutes,Tamb,irr,Qintgains,QheatHP,pv,Tset):
                 ach_infl=inputs['HP']['ACH_infl']/60,
                 ventilation_efficiency=inputs['HP']['VentEff'],
                 thermal_capacitance=inputs['HP']['Ctot'],
-                t_set_heating=Tset[0],
+                t_set_heating=Tset[0], #inputs['HP']['Tthermostatsetpoint'],
                 max_heating_power=QheatHP)
             
-    Tair = max(16.,Tamb[0])  + random.random()*2. #°C
     Qheat = np.zeros(nminutes)
     Tinside = np.zeros(nminutes)
-    Tsetold = Tset[0]
 
-    for i in range(nminutes):
+    d1 = 60*24*heatseas_end-1
+    d2 = 60*24*heatseas_st-1
+    concatenated = chain(range(1,d1), range(d2,nminutes))
+
+    Tair = max(16.,Tamb[0])
+    House.t_set_heating = Tset[0]    
+    House.solve_energy(Qintgains[0], Qsolgains[0], Tamb[0], Tair)
+    Qheat[0]   = House.heating_demand
+    Tinside[0] = House.t_air    
+
+    for i in concatenated:
         
-        if 60*24*151 < i <= 60*24*244: # heating season
-            Qheat[i] = 0
-            if i == 60*24*244:
-                Tair = Tamb[i]
-        else:
-            
-            if pv[i] > 0.:
-                Tset_ts = 23.
-            else:
-                Tset_ts = Tset[i]
-                
-            if Tset_ts != Tsetold:
-                
-                House = Zone(window_area=inputs['HP']['Aglazed'],
-                            walls_area=inputs['HP']['Aopaque'],
-                            floor_area=inputs['HP']['Afloor'],
-                            room_vol=inputs['HP']['volume'],
-                            total_internal_area=inputs['HP']['Atotal'],
-                            u_walls=inputs['HP']['Uwalls'],
-                            u_windows=inputs['HP']['Uwindows'],
-                            ach_vent=inputs['HP']['ACH_vent']/60,
-                            ach_infl=inputs['HP']['ACH_infl']/60,
-                            ventilation_efficiency=inputs['HP']['VentEff'],
-                            thermal_capacitance=inputs['HP']['Ctot'],
-                            t_set_heating=Tset_ts,
-                            max_heating_power=QheatHP)
-                
-            House.solve_energy(Qintgains[i], Qsolgains[i], Tamb[i], Tair)
-            Tair      = House.t_air
-            Qheat[i] = House.heating_demand
-            Tinside[i] = Tair
-            
-            Tsetold = Tset_ts
-           
-    return Qheat, Tinside
+        if i == d2:
+            Tinside[i-1] = max(16.,Tamb[i-1])
 
+        if Tset[i] != Tset[i-1]:
+            House.t_set_heating = Tset[i]    
+            
+        House.solve_energy(Qintgains[i], Qsolgains[i], Tamb[i], Tinside[i-1])
+        Qheat[i]   = House.heating_demand
+        Tinside[i] = House.t_air
+                       
+    return Qheat, Tinside
 
 
 def ResultsAnalysis(pv_capacity,batt_capacity,pv,demand_ref,demand,ElPrices,prices,scenario,econ_param):
@@ -418,7 +399,6 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pv,demand_ref,demand,ElPrices,pric
     out['PI']  = res_EA['PI']
     
     return out
-
 
 
 def WriteResToExcel(file,sheet,results,row):

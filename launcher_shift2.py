@@ -6,7 +6,7 @@ import json
 import time
 from prosumpy import dispatch_max_sc,print_analysis
 from temp_functions import yearlyprices,HPSizing,COP_Tamb
-from launcher_shift_functions import MostRepCurve,DHWShiftTariffs,HouseHeatingShiftSC,ResultsAnalysis,WriteResToExcel
+from launcher_shift_functions import MostRepCurve,DHWShiftTariffs,HouseHeating,ResultsAnalysis,WriteResToExcel
 from temp_functions import shift_appliance
 from pv import pvgis_hist
 from demands import compute_demand
@@ -172,13 +172,13 @@ if PVBool:
     pv_1min_res = [a if a>0. else 0. for a in pv_1min-demnoshift] # kW 
     pv_1min_res = np.array(pv_1min_res) # kW
     
+    # Update PV capacity
+    pvbatt_param['PVCapacity'] = pvpeak # kWp
+    
 else:
     pv_15min = np.zeros(n15min) # kW
     pv_15min = pd.Series(data=pv_15min,index=index15min) # kW
-
-# Update PV capacity
-pvbatt_param['PVCapacity'] = pvpeak # kWp
-
+    pvbatt_param['PVCapacity'] = 0. # kWp
 
 """
 7) Battery size
@@ -329,7 +329,7 @@ if DHWBool:
     else: # strategy based on tariffs
         
         # prosumpy inspired tariffs based function
-        outs = DHWShiftTariffs(demand_dhw, yprices_15min, thresholdprice, param_tech_dhw, return_series=False)
+        outs = DHWShiftTariffs(demand_dhw, yprices_15min, prices[scenario][thresholdprice], param_tech_dhw, return_series=False)
         demand_dhw_shift = outs['grid2load']+outs['grid2store'] # kW
         demand_dhw_shift = demand_dhw_shift.astype('float64')   # kW
         
@@ -344,8 +344,7 @@ if DHWBool:
         
 """
 8C) Load shifting - House heating
-""" 
-   
+"""  
 
 # TODO
 # - save T inside house if needed to check how shift affects it
@@ -354,6 +353,8 @@ if DHWBool:
 #   use TMY obtained from PVGIS everywhere
 # - add fraction of max power when sizing HP
 # - revise heating season
+# - check how much a 15 min ts would affect the results
+# - to decide how to handle T increase
 
 if HeatingBool:
     
@@ -371,50 +372,103 @@ if HeatingBool:
 
     # T setpoint based on occupancy
     Tset = [20. if a == 1 else 15. for a in occupancy] # °C
+    Tset = np.array(Tset)
     
     # Heat pump sizing
     fracmaxP = 0.8
     QheatHP = HPSizing(inputs,fracmaxP) # W
     
+    # Heating season
+    heatseas_st = 244
+    heatseas_end = 151
+    
     if PVBool: # strategy based on enhancing self-consumption
+    
+        # Strategy here:
+        # increasing setpoint T of Tincrease when:
+        # residual PV > 0.
+    
+        Tincrease = 3.    
+        Tset[pv_1min_res>0] += Tincrease
+   
+    else: # strategy based on tariffs
+    
+        # Strategy here:
+        # increasing setpoint T of Tincrease when:
+        # in the 3 hour time window before heating on
+        # AND
+        # tariffs are low
+    
+        # Shifting based on tariffs-specific inputs
+        Tincrease = 3. # °C T increase wrt min T setpoint (heating off)
+        t_preheat = 3  # h max time allowed to consider pre-heating
+        t_preheat_min = t_preheat*60
         
-        # Heat shifted
-        Qshift,Tin_shift = HouseHeatingShiftSC(inputs,n1min,temp,irr,Qintgains,QheatHP,pv_1min,Tset) # W, °C
+        # Hours with admissible prices
+        yprices_1min = yearlyprices(scenario,timeslots,prices,stepperh_1min) # €/kWh
+        admprices = np.where(yprices_1min <= prices[scenario][thresholdprice]/1000,1.,0.)
         
-        # T analysis
-        Twhenon    = Tin_shift*occupancy # °C
-        Twhenon_hs = Twhenon[np.r_[0:60*24*151,60*24*244:-1]] # °C
-        whenon     = np.nonzero(Twhenon_hs)
-        Twhenon_hs_mean = np.mean(Twhenon_hs[whenon]) # °C
-        Twhenon_hs_min  = np.min(Twhenon_hs[whenon]) # °C
-        Twhenon_hs_max  = np.max(Twhenon_hs[whenon]) # °C
+        # Hours close enough to when heating will be required
+        offset = Tset.min()
+        Tset = Tset - offset
         
-        # Electricity consumption
-        Eshift = np.zeros(n1min) 
-        for i in range(n1min):
-            COP = COP_Tamb(temp[i])
-            Eshift[i] = Qshift[i]/COP # W
+        mask_z = Tset>0
+        idx_z = np.flatnonzero(mask_z)
+        idx_nz = np.flatnonzero(~mask_z)
         
-        # updating demand dataframe
-        demand_HP_shift = pd.Series(data=Eshift,index=pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='min'))
-        demand_HP_shift = demand_HP_shift.resample('15Min').mean().to_numpy()/1000. # kW
-        demand_pspy.insert(len(demand_pspy.columns),'HeatPumpPowerShift',demand_HP_shift,True) #kW
+        idx_z = np.r_[idx_z,len(Tset)]
         
-        # checking
-        HPcons_pre  = np.sum(demand_pspy['HeatPumpPower'])/4. # kWh
-        HPcons_post = np.sum(demand_pspy['HeatPumpPowerShift'])/4. # kWh
-        HPconsincr = (HPcons_post-HPcons_pre)/HPcons_pre*100 # %
-        print("Original consumption: {:.2f} kWh".format(HPcons_pre))
-        print("Consumption after shifting: {:.2f} kWh".format(HPcons_post))
-        print("Consumption increase: {:.2f}%".format(HPconsincr))
-
+        timeleftarr = np.zeros(len(Tset), dtype=int)
+        idx = np.searchsorted(idx_z, idx_nz)
+        timeleftarr[~mask_z] = idx_z[idx] - idx_nz
         
-        # updating residual PV
+        admhours = [1. if 0<a<t_preheat_min else 0. for a in timeleftarr]
+        admhours = np.array(admhours)
+        
+        # Resulting hours in which to increase setpoint
+        idx = np.where(admprices*admhours)
+        
+        # Recalculating T setpoint array with increase
+        Tset += offset
+        Tset[idx] += Tincrease
+        
+    
+    Qshift,Tin_shift = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,heatseas_st,heatseas_end)
+    
+    # T analysis
+    Twhenon    = Tin_shift*occupancy # °C
+    Twhenon_hs = Twhenon[np.r_[0:60*24*heatseas_end,60*24*heatseas_st:-1]] # °C
+    whenon     = np.nonzero(Twhenon_hs)
+    Twhenon_hs_mean = np.mean(Twhenon_hs[whenon]) # °C
+    Twhenon_hs_min  = np.min(Twhenon_hs[whenon]) # °C
+    Twhenon_hs_max  = np.max(Twhenon_hs[whenon]) # °C
+    
+    # Electricity consumption
+    Eshift = np.zeros(n1min) 
+    for i in range(n1min):
+        COP = COP_Tamb(temp[i])
+        Eshift[i] = Qshift[i]/COP # W
+    
+    # Updating demand dataframe
+    demand_HP_shift = pd.Series(data=Eshift,index=pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='min'))
+    demand_HP_shift = demand_HP_shift.resample('15Min').mean().to_numpy()/1000. # kW
+    demand_pspy.insert(len(demand_pspy.columns),'HeatPumpPowerShift',demand_HP_shift,True) #kW
+    
+    # Check results
+    HPcons_pre  = np.sum(demand_pspy['HeatPumpPower'])/4. # kWh
+    HPcons_post = np.sum(demand_pspy['HeatPumpPowerShift'])/4. # kWh
+    HPconsincr = (HPcons_post-HPcons_pre)/HPcons_pre*100 # %
+    print("Original consumption: {:.2f} kWh".format(HPcons_pre))
+    print("Consumption after shifting: {:.2f} kWh".format(HPcons_post))
+    print("Consumption increase: {:.2f}%".format(HPconsincr))
+    
+    if PVBool:        
+        # Updating residual PV
         pv_15min_res = [a if a>0 else 0 for a in (pv_15min_res.to_numpy()-demand_HP_shift)] # kW
         pv_15min_res = pd.Series(data=pv_15min_res,index=index15min) # kW
-        pv_1min_res  = pv_15min_res.resample('T').pad().reindex(index1min,method='nearest').to_numpy() # kW   
+        pv_1min_res  = pv_15min_res.resample('T').pad().reindex(index1min,method='nearest').to_numpy() # kW 
     
-    #else: # strategy based on tariffs
+        
 
 """
 8D) Load shifting - EV
