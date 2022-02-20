@@ -1,9 +1,7 @@
 {
-"case12": {
-		   "PVCapacity": 0.0,
-           "BatteryCapacity": 0.0,
-           "BatteryEfficiency": 0.9,
-           "MaxPower": 7.0,
-           "InverterEfficiency": 1.0
-          }
+"PVCapacity": 0.0,
+"BatteryCapacity": 0.0,
+"BatteryEfficiency": 0.9,
+"MaxPower": 7.0,
+"InverterEfficiency": 1.0
 }

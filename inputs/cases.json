@@ -1,17 +1,1911 @@
 {
-"case12": {
-	       "house": "4f",
-           "sheet": "4F",
-		   "row": 11,
-           "columns": ["StaticLoad","TumbleDryer","DishWasher","WashingMachine","DomesticHotWater","HeatPumpPower"],
-		   "TechsShift": [],
-		   "WetAppBool": false, 
-           "WetAppManBool": false,
-           "WetAppAutoBool": false,
-           "PVBool": true,
-           "BattBool": false,
-           "DHWBool": true,
-           "HeatingBool": true,
-           "EVBool": false
-           }
+    "case1": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 0,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case2": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 1,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "WetAppBool": true,
+        "WetAppManBool": true,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case3": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 2,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case4": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 3,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case5": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 4,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "WetAppBool": true,
+        "WetAppManBool": true,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case6": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 5,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case7": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 6,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case8": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 7,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case9": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 8,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case10": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 9,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [
+            "DomesticHotWater"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case11": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 10,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case12": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 11,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [
+            "DomesticHotWater"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case13": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 12,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case14": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 13,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [
+            "DomesticHotWater"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case15": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 14,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case16": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 15,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
+    },
+    "case17": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 16,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case18": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 17,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
+    },
+    "case19": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 18,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case20": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 19,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
+    },
+    "case21": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 20,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case22": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 21,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": true
+    },
+    "case23": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 22,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case24": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 23,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": true
+    },
+    "case25": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 24,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case26": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 25,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": true,
+        "EVBool": true
+    },
+    "case27": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 26,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case28": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 27,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": true
+    },
+    "case29": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 28,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case30": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 29,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": true
+    },
+    "case31": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 30,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case32": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 31,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": true
+    },
+    "case33": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 32,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case34": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 33,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": true
+    },
+    "case35": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 34,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case36": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 35,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": true
+    },
+    "case37": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 36,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case38": {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 37,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": true
+    },
+    "case39": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 38,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case40": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 39,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "WetAppBool": true,
+        "WetAppManBool": true,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case41": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 40,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case42": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 41,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case43": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 42,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "WetAppBool": true,
+        "WetAppManBool": true,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case44": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 43,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case45": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 44,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case46": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 45,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case47": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 46,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case48": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 47,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [
+            "DomesticHotWater"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case49": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 48,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case50": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 49,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [
+            "DomesticHotWater"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case51": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 50,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case52": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 51,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [
+            "DomesticHotWater"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case53": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 52,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case54": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 53,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
+    },
+    "case55": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 54,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case56": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 55,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
+    },
+    "case57": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 56,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case58": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 57,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
+    },
+    "case59": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 58,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case60": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 59,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": true
+    },
+    "case61": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 60,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case62": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 61,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": true
+    },
+    "case63": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 62,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case64": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 63,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": true,
+        "EVBool": true
+    },
+    "case65": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 64,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case66": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 65,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": true
+    },
+    "case67": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 66,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case68": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 67,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": true
+    },
+    "case69": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 68,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case70": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 69,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": true
+    },
+    "case71": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 70,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case72": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 71,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": true
+    },
+    "case73": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 72,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case74": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 73,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": true
+    },
+    "case75": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 74,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case76": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 75,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "EVCharging"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": true
+    },
+    "case77": {
+        "house": "1f",
+        "sheet": "1F",
+        "row": 76,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case78": {
+        "house": "1f",
+        "sheet": "1F",
+        "row": 77,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "WetAppBool": true,
+        "WetAppManBool": true,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case79": {
+        "house": "1f",
+        "sheet": "1F",
+        "row": 78,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case80": {
+        "house": "1f",
+        "sheet": "1F",
+        "row": 79,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case81": {
+        "house": "1f",
+        "sheet": "1F",
+        "row": 80,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [
+            "DomesticHotWater"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case82": {
+        "house": "1f",
+        "sheet": "1F",
+        "row": 81,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case83": {
+        "house": "1f",
+        "sheet": "1F",
+        "row": 82,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "TechsShift": [
+            "DomesticHotWater",
+            "HeatPumpPower"
+        ],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
+    }
 }

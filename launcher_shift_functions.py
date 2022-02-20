@@ -401,9 +401,20 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pv,demand_ref,demand,ElPrices,pric
     return out
 
 
-def WriteResToExcel(file,sheet,results,row):
+def WriteResToExcel(file,sheet,results,econ_param,tariff,row):
     
     df = pd.read_excel(file,sheet_name=sheet,header=0,index_col=0)
+    
+    df.at[row,'Investissement fixe pilotage [€]'] = econ_param['FixedControlCost']
+    df.at[row,'Investissement annuel pilotage [€] (abonnement, … )'] = econ_param['AnnualControlCost']
+    df.at[row,"Année d'étude"] = econ_param['time_horizon']
+    df.at[row,"Valeur de vendue de l'élec [€/kWh]"] = econ_param['P_FtG']/1000.
+    df.at[row,'Heure Talon [1h-7h]  [€/kWh]'] = tariff['heel']/1000.
+    df.at[row,'Heure creuse [23h-1h et 7h-10h]  [€/kWh]'] = tariff['hollow']/1000.
+    df.at[row,'Heure pleine [10h-18h et 21h-23h]  [€/kWh]'] = tariff['full']/1000.
+    df.at[row,'Heure pointe [18h-21h]  [€/kWh]'] = tariff['peak']/1000.
+    df.at[row,'Fixe [€/an]'] = econ_param['C_grid_fixed']
+    df.at[row,'Capacitaire [€/kW]'] = econ_param['C_grid_kW']
     
     df.at[row,'PV [kWp]'] = results['PVCapacity']
     df.at[row,'Battery [kWh]'] = results['BatteryCapacity']
