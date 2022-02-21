@@ -52,6 +52,7 @@ with open('inputs/housetypes.json','r') as f:
 
 for jjj in idx_casestobesim:
     namecase = 'case'+str(jjj+1)
+    namecase = 'default'
     
     print('###########################')
     print('        Case'+str(jjj+1))
@@ -77,10 +78,7 @@ for jjj in idx_casestobesim:
     AnnualControl  = econ_param[namecase]['AnnualControlCost']
     thresholdprice = econ_param[namecase]['thresholdprice']
     
-    
-    # Demands
-    # with open('inputs/' + house+'.json') as f:
-    #     inputs = json.load(f)
+
     inputs = housetypes[house]
     demands = compute_demand(inputs,N,inputs['members'],inputs['thermal_parameters'])
     
@@ -480,6 +478,7 @@ for jjj in idx_casestobesim:
     """
     
     #TODO
+    demand_pspy['EVChargingShift'] = demand_pspy['EVCharging']              # temporary value to run the rest of the code
     
     """
     8E) Final aggregated demand before battery shifting
@@ -509,11 +508,9 @@ for jjj in idx_casestobesim:
         print('--- Shifting resulting demand with battery ---')
          
         # Battery applied to demand profile shifted by all other shifting techs
-        param_tech_batt_pspy = {'BatteryCapacity': pvbatt_param['BatteryCapacity'],
-                                'BatteryEfficiency': pvbatt_param['BatteryEfficiency'],
-                                'MaxPower': pvbatt_param['MaxPower'],
-                                'InverterEfficiency': pvbatt_param['InverterEfficiency'],
-                                'timestep': .25} 
+        param_tech_batt_pspy = pvbatt_param['battery']
+        param_tech_batt_pspy['timestep']=.25
+        
         outs = dispatch_max_sc(pv_15min,demand_prebatt,param_tech_batt_pspy,return_series=False)
         print_analysis(pv_15min,demand_prebatt,param_tech_batt_pspy, outs)
         
