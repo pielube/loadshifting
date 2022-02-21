@@ -313,7 +313,7 @@ def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,hea
 
 def ResultsAnalysis(pv_capacity,batt_capacity,pv,demand_ref,demand,ElPrices,prices,scenario,econ_param):
     
-    # Running prosumpy to get SC and SSR
+    # Running prosumpy to get SC and SSR and energy fluxes for economic analysis
     # All shifting must have already been modelled, including battery
     # param_tech is hence defined here and battery forced to be 0
     
@@ -324,12 +324,8 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pv,demand_ref,demand,ElPrices,pric
                   'timestep': 0.25}
     
     res_pspy = dispatch_max_sc(pv,demand,param_tech,return_series=False)
-    #print_analysis(pv, demand, param_tech, outputs)
-
-    # Economic analysis
 
     Epspy = {}
-    
     Epspy['PVCapacity']      = pv_capacity
     Epspy['BatteryCapacity'] = batt_capacity
     Epspy['ACGeneration'] = pv.to_numpy()
@@ -337,13 +333,31 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pv,demand_ref,demand,ElPrices,pric
     Epspy['ToGrid']       = res_pspy['inv2grid']
     Epspy['FromGrid']     = res_pspy['grid2load']
     Epspy['SC']           = res_pspy['inv2load']
-    # Not used by economic analysis 
-    # and would be all 0 considerng how prosumpy has been used
-    #Epspy['FromBattery'] = outputs['store2inv']
+    # Not used by economic analysis and would be all 0 considerng how prosumpy has been used
+    # Epspy['FromBattery'] = outputs['store2inv']
     
     timestep = 0.25
     
     res_EA = EconomicAnalysis(Epspy,econ_param,ElPrices,timestep,demand_ref)
+    
+    # Running prosumpy for reference case with only PV
+    # Used in another economic analysis to get NPV, PBP and PI
+    # of the only shifting part, considering PV in the ref case
+    
+    demand_ref_series = pd.Series(data=demand_ref,index=demand.index)
+    res_pspy_pv = dispatch_max_sc(pv,demand_ref_series,param_tech,return_series=False)
+    
+    Epspy_pv = {}
+    Epspy_pv['PVCapacity']      = pv_capacity
+    Epspy_pv['BatteryCapacity'] = 0.
+    Epspy_pv['ACGeneration'] = pv.to_numpy()
+    Epspy_pv['Load']         = demand_ref
+    Epspy_pv['ToGrid']       = res_pspy_pv['inv2grid']
+    Epspy_pv['FromGrid']     = res_pspy_pv['grid2load']
+    Epspy_pv['SC']           = res_pspy_pv['inv2load']
+    
+    res_EA_pv = EconomicAnalysisRefPV(Epspy,econ_param,ElPrices,timestep,Epspy_pv)
+    
     
     # Preparing function outputs
     
@@ -401,6 +415,13 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pv,demand_ref,demand,ElPrices,pric
     out['NPV'] = res_EA['NPV']
     out['PI']  = res_EA['PI']
     
+    out['PBP_onlyshift'] = res_EA_pv['PBP']
+    out['NPV_onlyshift'] = res_EA_pv['NPV']
+    out['PI_onlyshift']  = res_EA_pv['PI']
+
+    out['el_netexpend_onlyshift'] = res_EA_pv['ElBill']    
+    out['el_netexpend_onlyshift_ref'] = res_EA_pv['ElBill_ref']
+    
     return out
 
 
@@ -457,8 +478,12 @@ def WriteResToExcel(file,sheet,results,econ_param,tariff,row):
     df.at[row,"Coût de l'électricité [€/kWh]"] = results['el_costperkwh']
         
     df.at[row,'PBP [years]'] = results['PBP']
-    df.at[row,'NPV [€]'] = results['NPV']
-    df.at[row,'PI [-]'] = results['PI'] 
+    df.at[row,'NPV [€]']     = results['NPV']
+    df.at[row,'PI [-]']      = results['PI'] 
+    
+    df.at[row,'PBP_onlyshift [years]'] = results['PBP_onlyshift']
+    df.at[row,'NPV_onlyshift [€]']     = results['NPV_onlyshift']
+    df.at[row,'PI_onlyshift [-]']      = results['PI_onlyshift'] 
     
     df.to_excel(file,sheet_name=sheet)
 
