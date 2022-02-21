@@ -29,3 +29,7 @@ T_min_dhw = 45
 
 # Probability of load shifting for a particular appliance [0,1]:
 probshift = 1
+# Minimum size of the admitted time window relative to the average length of the appliance duty cycle
+threshold_window = 0.5
+# Maximum time over which the timing of an appliance cycle can be shifted (in hours)
+max_shift = 24

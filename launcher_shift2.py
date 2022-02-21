@@ -175,12 +175,10 @@ for jjj in idx_casestobesim:
         # Residual PV
         # 15 min timestep series
         dem_15min_noshift = demand_pspy[TechsNoShift].sum(axis=1) # kW
-        pv_15min_res = [a if a>0 else 0 for a in (pv_15min.to_numpy() - dem_15min_noshift.to_numpy())] # kW
-        pv_15min_res = pd.Series(data=pv_15min_res,index=index15min) # kW
+        pv_15min_res = np.maximum(0,pv_15min - dem_15min_noshift) # kW
         # 1 min timestep array
         demnoshift = demands['results'][idx][TechsNoShift].sum(axis=1)[:-1].to_numpy()/1000. # kW
-        pv_1min_res = [a if a>0. else 0. for a in pv_1min-demnoshift] # kW 
-        pv_1min_res = np.array(pv_1min_res) # kW
+        pv_1min_res = np.maximum(0,pv_1min-demnoshift) # kW 
       
     else:
         pv_15min = np.zeros(n15min) # kW
@@ -233,48 +231,43 @@ for jjj in idx_casestobesim:
         
         if WetAppAutoBool:
             admtimewin = admprices*admcustom
+            
+        # Admissible time window based on pv generation and residual load
+        admtimewin_pv = (pv_1min_res > 0)
     
         """
         Shifting wet appliances
         """
+        threshold_window = defaults.threshold_window
+        
+        # Shift the app consumption vector by one time step:
+        pv_1min_res_s  = np.roll(pv_1min_res,1)
+        pv_cumsum = pv_1min_res.cumsum()
+        
+        # locate all the points whit a start or a shutdown
+        starting_times = (pv_1min_res>0) * (pv_1min_res_s==0)
+        stopping_times = (pv_1min_res_s>0) * (pv_1min_res==0)
+        
+        # List the indexes of all start-ups and shutdowns
+        starts   = np.where(starting_times)[0]
+        ends   = np.where(stopping_times)[0]
+        volumes = starts
+        for i in range(len(starts)):
+            volumes[i] = pv_cumsum[ends[i]] - pv_cumsum[starts[i]]
+        
         for app in WetAppShift:
         
             # Admissible time windows according to PV production
             # Adm starting times are when:
-            # residual PV covers at least 90% of cycle consumption of the longest cycle of the year
+            # residual PV covers at least 90% of cycle consumption of the average cycle 
             
-            if PVBool:
-                
-                admpv = np.zeros(len(demnoshift))
-                
-                apparr = demshift[app].to_numpy() # W
-                app_s  = np.roll(apparr,1)
-                starts = np.where(apparr-app_s>1)[0]
-                ends   = np.where(apparr-app_s<-1)[0]
-                lengths = ends-starts
-                maxcyclen = np.max(lengths)            
-                cons = np.ones(maxcyclen)*apparr[starts[0]+1] # W
-                sumcons = np.sum(cons)*ts_15min # Wh
-                
-                for i in range(len(demshift)-maxcyclen*60):
-                    
-                    prod = pv_1min_res[i:i+maxcyclen]*1000. # W
-                    diff = np.array(cons-prod) # W
-                    diff = np.where(diff>=0,diff,0)
-                    notcov = np.sum(diff)*ts_15min # Wh
-                    share = 1-notcov/sumcons
-                    if share >= 0.9:
-                        admpv[i]=1
-                
-                # Updating admissibile time windows
-                admtimewin = admtimewin + admpv*occupancy
-                admtimewin = np.minimum(admtimewin,1)
-                admtimewin = np.maximum(admtimewin,0)
+            if PVBool:          # if there is PV, priority is given to self-consumption
+                admtimewin = admtimewin_pv
+                threshold_window = 0.9
         
             # Calling function to shift the app
             print("---"+str(app)+"---")
-            #app_n,enshift = AdmTimeWinShift(demands['results'][idx][app][:-1],admtimewin,probshift) # W, Wh
-            app_n,ncyc,ncycshift,enshift = shift_appliance(demands['results'][idx][app][:-1],admtimewin,defaults.probshift,max_shift=24*60)
+            app_n,ncyc,ncycshift,enshift = shift_appliance(demands['results'][idx][app][:-1],admtimewin,defaults.probshift,max_shift=defaults.max_shift*60,threshold_window=threshold_window,verbose=True)
             
             # Resizing shifted array
             app_n_series = pd.Series(data=app_n,index=index1min) # W
