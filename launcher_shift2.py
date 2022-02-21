@@ -18,13 +18,14 @@ start_time = time.time()
 
 #%% Main simulation parameters
 
-N = 10 # Number of stochastic simulations to be run for the demand curves
+N = 1 # Number of stochastic simulations to be run for the demand curves
 
 idx_casestobesim = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
         17, 18, 19, 20, 22, 24, 26, 28, 30, 32,
         34, 36, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
         51, 52, 53, 54, 55, 56, 57, 58, 60, 62, 64, 66,
         68, 70, 72, 74, 76, 77, 78, 79, 80, 81, 82]
+idx_casestobesim = [0]
 
 #%% Loading inputs
 
@@ -54,12 +55,6 @@ for jjj in idx_casestobesim:
     print('        Case'+str(jjj+1))
     print('###########################')
     
-    
-    #%%
-    # Case description
-    with open('inputs/cases.json','r') as f:
-        cases = json.load(f)
-    
     house          = cases[namecase]['house']
     sheet          = cases[namecase]['sheet']
     row            = cases[namecase]['row']
@@ -75,32 +70,33 @@ for jjj in idx_casestobesim:
     DHWBool        = cases[namecase]['DHWBool']
     HeatingBool    = cases[namecase]['HeatingBool']
     EVBool         = cases[namecase]['EVBool']
-
+    
     FixedControl   = econ_param[namecase]['FixedControlCost']
     AnnualControl  = econ_param[namecase]['AnnualControlCost']
     thresholdprice = econ_param[namecase]['thresholdprice']
     
-
+    
     # Demands
     with open('inputs/' + house+'.json') as f:
-      inputs = json.load(f)
+        inputs = json.load(f)
     demands = compute_demand(inputs,N,inputs['members'],inputs['thermal_parameters'])
-
-	config_pv = pvbatt_param['pv']
-	config_bat = pvbatt_param['battery']
-
+    
+    config_pv = pvbatt_param['pv']
+    
+    config_bat = pvbatt_param['battery']
+    
     pvadim = pvgis_hist(config_pv)  
-
+    
     # Various array sizes and timesteps used throughout the code
-	index1min  = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='T')
-	index15min = pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')
-	n1min  = len(index1min)
-	n10min = int(n1min/10)
-	n15min = int(n1min/15)
-	stepperh_1min = 60 # 1/h
-	stepperh_15min = 4 # 1/h
-	ts_15min = 0.25 # h
-
+    index1min  = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='T')
+    index15min = pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')
+    n1min  = len(index1min)
+    n10min = int(n1min/10)
+    n15min = int(n1min/15)
+    stepperh_1min = 60 # 1/h
+    stepperh_15min = 4 # 1/h
+    ts_15min = 0.25 # h
+    
     #%%
     # Electricity prices array - 15 min timestep
     scenario = econ_param[namecase]['scenario']
@@ -164,12 +160,12 @@ for jjj in idx_casestobesim:
     
     if PVBool:
     
-	    if config_pv['AutomaticSizing']:
-	        yield_pv = pvadim.sum()/4
-	        # Sizing
-	        pvpeak = ydemand/yield_pv  # kWp
-	    else:
-	        pvpeak = config_pv['Ppeak']
+        if config_pv['AutomaticSizing']:
+            yield_pv = pvadim.sum()/4
+            # Sizing
+            pvpeak = ydemand/yield_pv  # kWp
+        else:
+            pvpeak = config_pv['Ppeak']
         # 15 min timestep series
         pv_15min = pvadim * pvpeak # kW
         # 1 min timestep array
@@ -184,22 +180,22 @@ for jjj in idx_casestobesim:
         demnoshift = demands['results'][idx][TechsNoShift].sum(axis=1)[:-1].to_numpy()/1000. # kW
         pv_1min_res = [a if a>0. else 0. for a in pv_1min-demnoshift] # kW 
         pv_1min_res = np.array(pv_1min_res) # kW
-  
+      
     else:
         pv_15min = np.zeros(n15min) # kW
         pv_15min = pd.Series(data=pv_15min,index=index15min) # kW
         pvpeak = 0. # kWp
-
-	# Update PV capacity
-	pvbatt_param['pv']['Ppeak'] = pvpeak # kWp
+    
+    # Update PV capacity
+    pvbatt_param['pv']['Ppeak'] = pvpeak # kWp
     
     """
     7) Battery size
     """
     
-	if not BattBool:
-	    pvbatt_param['battery']['BatteryCapacity'] = 0. # kWh
-	   
+    if not BattBool:
+        pvbatt_param['battery']['BatteryCapacity'] = 0. # kWh
+    	   
     
     """
     8) Shifting
@@ -308,7 +304,7 @@ for jjj in idx_casestobesim:
         Ttarget = inputs['DHW']['Ttarget'] # °C
         PowerDHWMax = inputs['DHW']['PowerElMax']/1000. # kW
     
-    	Tmin = defaults.T_min_dhw # °C
+        Tmin = defaults.T_min_dhw # °C
         Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
         capacity = Ccyl*(Ttarget-Tmin)/3600./1000. # kWh
           

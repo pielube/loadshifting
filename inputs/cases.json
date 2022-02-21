@@ -1,19 +1,24 @@
 {
 "default": {
-	       "house": "4f",
-           "sheet": "4F",
-		   "row": 11,
-           "columns": ["StaticLoad","TumbleDryer","DishWasher","WashingMachine","DomesticHotWater","HeatPumpPower"],
-		   "TechsShift": [],
-		   "WetAppBool": false, 
-           "WetAppManBool": false,
-           "WetAppAutoBool": false,
-           "PVBool": true,
-           "BattBool": false,
-           "DHWBool": true,
-           "HeatingBool": true,
-           "EVBool": false
-           },
+        "house": "4f",
+        "sheet": "4F",
+        "row": 0,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [],
+        "WetAppBool": true,
+        "WetAppManBool": true,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": true
+    },
 "case1": {
         "house": "4f",
         "sheet": "4F",
@@ -1923,3 +1928,4 @@
         "HeatingBool": true,
         "EVBool": false
     }
+}
