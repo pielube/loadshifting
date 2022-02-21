@@ -45,7 +45,9 @@ with open('inputs/econ_param.json','r') as f:
 with open('inputs/tariffs.json','r') as f:
     tariffs = json.load(f)
 
-
+# Parameters for the dwelling
+with open('inputs/housetypes.json','r') as f:
+    housetypes = json.load(f)
         
 
 for jjj in idx_casestobesim:
@@ -77,8 +79,9 @@ for jjj in idx_casestobesim:
     
     
     # Demands
-    with open('inputs/' + house+'.json') as f:
-        inputs = json.load(f)
+    # with open('inputs/' + house+'.json') as f:
+    #     inputs = json.load(f)
+    inputs = housetypes[house]
     demands = compute_demand(inputs,N,inputs['members'],inputs['thermal_parameters'])
     
     config_pv = pvbatt_param['pv']
