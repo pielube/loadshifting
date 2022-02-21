@@ -203,11 +203,7 @@ def EconomicAnalysis(E,econ_param,ElPrices,timestep,demand_ref):
     NPV = npf.npv(interest,CashFlows)
     out['NPV'] = NPV
     
-    #import matplotlib.pyplot as plt
-    # plt.plot(NPVcurve)
-       
     zerocross = np.where(np.diff(np.sign(NPVcurve)))[0]
-    print(len(zerocross))
     if len(zerocross) > 0: 
         x1 = zerocross[0]
         x2 = zerocross[0]+1
@@ -393,10 +389,7 @@ def EconomicAnalysisRefPV(E,econ_param,ElPrices,timestep,E_ref):
         
     NPV = npf.npv(interest,CashFlows)
     out['NPV'] = NPV
-      
-    # import matplotlib.pyplot as plt
-    # plt.plot(NPVcurve)
-       
+         
     zerocross = np.where(np.diff(np.sign(NPVcurve)))[0]
     if len(zerocross) > 0:
         x1 = zerocross[0]
