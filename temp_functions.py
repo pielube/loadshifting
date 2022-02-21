@@ -748,6 +748,12 @@ def shift_appliance(app,admtimewin,probshift,max_shift=None,verbose=False):
     ends   = np.where(stopping_times)[0]
     means = (( starts + ends)/2 ).astype('int')
     
+    # Conditioning the admitted time window vector:
+    if (admtimewin>1).any() or (admtimewin<0).any():
+        admtimewin = np.minimum(admtimewin,1)
+        admtimewin = np.maximum(admtimewin,0)
+        print('WARNING: Some values of the admitted time windows are higher than 1 or lower than 0')
+    
     # Define the indexes of each admitted time window
     admtimewin_s = np.roll(admtimewin,1)
     adm_starts   = np.where(admtimewin-admtimewin_s>0.1)[0]
@@ -784,6 +790,7 @@ def shift_appliance(app,admtimewin,probshift,max_shift=None,verbose=False):
                     delta = (adm_ends[j_min] - adm_starts[j_min]) - length
                     if delta < 0:                                        # if the admissible window is smaller than the activation length
                         t_start = int(adm_starts[j_min] - length/2)
+                        t_start = np.minimum(t_start,len(app)-length)    # ensure that there is sufficient space for the whole activation at the end of the vector
                         app_n[t_start:t_start+length] += app[starts[i]:ends[i]] 
                     else:
                         delay = random.randrange(1+int(delta/2))             # dandomize the activation time within the allowed window
