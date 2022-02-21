@@ -1,4 +1,19 @@
 {
+"default": {
+	       "house": "4f",
+           "sheet": "4F",
+		   "row": 11,
+           "columns": ["StaticLoad","TumbleDryer","DishWasher","WashingMachine","DomesticHotWater","HeatPumpPower"],
+		   "TechsShift": [],
+		   "WetAppBool": false, 
+           "WetAppManBool": false,
+           "WetAppAutoBool": false,
+           "PVBool": true,
+           "BattBool": false,
+           "DHWBool": true,
+           "HeatingBool": true,
+           "EVBool": false
+           }, 
 "case12": {
 	       "house": "4f",
            "sheet": "4F",

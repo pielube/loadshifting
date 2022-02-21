@@ -8,6 +8,7 @@
 "pv"  : {
         "location": [50.6, 5.6, "Europe/Brussels", 60, "Etc/GMT-2"], 
         "Ppeak": 1, 
+        "AutomaticSizing": true,
         "losses": 13, 
         "tilt": 35, 
         "azimuth": 0, 
