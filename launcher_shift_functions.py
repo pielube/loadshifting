@@ -8,7 +8,7 @@ from itertools import chain
 from prosumpy import dispatch_max_sc
 from strobe.RC_BuildingSimulator import Zone
 
-from temp_functions import EconomicAnalysis,cache_func
+from temp_functions import EconomicAnalysis,EconomicAnalysisRefPV,cache_func
 
 from joblib import Memory
 memory = Memory('./cache/', verbose=1)
