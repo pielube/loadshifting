@@ -323,7 +323,7 @@ for jjj in idx_casestobesim:
     
             # prosumpy
             outs = dispatch_max_sc(pv_15min_res,demand_dhw,param_tech_dhw,return_series=False)
-            demand_dhw_shift = outs['inv2load']+outs['grid2load'] # kW
+            demand_dhw_shift = outs['pv2store']+outs['grid2load'] # kW
             demand_dhw_shift = demand_dhw_shift.astype('float64') # kW
             
             # updating residual pv
