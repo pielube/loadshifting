@@ -16,7 +16,7 @@ import defaults
 start_time = time.time()
 
 
-#%%
+#%% Main simulation parameters
 
 N = 2 # Number of stochastic simulations to be run for the demand curves
 jjj = 12  
@@ -27,10 +27,36 @@ print('        Case'+str(jjj))
 print('###########################')
 
 
-#%%
+#%% Loading inputs
+
 # Case description
 with open('inputs/cases.json','r') as f:
     cases = json.load(f)
+
+# PV and battery technology parameters
+with open('inputs/pvbatt_param.json','r') as f:
+    pvbatt_param = json.load(f)
+
+# Demands
+with open('inputs/' + cases[namecase]['house'] +'.json') as f:
+  inputs = json.load(f)
+
+# Economic parameters
+with open('inputs/econ_param.json','r') as f:
+    econ_param = json.load(f)
+
+# Time of use tariffs
+with open('inputs/tariffs.json','r') as f:
+    tariffs = json.load(f)
+
+
+
+#%%
+
+FixedControl   = econ_param[namecase]['FixedControlCost']
+AnnualControl  = econ_param[namecase]['AnnualControlCost']
+thresholdprice = econ_param[namecase]['thresholdprice']
+
 
 house          = cases[namecase]['house']
 sheet          = cases[namecase]['sheet']
@@ -48,44 +74,22 @@ DHWBool        = cases[namecase]['DHWBool']
 HeatingBool    = cases[namecase]['HeatingBool']
 EVBool         = cases[namecase]['EVBool']
 
-#%%
-# PV and battery technology parameters
-with open('inputs/pvbatt_param.json','r') as f:
-    pvbatt_param = json.load(f)
+config_pv = pvbatt_param['pv']
+config_bat = pvbatt_param['battery']
 
-#%%
-# Demands
-with open('inputs/' + house+'.json') as f:
-  inputs = json.load(f)
-
-demands = compute_demand(inputs,N,inputs['members'],inputs['thermal_parameters'])
-
-#%%
-# Economic parameters
-with open('inputs/econ_param.json','r') as f:
-    econ_param = json.load(f)
-
-FixedControl   = econ_param[namecase]['FixedControlCost']
-AnnualControl  = econ_param[namecase]['AnnualControlCost']
-thresholdprice = econ_param[namecase]['thresholdprice']
-
-
-#%%
-# Time of use tariffs
-with open('inputs/tariffs.json','r') as f:
-    tariffs = json.load(f)
 
 #%%
 # Various array sizes and timesteps used throughout the code
 
-n1min  = np.size(demands['results'][0]['StaticLoad'])-1
+index1min  = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='T')
+index15min = pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')
+n1min  = len(index1min)
 n10min = int(n1min/10)
 n15min = int(n1min/15)
 stepperh_1min = 60 # 1/h
 stepperh_15min = 4 # 1/h
 ts_15min = 0.25 # h
-index1min  = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='T')
-index15min = pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')
+
 
 #%%
 # Electricity prices array - 15 min timestep
@@ -99,11 +103,10 @@ yprices_15min = yearlyprices(scenario,timeslots,prices,stepperh_15min) # €/kWh
 # Adimensional PV curve
 pvadim = pvgis_hist(pvbatt_param['pv'])  
 
-
 """
 3) Most representative demand curve
 """
-
+demands = compute_demand(inputs,N,inputs['members'],inputs['thermal_parameters'])
 idx = MostRepCurve(demands['results'],columns,yprices_15min,ts_15min,econ_param[namecase])
 
 # Inputs relative to the most representative curve:
@@ -154,8 +157,13 @@ for i in range(n10min):
 
 if PVBool:
 
-    # Sizing
-    pvpeak = ydemand/950. if ydemand/950. < 10. else 10. # kWp
+    if config_pv['AutomaticSizing']:
+        yield_pv = pvadim.sum()/4
+        # Sizing
+        pvpeak = ydemand/yield_pv  # kWp
+    else:
+        pvpeak = config_pv['Ppeak']
+    
     # 15 min timestep series
     pv_15min = pvadim * pvpeak # kW
     # 1 min timestep array

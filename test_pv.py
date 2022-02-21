@@ -14,7 +14,8 @@ inputs = {'location':(50.6,5.6,'Europe/Brussels',60,'Etc/GMT-2'),
          'losses':12,
          'tilt':35,
          'azimuth':0,
-         'year':2015}
+         'year':2015,
+         'TMY':True}
 
 pv = pvgis_hist(inputs)
 

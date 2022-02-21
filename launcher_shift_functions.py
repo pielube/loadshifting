@@ -7,7 +7,10 @@ from statistics import mean
 from prosumpy import dispatch_max_sc
 from strobe.RC_BuildingSimulator import Zone
 
-from temp_functions import EconomicAnalysis
+from temp_functions import EconomicAnalysis,cache_func
+
+from joblib import Memory
+memory = Memory('./cache/', verbose=1)
 
 # List of functions this .py file should contain
 
@@ -250,7 +253,7 @@ def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
         
     return out
 
-
+@memory.cache
 def HouseHeatingShiftSC(inputs,nminutes,Tamb,irr,Qintgains,QheatHP,pv,Tset):
 
     # Rough estimation of solar gains based on data from Crest
