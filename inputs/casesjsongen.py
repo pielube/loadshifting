@@ -111,7 +111,12 @@ for i in range(83):
     if data['wetapp_shift_auto'][i] == 1:
         fixed += 50.
         neweconparam['thresholdprice'] = 'heel'
-    if data['battery'][i] == 1:
+
+    aa = data['dhw_shift'][i] == 1
+    bb = data['househeat_shift'][i] == 1
+    cc = data['ev_shift'][i] == 1
+    dd = data['battery'][i] == 1
+    if aa or bb or cc or dd:
         fixed += 500.
         annual += 30.
     
