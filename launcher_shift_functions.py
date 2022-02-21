@@ -3,6 +3,7 @@ import random
 import numpy as np
 import pandas as pd
 from statistics import mean
+from itertools import chain
 
 from prosumpy import dispatch_max_sc
 from strobe.RC_BuildingSimulator import Zone
@@ -30,8 +31,6 @@ memory = Memory('./cache/', verbose=1)
 # - add description of all functions
 # - comment all functions
 # - change name of this file
-
-
 
     
 def MostRepCurve(demands,columns,ElPrices,timestep,econ_param):
@@ -104,7 +103,6 @@ def MostRepCurve(demands,columns,ElPrices,timestep,econ_param):
     index = min(range(len(var)), key=var.__getitem__)
         
     return index
-
 
 
 def AdmTimeWinShift(app,admtimewin,probshift):
@@ -253,8 +251,8 @@ def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
         
     return out
 
-@memory.cache
-def HouseHeatingShiftSC(inputs,nminutes,Tamb,irr,Qintgains,QheatHP,pv,Tset):
+
+def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,heatseas_end):
 
     # Rough estimation of solar gains based on data from Crest
     # Could be improved
@@ -282,52 +280,35 @@ def HouseHeatingShiftSC(inputs,nminutes,Tamb,irr,Qintgains,QheatHP,pv,Tset):
                 ach_infl=inputs['HP']['ACH_infl']/60,
                 ventilation_efficiency=inputs['HP']['VentEff'],
                 thermal_capacitance=inputs['HP']['Ctot'],
-                t_set_heating=Tset[0],
+                t_set_heating=Tset[0], #inputs['HP']['Tthermostatsetpoint'],
                 max_heating_power=QheatHP)
             
-    Tair = max(16.,Tamb[0])  + random.random()*2. #°C
     Qheat = np.zeros(nminutes)
     Tinside = np.zeros(nminutes)
-    Tsetold = Tset[0]
 
-    for i in range(nminutes):
+    d1 = 60*24*heatseas_end-1
+    d2 = 60*24*heatseas_st-1
+    concatenated = chain(range(1,d1), range(d2,nminutes))
+
+    Tair = max(16.,Tamb[0])
+    House.t_set_heating = Tset[0]    
+    House.solve_energy(Qintgains[0], Qsolgains[0], Tamb[0], Tair)
+    Qheat[0]   = House.heating_demand
+    Tinside[0] = House.t_air    
+
+    for i in concatenated:
         
-        if 60*24*151 < i <= 60*24*244: # heating season
-            Qheat[i] = 0
-            if i == 60*24*244:
-                Tair = Tamb[i]
-        else:
-            
-            if pv[i] > 0.:
-                Tset_ts = 23.
-            else:
-                Tset_ts = Tset[i]
-                
-            if Tset_ts != Tsetold:
-                
-                House = Zone(window_area=inputs['HP']['Aglazed'],
-                            walls_area=inputs['HP']['Aopaque'],
-                            floor_area=inputs['HP']['Afloor'],
-                            room_vol=inputs['HP']['volume'],
-                            total_internal_area=inputs['HP']['Atotal'],
-                            u_walls=inputs['HP']['Uwalls'],
-                            u_windows=inputs['HP']['Uwindows'],
-                            ach_vent=inputs['HP']['ACH_vent']/60,
-                            ach_infl=inputs['HP']['ACH_infl']/60,
-                            ventilation_efficiency=inputs['HP']['VentEff'],
-                            thermal_capacitance=inputs['HP']['Ctot'],
-                            t_set_heating=Tset_ts,
-                            max_heating_power=QheatHP)
-                
-            House.solve_energy(Qintgains[i], Qsolgains[i], Tamb[i], Tair)
-            Tair      = House.t_air
-            Qheat[i] = House.heating_demand
-            Tinside[i] = Tair
-            
-            Tsetold = Tset_ts
-           
-    return Qheat, Tinside
+        if i == d2:
+            Tinside[i-1] = max(16.,Tamb[i-1])
 
+        if Tset[i] != Tset[i-1]:
+            House.t_set_heating = Tset[i]    
+            
+        House.solve_energy(Qintgains[i], Qsolgains[i], Tamb[i], Tinside[i-1])
+        Qheat[i]   = House.heating_demand
+        Tinside[i] = House.t_air
+                       
+    return Qheat, Tinside
 
 
 def ResultsAnalysis(pv_capacity,batt_capacity,pv,demand_ref,demand,ElPrices,prices,scenario,econ_param):
@@ -423,10 +404,20 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pv,demand_ref,demand,ElPrices,pric
     return out
 
 
-
-def WriteResToExcel(file,sheet,results,row):
+def WriteResToExcel(file,sheet,results,econ_param,tariff,row):
     
     df = pd.read_excel(file,sheet_name=sheet,header=0,index_col=0)
+    
+    df.at[row,'Investissement fixe pilotage [€]'] = econ_param['FixedControlCost']
+    df.at[row,'Investissement annuel pilotage [€] (abonnement, … )'] = econ_param['AnnualControlCost']
+    df.at[row,"Année d'étude"] = econ_param['time_horizon']
+    df.at[row,"Valeur de vendue de l'élec [€/kWh]"] = econ_param['P_FtG']/1000.
+    df.at[row,'Heure Talon [1h-7h]  [€/kWh]'] = tariff['heel']/1000.
+    df.at[row,'Heure creuse [23h-1h et 7h-10h]  [€/kWh]'] = tariff['hollow']/1000.
+    df.at[row,'Heure pleine [10h-18h et 21h-23h]  [€/kWh]'] = tariff['full']/1000.
+    df.at[row,'Heure pointe [18h-21h]  [€/kWh]'] = tariff['peak']/1000.
+    df.at[row,'Fixe [€/an]'] = econ_param['C_grid_fixed']
+    df.at[row,'Capacitaire [€/kW]'] = econ_param['C_grid_kW']
     
     df.at[row,'PV [kWp]'] = results['PVCapacity']
     df.at[row,'Battery [kWh]'] = results['BatteryCapacity']
