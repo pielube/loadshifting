@@ -32,7 +32,17 @@ memory = Memory('./cache/', verbose=1)
 # - comment all functions
 # - change name of this file
 
-    
+@memory.cache
+def load_climate_data(datapath = r'./strobe/Data'):
+    '''
+    Function that loads the climate data from strobe
+    '''
+            # ambient data
+    temp = np.loadtxt(datapath + '/Climate/temperature.txt')
+    irr  = np.loadtxt(datapath + '/Climate/irradiance.txt')   
+    return temp,irr
+
+
 def MostRepCurve(demands,columns,ElPrices,timestep,econ_param):
     
     """

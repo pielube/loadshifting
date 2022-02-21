@@ -6,7 +6,7 @@ import json
 import time
 from prosumpy import dispatch_max_sc,print_analysis
 from temp_functions import yearlyprices,HPSizing,COP_Tamb
-from launcher_shift_functions import MostRepCurve,DHWShiftTariffs,HouseHeating,ResultsAnalysis,WriteResToExcel
+from launcher_shift_functions import MostRepCurve,DHWShiftTariffs,HouseHeating,ResultsAnalysis,WriteResToExcel,load_climate_data
 from temp_functions import shift_appliance
 from pv import pvgis_hist
 from demands import compute_demand
@@ -365,10 +365,7 @@ for jjj in idx_casestobesim:
         
         print('--- Shifting house heating ---')
         
-        # ambient data
-        datapath = r'./strobe/Data'
-        temp = np.loadtxt(datapath + '/Climate/temperature.txt')
-        irr  = np.loadtxt(datapath + '/Climate/irradiance.txt')   
+        temp,irr = load_climate_data()
         temp = np.delete(temp,-1) # °C
         irr = np.delete(irr,-1) # W/m2
         
