@@ -8,7 +8,7 @@ from itertools import chain
 from prosumpy import dispatch_max_sc
 from strobe.RC_BuildingSimulator import Zone
 
-from temp_functions import EconomicAnalysis,cache_func
+from temp_functions import EconomicAnalysis,EconomicAnalysisRefPV,cache_func
 
 from joblib import Memory
 memory = Memory('./cache/', verbose=1)
@@ -356,7 +356,7 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pv,demand_ref,demand,ElPrices,pric
     Epspy_pv['FromGrid']     = res_pspy_pv['grid2load']
     Epspy_pv['SC']           = res_pspy_pv['inv2load']
     
-    res_EA_pv = EconomicAnalysis(Epspy,econ_param,ElPrices,timestep,Epspy_pv)
+    res_EA_pv = EconomicAnalysisRefPV(Epspy,econ_param,ElPrices,timestep,Epspy_pv)
     
     
     # Preparing function outputs
