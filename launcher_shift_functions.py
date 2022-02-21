@@ -8,7 +8,7 @@ from itertools import chain
 from prosumpy import dispatch_max_sc
 from strobe.RC_BuildingSimulator import Zone
 
-from temp_functions import EconomicAnalysis,EconomicAnalysisRefPV,cache_func
+from temp_functions import EconomicAnalysis,EconomicAnalysisRefPV
 
 from joblib import Memory
 memory = Memory('./cache/', verbose=1)
@@ -251,7 +251,7 @@ def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
         
     return out
 
-
+@memory.cache
 def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,heatseas_end):
 
     # Rough estimation of solar gains based on data from Crest

@@ -268,8 +268,8 @@ for jjj in idx_casestobesim:
                 
                 # Updating admissibile time windows
                 admtimewin = admtimewin + admpv*occupancy
-                admtimewin = [1 if a>=1 else 0 for a in admtimewin]
-                admtimewin = np.array(admtimewin)
+                admtimewin = np.minimum(admtimewin,1)
+                admtimewin = np.maximum(admtimewin,0)
         
             # Calling function to shift the app
             print("---"+str(app)+"---")
