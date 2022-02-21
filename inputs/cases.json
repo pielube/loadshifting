@@ -1,5 +1,5 @@
 {
-"default": {
+"default": {                    
         "house": "4f",
         "sheet": "4F",
         "row": 0,
@@ -7,9 +7,19 @@
             "StaticLoad",
             "TumbleDryer",
             "DishWasher",
-            "WashingMachine"
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"   
         ],
-        "TechsShift": [],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"            
+        ],
         "WetAppBool": true,
         "WetAppManBool": true,
         "WetAppAutoBool": true,
