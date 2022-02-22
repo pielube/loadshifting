@@ -546,8 +546,8 @@ for jjj in idx_casestobesim:
     WriteResToExcel(file,sheet,outs,econ_param[namecase],prices[scenario],row)
 
 
-exectime = (time.time() - start_time)/60.
-print('It all took {:.1f} minutes'.format(exectime))
+exectime = (time.time() - start_time)
+print('It all took {:.1f} seconds'.format(exectime))
 
 
 
