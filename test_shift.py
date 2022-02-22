@@ -9,6 +9,7 @@ Created on Wed Feb  9 10:57:35 2022
 import pickle
 import time
 from temp_functions import shift_appliance
+from launcher_shift_functions import AdmTimeWinShift
 
 with open('examples/shiftinputs.pkl', 'rb') as handle:
     (app,admtimewin,probshift) = pickle.load(handle)
@@ -20,7 +21,7 @@ app[3502:3522] = app[3502:3522] /2
 
 time1 = time.time()
 
-#app_n1,ncyc1,ncycshift1,maxshift1,avgshift1,cycnotshift1,enshift1 = strategy1(app,admtimewin,probshift)
+app_n1,ncyc1,ncycshift1,maxshift1,avgshift1,cycnotshift1,enshift1 = AdmTimeWinShift(app,admtimewin,probshift)
 
 time2 = time.time()
 

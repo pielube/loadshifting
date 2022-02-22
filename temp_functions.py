@@ -14,6 +14,9 @@ import json
 from typing import Dict, Any      # for the dictionnary hashing funciton
 import hashlib  # for the dictionnary hashing funciton
 
+from joblib import Memory
+memory = Memory('./cache/', verbose=1)
+
 
 
 def dict_hash(dictionary: Dict[str, Any]) -> str:
@@ -491,7 +494,7 @@ def yearlyprices(scenario,timeslots,prices,stepperhour):
     return out
 
 
-
+@memory.cache
 def shift_appliance(app,admtimewin,probshift,max_shift=None,threshold_window=0,verbose=False):
     '''
     This function shifts the duty duty cycles of a particular appliances according
