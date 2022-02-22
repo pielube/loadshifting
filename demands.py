@@ -9,10 +9,11 @@ import json
 from preprocess import ProcebarExtractor,HouseholdMembers
 import os
 import pickle
-from temp_functions import cache_func
+from joblib import Memory
+memory = Memory('./cache/', verbose=1)
 
 
-@cache_func
+@memory.cache
 def compute_demand(inputs,N,members= None,thermal_parameters=None):
     '''
     Function that generates the stochastic time series for
@@ -78,8 +79,9 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         n_steps = np.size(result['StaticLoad'][n_scen,:])
         index = pd.date_range(start='2015-01-01 00:00', periods=n_steps, freq='1min')
         
-        # Dataframe of original results
+        index_10min = pd.date_range(start='2015-01-01 00:00', periods=len(result['occupancy'][n_scen][0]), freq='10min')
         
+        # Dataframe of demands
         df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging','InternalGains'])
         result_ramp.loc[df.index[-1],'EVCharging']=0
         
@@ -90,9 +92,14 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
                 df[key] = result_ramp[key]* 1000
             else:
                 df[key] = 0
+        # Dataframe with the 
+        occupancy = pd.DataFrame(index=index_10min)
+        for i,m in enumerate(result['members']):
+            membername = str(i) + '-' + m 
+            occupancy[membername] = result['occupancy'][n_scen][i]
         
         out['results'].append(df)
-        out['occupancy'].append(result['occupancy'][n_scen])
+        out['occupancy'].append(occupancy)
         out['input_data'].append(inputs)    
 
     return out

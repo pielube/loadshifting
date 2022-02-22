@@ -144,16 +144,12 @@ for jjj in idx_casestobesim:
     # 1-yes 0-no
     # 1 min timestep
     
-    occ = np.zeros(n10min)
-    for i in range(len(demands['occupancy'][idx])):
-        singlehouseholdocc = [1 if a==1 else 0 for a in demands['occupancy'][idx][i][:-1]]
-        occ += singlehouseholdocc
-    occ = [1 if a >=1 else 0 for a in occ]    
-    occupancy = np.zeros(n1min)
-    for i in range(n10min):
-        for j in range(10):
-            occupancy[i*10+j] = occ[i]
-    
+    occ = demands['occupancy'][idx]
+    occupancy_10min = (occ==1).sum(axis=1)                         # when occupancy==1, the person is in the house and not sleeping
+    occupancy_10min = (occupancy_10min>0)                       # if there is at least one person awake in the house
+    occupancy_1min = occupancy_10min.reindex(index1min,method='nearest')
+    occupancy_15min = occupancy_10min.reindex(index15min,method='nearest')
+  
     
     """
     6) PV production
@@ -227,7 +223,7 @@ for jjj in idx_casestobesim:
                 admcustom[i] = 0
     
         if WetAppManBool:
-            admtimewin = admprices*admcustom*occupancy
+            admtimewin = admprices*admcustom*occupancy_1min
         
         if WetAppAutoBool:
             admtimewin = admprices*admcustom
@@ -238,29 +234,13 @@ for jjj in idx_casestobesim:
         """
         Shifting wet appliances
         """
-        threshold_window = defaults.threshold_window
-        
-        # Shift the app consumption vector by one time step:
-        pv_1min_res_s  = np.roll(pv_1min_res,1)
-        pv_cumsum = pv_1min_res.cumsum()
-        
-        # locate all the points whit a start or a shutdown
-        starting_times = (pv_1min_res>0) * (pv_1min_res_s==0)
-        stopping_times = (pv_1min_res_s>0) * (pv_1min_res==0)
-        
-        # List the indexes of all start-ups and shutdowns
-        starts   = np.where(starting_times)[0]
-        ends   = np.where(stopping_times)[0]
-        volumes = starts
-        for i in range(len(starts)):
-            volumes[i] = pv_cumsum[ends[i]] - pv_cumsum[starts[i]]
-        
         for app in WetAppShift:
         
             # Admissible time windows according to PV production
             # Adm starting times are when:
             # residual PV covers at least 90% of cycle consumption of the average cycle 
             
+            threshold_window = defaults.threshold_window
             if PVBool:          # if there is PV, priority is given to self-consumption
                 admtimewin = admtimewin_pv
                 threshold_window = 0.9
@@ -366,16 +346,10 @@ for jjj in idx_casestobesim:
         Qintgains = demands['results'][idx]['InternalGains'][:-1].to_numpy() # W
     
         # T setpoint based on occupancy
-        Tset = [20. if a == 1 else 15. for a in occupancy] # °C
-        Tset = np.array(Tset)
+        Tset = np.full(n1min,defaults.T_sp_low) + np.full(n1min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_1min
         
         # Heat pump sizing
-        fracmaxP = 0.8
-        QheatHP = HPSizing(inputs,fracmaxP) # W
-        
-        # Heating season
-        heatseas_st = 244
-        heatseas_end = 151
+        QheatHP = HPSizing(inputs,defaults.fracmaxP) # W
         
         if PVBool: # strategy based on enhancing self-consumption
         
@@ -383,8 +357,7 @@ for jjj in idx_casestobesim:
             # increasing setpoint T of Tincrease when:
             # residual PV > 0.
         
-            Tincrease = 3.    
-            Tset[pv_1min_res>0] += Tincrease
+            Tset[pv_1min_res>0] += defaults.Tincrease
        
         else: # strategy based on tariffs
         
@@ -395,9 +368,7 @@ for jjj in idx_casestobesim:
             # tariffs are low
         
             # Shifting based on tariffs-specific inputs
-            Tincrease = 3. # °C T increase wrt min T setpoint (heating off)
-            t_preheat = 3  # h max time allowed to consider pre-heating
-            t_preheat_min = t_preheat*60
+            t_preheat_min = defaults.t_preheat*60
             
             # Hours with admissible prices
             yprices_1min = yearlyprices(scenario,timeslots,prices,stepperh_1min) # €/kWh
@@ -425,14 +396,14 @@ for jjj in idx_casestobesim:
             
             # Recalculating T setpoint array with increase
             Tset += offset
-            Tset[idx] += Tincrease
+            Tset[idx] += defaults.Tincrease
             
         
-        Qshift,Tin_shift = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,heatseas_st,heatseas_end)
+        Qshift,Tin_shift = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,defaults.heatseas_st,defaults.heatseas_end)
         
         # T analysis
-        Twhenon    = Tin_shift*occupancy # °C
-        Twhenon_hs = Twhenon[np.r_[0:60*24*heatseas_end,60*24*heatseas_st:-1]] # °C
+        Twhenon    = Tin_shift*occupancy_1min.values # °C
+        Twhenon_hs = Twhenon[np.r_[0:60*24*defaults.heatseas_end,60*24*defaults.heatseas_st:-1]] # °C
         whenon     = np.nonzero(Twhenon_hs)
         Twhenon_hs_mean = np.mean(Twhenon_hs[whenon]) # °C
         Twhenon_hs_min  = np.min(Twhenon_hs[whenon]) # °C
@@ -445,7 +416,7 @@ for jjj in idx_casestobesim:
             Eshift[i] = Qshift[i]/COP # W
         
         # Updating demand dataframe
-        demand_HP_shift = pd.Series(data=Eshift,index=pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='min'))
+        demand_HP_shift = pd.Series(data=Eshift,index=index1min)
         demand_HP_shift = demand_HP_shift.resample('15Min').mean().to_numpy()/1000. # kW
         demand_pspy.insert(len(demand_pspy.columns),'HeatPumpPowerShift',demand_HP_shift,True) #kW
         

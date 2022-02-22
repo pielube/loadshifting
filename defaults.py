@@ -15,7 +15,22 @@ hp_thermal_power = 7000
 Vol_DHW = 200
 T_sp_DHW = 53
 
+# Set points without/with occupancy
+T_sp_low = 15
+T_sp_occ = 20
 
+# Increase in the set point when shifting hp load:
+Tincrease = 3
+
+# maximum number of hours allowed to consider pre-heating
+t_preheat = 3  
+
+# Heating season definition (in days)
+heatseas_st = 244
+heatseas_end = 151
+
+# Heat pump sizing (TODO: define this)
+fracmaxP = 0.8
 
 #PV 
 pv_power = 4000
