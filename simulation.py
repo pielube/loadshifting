@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Feb 22 01:31:36 2022
+
+@author: sylvain
+"""
 
 import os
 import numpy as np
@@ -13,45 +20,9 @@ from demands import compute_demand
 import defaults
 
 
-start_time = time.time()
 
-
-#%% Main simulation parameters
-
-N = 1 # Number of stochastic simulations to be run for the demand curves
-
-idx_casestobesim = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
-        17, 18, 19, 20, 22, 24, 26, 28, 30, 32,
-        34, 36, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
-        51, 52, 53, 54, 55, 56, 57, 58, 60, 62, 64, 66,
-        68, 70, 72, 74, 76, 77, 78, 79, 80, 81, 82]
-idx_casestobesim = [0]
-
-#%% Loading inputs
-
-# Case description
-with open('inputs/cases.json','r') as f:
-    cases = json.load(f)
-
-# PV and battery technology parameters
-with open('inputs/pvbatt_param.json','r') as f:
-    pvbatt_param = json.load(f)
-
-# Economic parameters
-with open('inputs/econ_param.json','r') as f:
-    econ_param = json.load(f)
-
-# Time of use tariffs
-with open('inputs/tariffs.json','r') as f:
-    tariffs = json.load(f)
-
-# Parameters for the dwelling
-with open('inputs/housetypes.json','r') as f:
-    housetypes = json.load(f)
-        
-
-for jjj in idx_casestobesim:
-    namecase = 'case'+str(jjj+1)
+def shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N):
+    
     namecase = 'default'
     
     print('###########################')
@@ -545,26 +516,34 @@ for jjj in idx_casestobesim:
     file = 'simulations/test'+house+'.xlsx'
     WriteResToExcel(file,sheet,outs,econ_param[namecase],prices[scenario],row)
 
-
-exectime = (time.time() - start_time)
-print('It all took {:.1f} seconds'.format(exectime))
+    return outs
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+if __name__ == '__main__':
+    
+    N = 1 # Number of stochastic simulations to be run for the demand curves
+    
+    # Case description
+    with open('inputs/cases.json','r') as f:
+        cases = json.load(f)
+    
+    # PV and battery technology parameters
+    with open('inputs/pvbatt_param.json','r') as f:
+        pvbatt_param = json.load(f)
+    
+    # Economic parameters
+    with open('inputs/econ_param.json','r') as f:
+        econ_param = json.load(f)
+    
+    # Time of use tariffs
+    with open('inputs/tariffs.json','r') as f:
+        tariffs = json.load(f)
+    
+    # Parameters for the dwelling
+    with open('inputs/housetypes.json','r') as f:
+        housetypes = json.load(f)    
+    
+    results = shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N)
+    
+    print(results)
+    
