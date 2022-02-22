@@ -21,9 +21,32 @@ import defaults
 
 
 
-def shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N):
+def shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N,namecase = 'default'):
+    '''
     
-    namecase = 'default'
+    Parameters
+    ----------
+    cases : dict
+        Pre-defined simulation cases to be simulated.
+    pvbatt_param : dict
+        PV and battery parameters.
+    econ_param : dict
+        Economic parameters.
+    tariffs : dict
+        Time-of-use electricity tariffs.
+    housetypes : dict
+        House parameters.
+    N : int
+        Number of stochastic scenarios to be simulated.
+    namecase : str, optional
+        Short description of the case. The default is 'default'.
+
+    Returns
+    -------
+    outs : dict
+        Main simulation results.
+
+    '''
     
     print('###########################')
     print('   Simulating: '+ namecase )
@@ -545,5 +568,5 @@ if __name__ == '__main__':
     
     results = shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N)
     
-    print(results)
+    print(json.dumps(results, indent=4))
     
