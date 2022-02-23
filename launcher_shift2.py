@@ -129,7 +129,7 @@ for jjj in idx_casestobesim:
     demand_15min = demand_15min.resample('15Min').mean()[:-1] # kW
     
     # define the shifted demand dataframe. To be updated in the code
-    demand_shifted = demand_15min
+    demand_shifted = demand_15min.copy()
     
     # Define a dataframe with the main power flows (in kW)
     pflows = pd.DataFrame(index=demand_15min.index)
