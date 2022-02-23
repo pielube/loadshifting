@@ -12,6 +12,8 @@ import os,json
 from dash_components import household_components,heating_components,ev_components,pv_components
 import defaults
 from demands import compute_demand
+from plots import make_demand_plot
+from simulation import shift_load
 
 #%% Build the app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MINTY], title="Load Shifting")
@@ -274,6 +276,7 @@ statelist = ['week','dropdown_house']
 
 @app.callback(
     Output("display1", "figure"),
+    Output("display2", "figure"),
     Output("week", "disabled"),
     Output("simulation_output", "children"),
 #    Output("coordinates_output", "children"),
@@ -295,108 +298,88 @@ def display_graph(n_clicks,week,dropdown_house):
         n_clicks = 0
     analyze_button_pressed = n_clicks > n_clicks_last
     n_clicks_last = n_clicks
-    
-    path = r'./inputs'
+
         
     """
     Loading inputs
     """
-    filename = dropdown_house +'.json'
-    file = os.path.join(path,filename)
-    with open(file) as f:
-      inputs = json.load(f)
-    N = 1
-      
-    demands = compute_demand(inputs,N)
-    global load
-    load = demands['results'][0]
-
-    # #update inputs with user-defined values
-    # inputs['appliances']['apps'] = []
-    # if 'wm' in checklist_apps:
-    #     inputs['appliances']['apps'].append("WashingMachine")
-    # if 'td' in checklist_apps:
-    #     inputs['appliances']['apps'].append("TumbleDryer")        
-    # if 'dw' in checklist_apps:
-    #     inputs['appliances']['apps'].append("DishWasher")    
-    # if 'hp' in checklist_apps:
-    #     inputs['HP']['loadshift'] = True
-    # else:
-    #     inputs['HP']['loadshift'] = False
-    # if 'eb' in checklist_apps:
-    #     inputs['DHW']['loadshift'] = True
-    # else:
-    #     inputs['DHW']['loadshift'] = False
-    # if 'ev' in checklist_apps:
-    #     inputs['EV']['loadshift'] = True
-    # else:
-    #     inputs['EV']['loadshift'] = False
-        
-    # inputs['members'] = []
-    # inputs['members'] += ['FTE' for i in range(dropdown_FTE)]
-    # inputs['members'] += ['Retired' for i in range(dropdown_Retired)]
-    # inputs['members'] += ['Unemployed' for i in range(dropdown_Unemployed)]
-    # inputs['members'] += ['School' for i in range(dropdown_School)]
+    N = 1 # Number of stochastic simulations to be run for the demand curves
     
-    # # If given, HP size imposed, otherwise automatic sizing
-    # inputs['HP']['HeatPumpThermalPower'] = int(input_hp_power)
+    # Case description
+    with open('inputs/cases.json','r') as f:
+        cases = json.load(f)
     
-    # inputs['DHW']['Vcyl'] = int(input_boiler_volume)
-    # inputs['DHW']['Ttarget'] = int(input_boiler_temperature)
+    # PV and battery technology parameters
+    with open('inputs/pvbatt_param.json','r') as f:
+        pvbatt_param = json.load(f)
+    
+    # Economic parameters
+    with open('inputs/econ_param.json','r') as f:
+        econ_param = json.load(f)
+    
+    # Time of use tariffs
+    with open('inputs/tariffs.json','r') as f:
+        tariffs = json.load(f)
+    
+    # Parameters for the dwelling
+    with open('inputs/housetypes.json','r') as f:
+        housetypes = json.load(f)    
+    
+    
+    """
+    simulation
+    """
+    global demand_15min, demand_shifted
+    results,demand_15min,demand_shifted,pflows = shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N)
+    
+    print(json.dumps(results, indent=4))
     
 
-    n_middle = int(len(load)/2)
-    year = load.index.isocalendar().year[n_middle]
-    idx = load.index[(load.index.isocalendar().week==week) & (load.index.isocalendar().year==year)]
-    fig = go.Figure()
-    for key in load:
-        fig.add_trace(go.Scatter(
-            name = key,
-            x = idx,
-            y = load.loc[idx,key],
-            stackgroup='one',
-            mode='none'               # this remove the lines
-           ))
+    n_middle = int(len(demand_15min)/2)
+    year = demand_15min.index.isocalendar().year[n_middle]
+    idx = demand_15min.index[(demand_15min.index.isocalendar().week==week) & (demand_15min.index.isocalendar().year==year)]
+    
+    """
+    Figures
+    """    
+    fig = make_demand_plot(idx,demand_15min,title='Consommation sans déplacement de charge')
+    fig2 = make_demand_plot(idx,demand_shifted,title='Consommation avec déplacement de charge')
 
-    fig.update_layout(title = 'Consommation',
-                      xaxis_title = 'Dates',
-                      yaxis_title = 'Puissance en W'
-                      )
+    """
+    Text output
+    """   
     totext = []
-    for x in ['coucou','tout le monde']:
-        totext.append(x)
+    for key in results:
+        totext.append(key + ": " + str(results[key]))
         totext.append(html.Br())   
     
-    return fig,False,totext     # Number of returns must be equal to the number of outputs
+    return fig,fig2,False,totext     # Number of returns must be equal to the number of outputs
 
+
+
+@app.callback(
+    Output("display1", "figure"),
+    Output("display2", "figure"),
+    [Input("week", "value")]
+)
+def update_plot(week):
+    n_middle = int(len(demand_15min)/2)
+    idx = demand_15min.index[(demand_15min.index.isocalendar().week==week) & (demand_15min.index.isocalendar().year==demand_15min.index.isocalendar().year[n_middle])]
+
+    fig = make_demand_plot(idx,demand_15min,title='Consommation sans déplacement de charge')
+    fig2 = make_demand_plot(idx,demand_shifted,title='Consommation avec déplacement de charge')
+    
+    return fig,fig2
+
+
+
+
+
+#%%
 
 if __name__ == '__main__':
     app.run_server(debug=False)
 
 
-
-### Update the plot with a different week. TODO: understand why this does not work
-@app.callback(
-    Output("display1", "figure"),
-    [Input("week", "value")]
-)
-def update_plot(week):
-    n_middle = int(len(load)/2)
-    idx = load.index[(load.index.isocalendar().week==week) & (load.index.isocalendar().year==load.index.isocalendar().year[n_middle])]
-    fig = go.Figure()
-    for key in load:
-        fig.add_trace(go.Scatter(
-            name = key,
-            x = idx,
-            y = load.loc[idx,key],
-            stackgroup='one',
-            mode='none'               # this remove the lines
-           ))
-
-    fig.update_layout(title = 'Consommation',
-                      xaxis_title = 'Dates',
-                      yaxis_title = 'Puissance en W'
-                      )
-    return fig
 
 
