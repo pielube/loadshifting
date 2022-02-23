@@ -321,11 +321,13 @@ def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,hea
     return Qheat, Tinside
 
 
-def ResultsAnalysis(pv_capacity,batt_capacity,pv,demand_ref,demand,ElPrices,prices,scenario,econ_param):
+def ResultsAnalysis(pv_capacity,batt_capacity,pflows,ElPrices,prices,scenario,econ_param):
     
     # Running prosumpy to get SC and SSR and energy fluxes for economic analysis
     # All shifting must have already been modelled, including battery
     # param_tech is hence defined here and battery forced to be 0
+    
+    pv,demand_ref,demand=pflows.pv,pflows.demand_noshift,pflows.fromgrid
     
     param_tech = {'BatteryCapacity': 0.,
                   'BatteryEfficiency': 1.,

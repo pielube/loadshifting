@@ -131,12 +131,14 @@ for jjj in idx_casestobesim:
     # define the shifted demand dataframe. To be updated in the code
     demand_shifted = demand_15min
     
+    # Define a dataframe with the main power flows (in kW)
+    pflows = pd.DataFrame(index=demand_15min.index)
+    
     # Reference demand
     # Aggregated demand pre-shifting
-    demand_ref = demand_15min.sum(axis=1).to_numpy() # kW
-    ydemand = np.sum(demand_ref)/4
-    #demand_15min.insert(len(demand_pspy.columns),'TotalReference',demand_ref,True)
-    
+    pflows['demand_noshift'] = demand_15min.sum(axis=1).to_numpy() # kW
+    ydemand = np.sum(pflows['demand_noshift'])/4
+
     
     """
     5) Occupancy
@@ -166,20 +168,19 @@ for jjj in idx_casestobesim:
         else:
             pvpeak = config_pv['Ppeak']
         # 15 min timestep series
-        pv_15min = pvadim * pvpeak # kW
+        pflows['pv'] = pvadim * pvpeak # kW
         # 1 min timestep array
-        pv_1min = scale_timeseries(pv_15min,index1min)   # kW
+        pv_1min = scale_timeseries(pflows.pv,index1min)   # kW
                 
         # Residual PV
         # 15 min timestep series
-        dem_15min_noshift = demand_15min[TechsNoShift].sum(axis=1) # kW
-        pv_15min_res = np.maximum(0,pv_15min - dem_15min_noshift) # kW
+        pv_15min_res = np.maximum(0,pflows.pv - demand_15min[TechsNoShift].sum(axis=1)) # kW
         # 1 min timestep array
         demnoshift = demands['results'][idx][TechsNoShift].sum(axis=1)[:-1].to_numpy()/1000. # kW
         pv_1min_res = np.maximum(0,pv_1min-demnoshift) # kW 
       
     else:
-        pv_15min = pd.Series(0,index=index15min) # kW
+        pflows['pv'] = pd.Series(0,index=index15min) # kW
         pvpeak = 0. # kWp
     
     # Update PV capacity
@@ -441,8 +442,8 @@ for jjj in idx_casestobesim:
 
     # Saving demand profile obtained thanks to shifting techs
     # Not yet considering battery
-    # Equal to demand_ref if no shifting
-    demand_prebatt = demand_shifted[TechsNoShift+TechsShift].sum(axis=1) # kW
+    # Equal to pflows['demand_noshift'] if no shifting
+    pflows['demand_shifted_nobatt'] = demand_shifted[TechsNoShift+TechsShift].sum(axis=1) # kW
     #demand_pspy.insert(len(demand_pspy.columns),'TotalShiftPreBattery',demand_prebatt.to_numpy(),True) # kW
     
        
@@ -459,19 +460,21 @@ for jjj in idx_casestobesim:
         param_tech_batt_pspy = pvbatt_param['battery']
         param_tech_batt_pspy['timestep']=.25
         
-        dispatch_bat = dispatch_max_sc(pv_15min,demand_prebatt,param_tech_batt_pspy,return_series=False)
-        print_analysis(pv_15min,demand_prebatt,param_tech_batt_pspy, dispatch_bat)
+        dispatch_bat = dispatch_max_sc(pflows.pv,pflows.demand_shifted_nobatt,param_tech_batt_pspy,return_series=False)
+        print_analysis(pflows.pv,pflows.demand_shifted_nobatt,param_tech_batt_pspy, dispatch_bat)
         
         # The charging of the battery is considered as an additional load. It is the difference between the original PV genration and the generation from prosumpy
-        demand_shifted['BatteryConsumption'] = np.maximum(0,pv_15min - dispatch_bat['inv2load'] - dispatch_bat['inv2grid'])
+        demand_shifted['BatteryConsumption'] = np.maximum(0,pflows.pv - dispatch_bat['inv2load'] - dispatch_bat['inv2grid'])
         
         # The discharge of the battery is considered as a negative load:
-        demand_shifted['BatteryGeneration'] = np.minimum(0,pv_15min - dispatch_bat['inv2load'] - dispatch_bat['inv2grid'])
+        demand_shifted['BatteryGeneration'] = np.minimum(0,pflows.pv - dispatch_bat['inv2load'] - dispatch_bat['inv2grid'])
         
         # Saving demand profile considering also battery shifting
-        demand_fromgrid = pd.Series(data=dispatch_bat['grid2load'],index=index15min) # kW
-        #demand_pspy.insert(len(demand_pspy.columns),'TotalShiftPostBattery',demand_postbatt,True) # kW
-            
+        pflows['fromgrid'] = pd.Series(data=dispatch_bat['grid2load'],index=index15min) # kW
+        pflows['togrid'] = pd.Series(data=dispatch_bat['inv2grid'],index=index15min) # kW
+        
+        pflows['demand_shifted'] = demand_shifted.sum(axis=1)
+  
     
     """
     9) Final analisys of the results (including economic analysis)
@@ -484,8 +487,9 @@ for jjj in idx_casestobesim:
     #   - energy prices
     #   - fixed and capacity-related tariffs
     
-    outs = ResultsAnalysis(pvbatt_param['pv']['Ppeak'],pvbatt_param['battery']['BatteryCapacity'],pv_15min,demand_ref,demand_fromgrid,yprices_15min,prices,scenario,econ_param[namecase])
-    
+    outs = ResultsAnalysis(pvbatt_param['pv']['Ppeak'],pvbatt_param['battery']['BatteryCapacity'],pflows,yprices_15min,prices,scenario,econ_param[namecase])
+    outs['el_shifted'] = np.abs(pflows.demand_noshift-pflows.demand_shifted).sum()/2/4
+    outs['losses'] = (pflows.demand_shifted.sum() - pflows.demand_noshift.sum())/4
     
     """
     10) Saving results to Excel
@@ -494,10 +498,7 @@ for jjj in idx_casestobesim:
     #   - add column with time horizion EconomicVar['time_horizon']
     #   - add columns with el prices
     #   - add columns with capacity-related prices
-    #   - add in previous passages overall electricity shifted (right here set to 0)
-    
-    ###### TEMP ########
-    outs['el_shifted'] = 0. 
+    #   - add in previous passages overall electricity shifted (right here set to 0)   
     
     # Saving results to excel
     file = 'simulations/test'+house+'.xlsx'
