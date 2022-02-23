@@ -488,8 +488,6 @@ for jjj in idx_casestobesim:
     #   - fixed and capacity-related tariffs
     
     outs = ResultsAnalysis(pvbatt_param['pv']['Ppeak'],pvbatt_param['battery']['BatteryCapacity'],pflows,yprices_15min,prices,scenario,econ_param[namecase])
-    outs['el_shifted'] = np.abs(pflows.demand_noshift-pflows.demand_shifted).sum()/2/4
-    outs['losses'] = (pflows.demand_shifted.sum() - pflows.demand_noshift.sum())/4
     
     """
     10) Saving results to Excel

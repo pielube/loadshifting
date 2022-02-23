@@ -411,6 +411,8 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pflows,ElPrices,prices,scenario,ec
     out['el_boughtfromgrid'] = np.sum(res_pspy['grid2load'])*timestep
     
     out['selfsuffrate'] = out['el_selfcons']/out['cons_total']
+    out['el_shifted'] = np.abs(pflows.demand_noshift-pflows.demand_shifted).sum()/2/4
+    out['losses'] = (pflows.demand_shifted.sum() - pflows.demand_noshift.sum())/4
     
     if out['el_prod'] == 0:
         out['selfconsrate'] = 0
