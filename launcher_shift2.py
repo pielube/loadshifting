@@ -7,7 +7,7 @@ import time
 from prosumpy import dispatch_max_sc,print_analysis
 from temp_functions import yearlyprices,HPSizing,COP_Tamb
 from launcher_shift_functions import MostRepCurve,DHWShiftTariffs,HouseHeating,ResultsAnalysis,WriteResToExcel,load_climate_data
-from temp_functions import shift_appliance
+from temp_functions import shift_appliance,scale_timeseries
 from pv import pvgis_hist
 from demands import compute_demand
 import defaults
@@ -125,15 +125,17 @@ for jjj in idx_casestobesim:
     # Meaning 15 min timestep and in kW
     # Selecting only techs (columns) of the case of interest
     
-    demand_pspy = demands['results'][idx][columns]/1000. # kW
-    demand_pspy = demand_pspy.resample('15Min').mean()[:-1] # kW
+    demand_15min = demands['results'][idx][columns]/1000. # kW
+    demand_15min = demand_15min.resample('15Min').mean()[:-1] # kW
+    
+    # define the shifted demand dataframe. To be updated in the code
+    demand_shifted = demand_15min
     
     # Reference demand
     # Aggregated demand pre-shifting
-    
-    demand_ref = demand_pspy.sum(axis=1).to_numpy() # kW
+    demand_ref = demand_15min.sum(axis=1).to_numpy() # kW
     ydemand = np.sum(demand_ref)/4
-    demand_pspy.insert(len(demand_pspy.columns),'TotalReference',demand_ref,True)
+    #demand_15min.insert(len(demand_pspy.columns),'TotalReference',demand_ref,True)
     
     
     """
@@ -166,19 +168,18 @@ for jjj in idx_casestobesim:
         # 15 min timestep series
         pv_15min = pvadim * pvpeak # kW
         # 1 min timestep array
-        pv_1min = pv_15min.resample('T').pad().reindex(index1min,method='nearest').to_numpy() # kW
+        pv_1min = scale_timeseries(pv_15min,index1min)   # kW
                 
         # Residual PV
         # 15 min timestep series
-        dem_15min_noshift = demand_pspy[TechsNoShift].sum(axis=1) # kW
+        dem_15min_noshift = demand_15min[TechsNoShift].sum(axis=1) # kW
         pv_15min_res = np.maximum(0,pv_15min - dem_15min_noshift) # kW
         # 1 min timestep array
         demnoshift = demands['results'][idx][TechsNoShift].sum(axis=1)[:-1].to_numpy()/1000. # kW
         pv_1min_res = np.maximum(0,pv_1min-demnoshift) # kW 
       
     else:
-        pv_15min = np.zeros(n15min) # kW
-        pv_15min = pd.Series(data=pv_15min,index=index15min) # kW
+        pv_15min = pd.Series(0,index=index15min) # kW
         pvpeak = 0. # kWp
     
     # Update PV capacity
@@ -250,17 +251,15 @@ for jjj in idx_casestobesim:
             app_n,ncyc,ncycshift,enshift = shift_appliance(demands['results'][idx][app][:-1],admtimewin,defaults.probshift,max_shift=defaults.max_shift*60,threshold_window=threshold_window,verbose=True)
             
             # Resizing shifted array
-            app_n_series = pd.Series(data=app_n,index=index1min) # W
-            app_n_15min = app_n_series.resample('15Min').mean().to_numpy()/1000. # kW
+            app_n_15min = pd.Series(data=app_n,index=index1min).resample('15Min').mean().to_numpy()/1000. # kW
             
             # updating demand dataframe
-            demand_pspy.insert(len(demand_pspy.columns),app+'Shift',app_n_15min,True) # kW
+            demand_shifted[app] = app_n_15min     # kW
             
             # Updating residual PV considering the consumption of the app just shifted
             if PVBool:  
                 pv_1min_res = pv_1min_res - app_n/1000. # kW
-                pv_1min_res_series = pd.Series(data=pv_1min_res,index=index1min) # kW
-                pv_15min_res = pv_1min_res_series.resample('15Min').mean() # kW
+                pv_15min_res = pd.Series(data=pv_1min_res,index=index1min).resample('15Min').mean() # kW
       
     """
     8B) Load shifting - DHW
@@ -272,7 +271,7 @@ for jjj in idx_casestobesim:
         print('--- Shifting domestic hot water ---')
     
         # demand of domestic hot water (to be used with battery equivalent approach)
-        demand_dhw = demand_pspy['DomesticHotWater'] # kW
+        demand_dhw = demand_15min['DomesticHotWater'] # kW
     
         # equivalent battery
         # TODO check these entries
@@ -300,9 +299,8 @@ for jjj in idx_casestobesim:
             demand_dhw_shift = demand_dhw_shift.astype('float64') # kW
             
             # updating residual pv
-            pv_15min_res = [a if a>0 else 0 for a in (pv_15min_res.to_numpy()-demand_dhw_shift)] # kW
-            pv_15min_res = pd.Series(data=pv_15min_res,index=index15min) # kW
-            pv_1min_res  = pv_15min_res.resample('T').pad().reindex(index1min,method='nearest').to_numpy() # kW 
+            pv_15min_res = np.maximum(0,pv_15min_res-demand_dhw_shift) # kW
+            pv_1min_res  = scale_timeseries(pv_15min_res,index1min) # kW 
             
         else: # strategy based on tariffs
             
@@ -312,11 +310,11 @@ for jjj in idx_casestobesim:
             demand_dhw_shift = demand_dhw_shift.astype('float64')   # kW
             
         # updating demand dataframe
-        demand_pspy.insert(len(demand_pspy.columns),'DomesticHotWaterShift',demand_dhw_shift,True) # kW
+        demand_shifted['DomesticHotWater'] = demand_dhw_shift     # kW
         
         # check on shifting
-        conspre  = np.sum(demand_pspy['DomesticHotWater'])/4. # kWh
-        conspost = np.sum(demand_pspy['DomesticHotWaterShift'])/4. # kWh
+        conspre  = np.sum(demand_15min['DomesticHotWater'])/4. # kWh
+        conspost = np.sum(demand_shifted['DomesticHotWater'])/4. # kWh
         print("Original consumption: {:.2f} kWh".format(conspre))
         print("Consumption after shifting (check): {:.2f} kWh".format(conspost))
             
@@ -366,9 +364,6 @@ for jjj in idx_casestobesim:
             # in the 3 hour time window before heating on
             # AND
             # tariffs are low
-        
-            # Shifting based on tariffs-specific inputs
-            t_preheat_min = defaults.t_preheat*60
             
             # Hours with admissible prices
             yprices_1min = yearlyprices(scenario,timeslots,prices,stepperh_1min) # €/kWh
@@ -388,15 +383,14 @@ for jjj in idx_casestobesim:
             idx = np.searchsorted(idx_z, idx_nz)
             timeleftarr[~mask_z] = idx_z[idx] - idx_nz
             
-            admhours = [1. if 0<a<t_preheat_min else 0. for a in timeleftarr]
-            admhours = np.array(admhours)
+            admtimes = (timeleftarr<defaults.t_preheat*60)
             
             # Resulting hours in which to increase setpoint
-            idx = np.where(admprices*admhours)
+            idx_tincrease = np.where(admprices*admtimes)[0]
             
             # Recalculating T setpoint array with increase
             Tset += offset
-            Tset[idx] += defaults.Tincrease
+            Tset[idx_tincrease] += defaults.Tincrease
             
         
         Qshift,Tin_shift = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,defaults.heatseas_st,defaults.heatseas_end)
@@ -417,12 +411,11 @@ for jjj in idx_casestobesim:
         
         # Updating demand dataframe
         demand_HP_shift = pd.Series(data=Eshift,index=index1min)
-        demand_HP_shift = demand_HP_shift.resample('15Min').mean().to_numpy()/1000. # kW
-        demand_pspy.insert(len(demand_pspy.columns),'HeatPumpPowerShift',demand_HP_shift,True) #kW
+        demand_shifted['HeatPumpPower'] = demand_HP_shift.resample('15Min').mean().to_numpy()/1000. # kW
         
         # Check results
-        HPcons_pre  = np.sum(demand_pspy['HeatPumpPower'])/4. # kWh
-        HPcons_post = np.sum(demand_pspy['HeatPumpPowerShift'])/4. # kWh
+        HPcons_pre  = np.sum(demand_15min['HeatPumpPower'])/4. # kWh
+        HPcons_post = np.sum(demand_shifted['HeatPumpPower'])/4. # kWh
         HPconsincr = (HPcons_post-HPcons_pre)/HPcons_pre*100 # %
         print("Original consumption: {:.2f} kWh".format(HPcons_pre))
         print("Consumption after shifting: {:.2f} kWh".format(HPcons_post))
@@ -430,9 +423,8 @@ for jjj in idx_casestobesim:
         
         if PVBool:        
             # Updating residual PV
-            pv_15min_res = [a if a>0 else 0 for a in (pv_15min_res.to_numpy()-demand_HP_shift)] # kW
-            pv_15min_res = pd.Series(data=pv_15min_res,index=index15min) # kW
-            pv_1min_res  = pv_15min_res.resample('T').pad().reindex(index1min,method='nearest').to_numpy() # kW 
+            pv_15min_res = np.maximum(0,pv_15min_res-demand_HP_shift) # kW
+            #pv_1min_res  = scale_timeseries(pv_15min_res,index1min) # kW 
         
             
     
@@ -441,25 +433,18 @@ for jjj in idx_casestobesim:
     """
     
     #TODO
-    demand_pspy['EVChargingShift'] = demand_pspy['EVCharging']              # temporary value to run the rest of the code
+    #demand_shifted['EVCharging'] = demand_15min['EVCharging']              # temporary value to run the rest of the code
     
     """
     8E) Final aggregated demand before battery shifting
     """
-    
-    # Columns to be considered for the final demand profile
-    finalcols = TechsNoShift
-    for app in TechsShift:
-        finalcols.append(app+'Shift')
-    
+
     # Saving demand profile obtained thanks to shifting techs
     # Not yet considering battery
     # Equal to demand_ref if no shifting
-    demand_prebatt = demand_pspy[finalcols].sum(axis=1) # kW
-    demand_pspy.insert(len(demand_pspy.columns),'TotalShiftPreBattery',demand_prebatt.to_numpy(),True) # kW
+    demand_prebatt = demand_shifted[TechsNoShift+TechsShift].sum(axis=1) # kW
+    #demand_pspy.insert(len(demand_pspy.columns),'TotalShiftPreBattery',demand_prebatt.to_numpy(),True) # kW
     
-    # If no battery this demand profile is the definitive one
-    demand_final = demand_prebatt # kW
        
     """
     8F) Load shifting - Standard battery
@@ -474,16 +459,19 @@ for jjj in idx_casestobesim:
         param_tech_batt_pspy = pvbatt_param['battery']
         param_tech_batt_pspy['timestep']=.25
         
-        outs = dispatch_max_sc(pv_15min,demand_prebatt,param_tech_batt_pspy,return_series=False)
-        print_analysis(pv_15min,demand_prebatt,param_tech_batt_pspy, outs)
+        dispatch_bat = dispatch_max_sc(pv_15min,demand_prebatt,param_tech_batt_pspy,return_series=False)
+        print_analysis(pv_15min,demand_prebatt,param_tech_batt_pspy, dispatch_bat)
+        
+        # The charging of the battery is considered as an additional load. It is the difference between the original PV genration and the generation from prosumpy
+        demand_shifted['BatteryConsumption'] = np.maximum(0,pv_15min - dispatch_bat['inv2load'] - dispatch_bat['inv2grid'])
+        
+        # The discharge of the battery is considered as a negative load:
+        demand_shifted['BatteryGeneration'] = np.minimum(0,pv_15min - dispatch_bat['inv2load'] - dispatch_bat['inv2grid'])
         
         # Saving demand profile considering also battery shifting
-        demand_postbatt = pd.Series(data=outs['grid2load'],index=index15min) # kW
-        demand_pspy.insert(len(demand_pspy.columns),'TotalShiftPostBattery',demand_postbatt,True) # kW
-        
-        # Updating final demand profile
-        demand_final = demand_postbatt # kW
-    
+        demand_fromgrid = pd.Series(data=dispatch_bat['grid2load'],index=index15min) # kW
+        #demand_pspy.insert(len(demand_pspy.columns),'TotalShiftPostBattery',demand_postbatt,True) # kW
+            
     
     """
     9) Final analisys of the results (including economic analysis)
@@ -496,8 +484,7 @@ for jjj in idx_casestobesim:
     #   - energy prices
     #   - fixed and capacity-related tariffs
     
-    demand_final = pd.Series(data=demand_final,index=index15min)
-    outs = ResultsAnalysis(pvbatt_param['pv']['Ppeak'],pvbatt_param['battery']['BatteryCapacity'],pv_15min,demand_ref,demand_final,yprices_15min,prices,scenario,econ_param[namecase])
+    outs = ResultsAnalysis(pvbatt_param['pv']['Ppeak'],pvbatt_param['battery']['BatteryCapacity'],pv_15min,demand_ref,demand_fromgrid,yprices_15min,prices,scenario,econ_param[namecase])
     
     
     """

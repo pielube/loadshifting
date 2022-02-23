@@ -3,8 +3,8 @@ import os
 import numpy as np
 import pandas as pd
 import pvlib
-from temp_functions import cache_func
-
+from joblib import Memory
+memory = Memory('./cache/', verbose=1)
 
 # Geographic location - Liège
 # Weather -  TMY (2006-2016)
@@ -133,7 +133,7 @@ def pvlib_detailed(coordinates,surface_tilt):
     
     return ac_15min,losses,dc_peak['p_mp']
 
-@cache_func
+@memory.cache
 def pvgis_hist(inputs):
     """
     PV production taken from PVGIS data
