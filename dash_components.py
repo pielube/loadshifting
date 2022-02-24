@@ -28,9 +28,9 @@ household_components = [
 
     html.Div(id='text_flex_appliances', children='Participation des électrodomestiques'),
     dcc.Dropdown( id = 'dropdown_flex_appliances',
-                    options = [ {'label':'Charge déplaçable', 'value': False}, 
-                               {'label':'Charge non déplaçable', 'value': True}],
-                    value = True),
+                    options = [ {'label':'Charge déplaçable', 'value': 'shiftable'}, 
+                               {'label':'Charge non déplaçable', 'value': 'non-shiftable'}],
+                    value = 'shiftable'),
 
 
 ]

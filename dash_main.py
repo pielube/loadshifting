@@ -271,7 +271,7 @@ n_clicks_last = 0
 #%% The callback to the main simulation
 
 # List of states to be considered in the functions:
-statelist = ['week','dropdown_house']
+statelist = ['dropdown_house']
 
 
 @app.callback(
@@ -282,6 +282,7 @@ statelist = ['week','dropdown_house']
 #    Output("coordinates_output", "children"),
     [
         Input('analyze', 'n_clicks'),
+        Input("week", "value"),
 #        Input("height_slider_input", "value"),
 #        Input("streamline_density_slider_input", "value"),
     ],
@@ -293,83 +294,98 @@ def display_graph(n_clicks,week,dropdown_house):
     Inputs trigger a callback 
     States are used as parameters but do not trigger a callback
     '''
-    global n_clicks_last
+    global n_clicks_last,demand_15min, demand_shifted,totext
     if n_clicks is None:
         n_clicks = 0
     analyze_button_pressed = n_clicks > n_clicks_last
     n_clicks_last = n_clicks
 
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        trigger = ''
+    else:
+        trigger = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if trigger!='week':
+        """
+        Loading inputs
+        """
+        N = 1 # Number of stochastic simulations to be run for the demand curves
         
-    """
-    Loading inputs
-    """
-    N = 1 # Number of stochastic simulations to be run for the demand curves
+        # Case description
+        with open('inputs/cases.json','r') as f:
+            cases = json.load(f)
+        
+        # PV and battery technology parameters
+        with open('inputs/pvbatt_param.json','r') as f:
+            pvbatt_param = json.load(f)
+        
+        # Economic parameters
+        with open('inputs/econ_param.json','r') as f:
+            econ_param = json.load(f)
+        
+        # Time of use tariffs
+        with open('inputs/tariffs.json','r') as f:
+            tariffs = json.load(f)
+        
+        # Parameters for the dwelling
+        with open('inputs/housetypes.json','r') as f:
+            housetypes = json.load(f)    
+        
+        
+        """
+        simulation
+        """
+        #global demand_15min, demand_shifted
+        results,demand_15min,demand_shifted,pflows = shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N)
+        
+        print(json.dumps(results, indent=4))
+        
     
-    # Case description
-    with open('inputs/cases.json','r') as f:
-        cases = json.load(f)
+        n_middle = int(len(demand_15min)/2)
+        year = demand_15min.index.isocalendar().year[n_middle]
+        idx = demand_15min.index[(demand_15min.index.isocalendar().week==week) & (demand_15min.index.isocalendar().year==year)]
+        
+        """
+        Figures
+        """    
+        fig = make_demand_plot(idx,demand_15min,title='Consommation sans déplacement de charge')
+        fig2 = make_demand_plot(idx,demand_shifted,title='Consommation avec déplacement de charge')
     
-    # PV and battery technology parameters
-    with open('inputs/pvbatt_param.json','r') as f:
-        pvbatt_param = json.load(f)
+        """
+        Text output
+        """   
+        totext = []
+        for key in results:
+            totext.append(key + ": " + str(results[key]))
+            totext.append(html.Br())   
+        
+        return fig,fig2,False,totext     # Number of returns must be equal to the number of outputs
+
+    else:
+        n_middle = int(len(demand_15min)/2)
+        idx = demand_15min.index[(demand_15min.index.isocalendar().week==week) & (demand_15min.index.isocalendar().year==demand_15min.index.isocalendar().year[n_middle])]
     
-    # Economic parameters
-    with open('inputs/econ_param.json','r') as f:
-        econ_param = json.load(f)
-    
-    # Time of use tariffs
-    with open('inputs/tariffs.json','r') as f:
-        tariffs = json.load(f)
-    
-    # Parameters for the dwelling
-    with open('inputs/housetypes.json','r') as f:
-        housetypes = json.load(f)    
-    
-    
-    """
-    simulation
-    """
-    global demand_15min, demand_shifted
-    results,demand_15min,demand_shifted,pflows = shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N)
-    
-    print(json.dumps(results, indent=4))
+        fig = make_demand_plot(idx,demand_15min,title='Consommation sans déplacement de charge')
+        fig2 = make_demand_plot(idx,demand_shifted,title='Consommation avec déplacement de charge')
+        return fig,fig2,False,totext
     
 
-    n_middle = int(len(demand_15min)/2)
-    year = demand_15min.index.isocalendar().year[n_middle]
-    idx = demand_15min.index[(demand_15min.index.isocalendar().week==week) & (demand_15min.index.isocalendar().year==year)]
+# The following function, although it works with some versions of Dash, is not allowed because it adds a callback on the display outputs, which is not allowed.
+# @app.callback(
+#     Output("display1", "figure"),
+#     Output("display2", "figure"),
+#     [Input("week", "value")],
+#     prevent_initial_call=True
+# )
+# def update_plot(week):
+#     n_middle = int(len(demand_15min)/2)
+#     idx = demand_15min.index[(demand_15min.index.isocalendar().week==week) & (demand_15min.index.isocalendar().year==demand_15min.index.isocalendar().year[n_middle])]
+
+#     fig = make_demand_plot(idx,demand_15min,title='Consommation sans déplacement de charge')
+#     fig2 = make_demand_plot(idx,demand_shifted,title='Consommation avec déplacement de charge')
     
-    """
-    Figures
-    """    
-    fig = make_demand_plot(idx,demand_15min,title='Consommation sans déplacement de charge')
-    fig2 = make_demand_plot(idx,demand_shifted,title='Consommation avec déplacement de charge')
-
-    """
-    Text output
-    """   
-    totext = []
-    for key in results:
-        totext.append(key + ": " + str(results[key]))
-        totext.append(html.Br())   
-    
-    return fig,fig2,False,totext     # Number of returns must be equal to the number of outputs
-
-
-
-@app.callback(
-    Output("display1", "figure"),
-    Output("display2", "figure"),
-    [Input("week", "value")]
-)
-def update_plot(week):
-    n_middle = int(len(demand_15min)/2)
-    idx = demand_15min.index[(demand_15min.index.isocalendar().week==week) & (demand_15min.index.isocalendar().year==demand_15min.index.isocalendar().year[n_middle])]
-
-    fig = make_demand_plot(idx,demand_15min,title='Consommation sans déplacement de charge')
-    fig2 = make_demand_plot(idx,demand_shifted,title='Consommation avec déplacement de charge')
-    
-    return fig,fig2
+#     return fig,fig2
 
 
 
