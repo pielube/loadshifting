@@ -3,8 +3,12 @@ import os
 import numpy as np
 import pandas as pd
 import pvlib
+
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
 from joblib import Memory
-memory = Memory('./cache/', verbose=1)
+memory = Memory(__location__ + '/cache/', verbose=1)
 
 # Geographic location - Liège
 # Weather -  TMY (2006-2016)

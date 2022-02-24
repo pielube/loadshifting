@@ -135,7 +135,7 @@ def simulate_scenarios(n_scen,inputs):
         textoutput += ["Generating scenario {}".format(i)]
         textoutput += family.textoutput
         
-        members += family.members
+        members.append(family.members)
         
         # Annual load from appliances
         E_app = int(np.sum(family.P)/60/1000)

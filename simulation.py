@@ -19,7 +19,8 @@ from pv import pvgis_hist
 from demands import compute_demand
 import defaults
 
-
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 def shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N,namecase = 'default'):
     '''

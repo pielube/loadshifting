@@ -10,8 +10,12 @@ from strobe.RC_BuildingSimulator import Zone
 
 from temp_functions import EconomicAnalysis,EconomicAnalysisRefPV
 
+import os
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
 from joblib import Memory
-memory = Memory('./cache/', verbose=1)
+memory = Memory(__location__ + '/cache/', verbose=1)
 
 # List of functions this .py file should contain
 
@@ -33,7 +37,7 @@ memory = Memory('./cache/', verbose=1)
 # - change name of this file
 
 @memory.cache
-def load_climate_data(datapath = r'./strobe/Data'):
+def load_climate_data(datapath = __location__ + '/strobe/Data'):
     '''
     Function that loads the climate data from strobe
     '''

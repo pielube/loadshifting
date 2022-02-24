@@ -10,8 +10,11 @@ from preprocess import ProcebarExtractor,HouseholdMembers
 import os
 import pickle
 from joblib import Memory
-memory = Memory('./cache/', verbose=1)
 
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
+memory = Memory(__location__ + '/cache/', verbose=1)
 
 @memory.cache
 def compute_demand(inputs,N,members= None,thermal_parameters=None):
@@ -92,9 +95,9 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
                 df[key] = result_ramp[key]* 1000
             else:
                 df[key] = 0
-        # Dataframe with the 
+        # Dataframe with the occupancy data
         occupancy = pd.DataFrame(index=index_10min)
-        for i,m in enumerate(result['members']):
+        for i,m in enumerate(result['members'][n_scen]):
             membername = str(i) + '-' + m 
             occupancy[membername] = result['occupancy'][n_scen][i]
         
@@ -109,7 +112,7 @@ if __name__ == "__main__":
     """
     Testing the main function and saving the results
     """
-    path = r'./inputs'
+    path = './inputs'
     names = ['4f']# ['1f','2f','4f']
     
     for name in names:            # For each house type
@@ -129,7 +132,7 @@ if __name__ == "__main__":
         Saving results, occupancy, and inputs
         """
         
-        path = r'./simulations'
+        path = './simulations'
         if not os.path.exists(path):
             os.makedirs(path)
             

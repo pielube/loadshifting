@@ -14,6 +14,8 @@ import defaults
 
 
 start_time = time.time()
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 
 #%% Main simulation parameters
@@ -29,24 +31,26 @@ idx_casestobesim = [0]
 
 #%% Loading inputs
 
+inputfolder = __location__ + "/inputs/"
+
 # Case description
-with open('inputs/cases.json','r') as f:
+with open(inputfolder + 'cases.json','r') as f:
     cases = json.load(f)
 
 # PV and battery technology parameters
-with open('inputs/pvbatt_param.json','r') as f:
+with open(inputfolder + 'pvbatt_param.json','r') as f:
     pvbatt_param = json.load(f)
 
 # Economic parameters
-with open('inputs/econ_param.json','r') as f:
+with open(inputfolder + 'econ_param.json','r') as f:
     econ_param = json.load(f)
 
 # Time of use tariffs
-with open('inputs/tariffs.json','r') as f:
+with open(inputfolder + 'tariffs.json','r') as f:
     tariffs = json.load(f)
 
 # Parameters for the dwelling
-with open('inputs/housetypes.json','r') as f:
+with open(inputfolder + 'housetypes.json','r') as f:
     housetypes = json.load(f)
         
 
@@ -499,7 +503,7 @@ for jjj in idx_casestobesim:
     #   - add in previous passages overall electricity shifted (right here set to 0)   
     
     # Saving results to excel
-    file = 'simulations/test'+house+'.xlsx'
+    file = __location__ + '/simulations/test'+house+'.xlsx'
     WriteResToExcel(file,sheet,outs,econ_param[namecase],prices[scenario],row)
 
 

@@ -66,7 +66,12 @@ country_dict = {'AT':'DE', 'CH':'DE', 'CZ':'DE', 'DK':'DE', 'FI':'DE', 'HU':'DE'
 
 #%% Files with the inputs to be loaded 
 
-inputfolder = r"../database/"
+import os
+# TODO: change this into something more robust
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
+inputfolder = __location__ + "/../../../database/"
 
 # Selection of the equivalent country from the dictionary defined above
 if country in set(country_dict.values()):

@@ -6,9 +6,12 @@ import numpy_financial as npf
 import random
 from strobe.RC_BuildingSimulator import Zone
 
+import os
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 from joblib import Memory
-memory = Memory('./cache/', verbose=1)
+memory = Memory(__location__ + '/cache/', verbose=1)
 
 
 
@@ -506,6 +509,9 @@ def shift_appliance(app,admtimewin,probshift,max_shift=None,threshold_window=0,v
     # Shift the app consumption vector by one time step:
     app_s  = np.roll(app,1)
     
+    # Imposing the extreme values
+    app_s[0] = 0; app[-1] = 0
+    
     # locate all the points whit a start or a shutdown
     starting_times = (app>0) * (app_s==0)
     stopping_times = (app_s>0) * (app==0)
@@ -531,6 +537,7 @@ def shift_appliance(app,admtimewin,probshift,max_shift=None,threshold_window=0,v
     
     for j in range(len(adm_starts)):            # create a time vector with the index number of the current time window
         admtimewin_j[adm_starts[j]:adm_ends[j]] = j
+
     
     # For all activations events:
     for i in range(len(starts)):
