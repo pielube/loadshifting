@@ -135,7 +135,8 @@ def simulate_scenarios(n_scen,inputs):
         textoutput += ["Generating scenario {}".format(i)]
         textoutput += family.textoutput
         
-        members.append(family.members)
+        #members.append(family.members)
+        members.append([f for f in family.members if f!='U12'])        # TODO check if the U12 (children under 12) should really be removed from the occupancy profile in residential.py
         
         # Annual load from appliances
         E_app = int(np.sum(family.P)/60/1000)
