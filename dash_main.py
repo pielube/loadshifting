@@ -15,6 +15,9 @@ from demands import compute_demand
 from plots import make_demand_plot
 from simulation import shift_load
 
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
 #%% Build the app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MINTY], title="Load Shifting")
 server = app.server
@@ -299,6 +302,8 @@ def display_graph(n_clicks,week,dropdown_house):
         n_clicks = 0
     analyze_button_pressed = n_clicks > n_clicks_last
     n_clicks_last = n_clicks
+    
+    inputhpath = __location__ + '/inputs/'
 
     ctx = dash.callback_context
     if not ctx.triggered:
@@ -313,23 +318,23 @@ def display_graph(n_clicks,week,dropdown_house):
         N = 1 # Number of stochastic simulations to be run for the demand curves
         
         # Case description
-        with open('inputs/cases.json','r') as f:
+        with open(inputhpath + 'cases.json','r') as f:
             cases = json.load(f)
         
         # PV and battery technology parameters
-        with open('inputs/pvbatt_param.json','r') as f:
+        with open(inputhpath + 'pvbatt_param.json','r') as f:
             pvbatt_param = json.load(f)
         
         # Economic parameters
-        with open('inputs/econ_param.json','r') as f:
+        with open(inputhpath + 'econ_param.json','r') as f:
             econ_param = json.load(f)
         
         # Time of use tariffs
-        with open('inputs/tariffs.json','r') as f:
+        with open(inputhpath + 'tariffs.json','r') as f:
             tariffs = json.load(f)
         
         # Parameters for the dwelling
-        with open('inputs/housetypes.json','r') as f:
+        with open(inputhpath + 'housetypes.json','r') as f:
             housetypes = json.load(f)    
         
         
