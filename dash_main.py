@@ -294,7 +294,7 @@ def display_graph(n_clicks,week,dropdown_house):
     Inputs trigger a callback 
     States are used as parameters but do not trigger a callback
     '''
-    global n_clicks_last,demand_15min, demand_shifted,totext
+    global n_clicks_last,demand_15min, demand_shifted,pflows,totext
     if n_clicks is None:
         n_clicks = 0
     analyze_button_pressed = n_clicks > n_clicks_last
@@ -341,6 +341,11 @@ def display_graph(n_clicks,week,dropdown_house):
         
         print(json.dumps(results, indent=4))
         
+        if 'pv' in pflows and not (pflows['pv']==0).all():
+            pv = pflows['pv']
+        else:
+            pv = None
+        
     
         n_middle = int(len(demand_15min)/2)
         year = demand_15min.index.isocalendar().year[n_middle]
@@ -349,8 +354,8 @@ def display_graph(n_clicks,week,dropdown_house):
         """
         Figures
         """    
-        fig = make_demand_plot(idx,demand_15min,title='Consommation sans déplacement de charge')
-        fig2 = make_demand_plot(idx,demand_shifted,title='Consommation avec déplacement de charge')
+        fig = make_demand_plot(idx,demand_15min,PV = pv,title='Consommation sans déplacement de charge')
+        fig2 = make_demand_plot(idx,demand_shifted,PV = pv,title='Consommation avec déplacement de charge')
     
         """
         Text output
@@ -365,9 +370,12 @@ def display_graph(n_clicks,week,dropdown_house):
     else:
         n_middle = int(len(demand_15min)/2)
         idx = demand_15min.index[(demand_15min.index.isocalendar().week==week) & (demand_15min.index.isocalendar().year==demand_15min.index.isocalendar().year[n_middle])]
-    
-        fig = make_demand_plot(idx,demand_15min,title='Consommation sans déplacement de charge')
-        fig2 = make_demand_plot(idx,demand_shifted,title='Consommation avec déplacement de charge')
+        if 'pv' in pflows and not (pflows['pv']==0).all():
+            pv = pflows['pv']
+        else:
+            pv = None    
+        fig = make_demand_plot(idx,demand_15min,PV = pv,title='Consommation sans déplacement de charge')
+        fig2 = make_demand_plot(idx,demand_shifted,PV = pv,title='Consommation avec déplacement de charge')
         return fig,fig2,False,totext
     
 

@@ -9,7 +9,7 @@ Created on Wed Feb 23 16:29:18 2022
 import plotly.graph_objects as go
 
 
-def make_demand_plot(idx,data,title='Consumption'):
+def make_demand_plot(idx,data,PV = None,title='Consumption'):
     '''
     Uses to plotly to generate a stacked consumption plot
 
@@ -38,6 +38,17 @@ def make_demand_plot(idx,data,title='Consumption'):
                 mode='none'               # this remove the lines
                ))
         cols.remove('BatteryGeneration')
+
+    if PV is not None:
+        fig.add_trace(go.Scatter(
+                name = 'PV geneartion',
+                x = idx,
+                y = PV.loc[idx],
+                stackgroup='three',
+                fillcolor='rgba(255, 255, 126,0.5)',
+                mode='none'               # this remove the lines
+                          ))        
+
     for key in cols:
         fig.add_trace(go.Scatter(
             name = key,
@@ -46,6 +57,7 @@ def make_demand_plot(idx,data,title='Consumption'):
             stackgroup='one',
             mode='none'               # this remove the lines
            ))
+    
 
     fig.update_layout(title = 'Consommation avec déplacement de charge',
                       xaxis_title = 'Dates',
