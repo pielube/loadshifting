@@ -10,6 +10,7 @@ from launcher_shift_functions import MostRepCurve,DHWShiftTariffs,HouseHeating,R
 from temp_functions import shift_appliance,scale_timeseries
 from pv import pvgis_hist
 from demands import compute_demand
+from simulation import load_config
 import defaults
 
 
@@ -58,29 +59,29 @@ for jjj in idx_casestobesim:
     namecase = 'case'+str(jjj+1)
     namecase = 'default'
     
-    print('###########################')
-    print('   Simulating: '+ namecase )
-    print('###########################')
+    conf = load_config(namecase)
+    config,pvbatt_param,econ_param,tariffs,housetypes,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetypes'],conf['N']
+
     
-    house          = cases[namecase]['house']
-    sheet          = cases[namecase]['sheet']
-    row            = cases[namecase]['row']
-    columns        = cases[namecase]['columns'] 
-    TechsShift     = cases[namecase]['TechsShift']
+    house          = config['house']
+    sheet          = config['sheet']
+    row            = config['row']
+    columns        = config['columns'] 
+    TechsShift     = config['TechsShift']
     WetAppShift    = [x for x in TechsShift if x in ['TumbleDryer','DishWasher','WashingMachine']]
     TechsNoShift   = [x for x in columns if x not in TechsShift]
-    WetAppBool     = cases[namecase]['WetAppBool']
-    WetAppManBool  = cases[namecase]['WetAppManBool']
-    WetAppAutoBool = cases[namecase]['WetAppAutoBool']
-    PVBool         = cases[namecase]['PVBool']
-    BattBool       = cases[namecase]['BattBool']
-    DHWBool        = cases[namecase]['DHWBool']
-    HeatingBool    = cases[namecase]['HeatingBool']
-    EVBool         = cases[namecase]['EVBool']
+    WetAppBool     = config['WetAppBool']
+    WetAppManBool  = config['WetAppManBool']
+    WetAppAutoBool = config['WetAppAutoBool']
+    PVBool         = config['PVBool']
+    BattBool       = config['BattBool']
+    DHWBool        = config['DHWBool']
+    HeatingBool    = config['HeatingBool']
+    EVBool         = config['EVBool']
     
-    FixedControl   = econ_param[namecase]['FixedControlCost']
-    AnnualControl  = econ_param[namecase]['AnnualControlCost']
-    thresholdprice = econ_param[namecase]['thresholdprice']
+    FixedControl   = econ_param['FixedControlCost']
+    AnnualControl  = econ_param['AnnualControlCost']
+    thresholdprice = econ_param['thresholdprice']
     
 
     inputs = housetypes[house]
@@ -104,7 +105,7 @@ for jjj in idx_casestobesim:
     
     #%%
     # Electricity prices array - 15 min timestep
-    scenario = econ_param[namecase]['scenario']
+    scenario = econ_param['scenario']
     timeslots = tariffs['timeslots']
     prices = tariffs['prices']
     yprices_15min = yearlyprices(scenario,timeslots,prices,stepperh_15min) # €/kWh
@@ -115,7 +116,7 @@ for jjj in idx_casestobesim:
     3) Most representative curve
     """
     
-    idx = MostRepCurve(demands['results'],columns,yprices_15min,ts_15min,econ_param[namecase])
+    idx = MostRepCurve(demands['results'],columns,yprices_15min,ts_15min,econ_param)
     
     # Inputs relative to the most representative curve:
     inputs = demands['input_data'][idx]
@@ -491,7 +492,7 @@ for jjj in idx_casestobesim:
     #   - energy prices
     #   - fixed and capacity-related tariffs
     
-    outs = ResultsAnalysis(pvbatt_param['pv']['Ppeak'],pvbatt_param['battery']['BatteryCapacity'],pflows,yprices_15min,prices,scenario,econ_param[namecase])
+    outs = ResultsAnalysis(pvbatt_param['pv']['Ppeak'],pvbatt_param['battery']['BatteryCapacity'],pflows,yprices_15min,prices,scenario,econ_param)
     
     """
     10) Saving results to Excel
@@ -504,7 +505,7 @@ for jjj in idx_casestobesim:
     
     # Saving results to excel
     file = __location__ + '/simulations/test'+house+'.xlsx'
-    WriteResToExcel(file,sheet,outs,econ_param[namecase],prices[scenario],row)
+    WriteResToExcel(file,sheet,outs,econ_param,prices[scenario],row)
 
 
 exectime = (time.time() - start_time)

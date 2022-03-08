@@ -13,7 +13,7 @@ from dash_components import household_components,heating_components,ev_component
 import defaults
 from demands import compute_demand
 from plots import make_demand_plot
-from simulation import shift_load
+from simulation import shift_load,load_config
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -21,6 +21,9 @@ __location__ = os.path.realpath(
 #%% Build the app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MINTY], title="Load Shifting")
 server = app.server
+
+# Load config
+conf = load_config('default')
 
 app.layout = dbc.Container(
     [
@@ -137,8 +140,8 @@ app.layout = dbc.Container(
                     tooltip={"placement": "top", "always_visible": False},
                     disabled = True
                 ),
-                html.Div(id="text_week2", children=''),
                 html.Br(),
+                html.Div(id="text_inputs_changed", children=''),
                 html.Hr(),
                 dcc.Markdown("##### Résultats de simulation"),
                 dcc.Loading(
@@ -251,6 +254,55 @@ def disable_pv_inputs(yesno_pv):
 
 
 
+#%%  Callbacks relative to the modification of particular input
+inputlist = ['dropdown_house','checklist_apps','dropdown_flex_appliances','checklist_hp','yesno_hp','input_hp_power',
+             'checklist_dhw','input_boiler_volume','input_boiler_temperature','checklist_ev','checklist_pv','yesno_pv',
+             'checklist_bat','input_bat_capacity','input_bat_power']
+
+@app.callback(
+    Output("text_inputs_changed", "children"),
+    [Input(component_id=state, component_property= 'value') for state in inputlist],
+    prevent_initial_call=True
+)
+def change_config(dropdown_house,checklist_apps,dropdown_flex_appliances,checklist_hp,yesno_hp,input_hp_power,
+             checklist_dhw,input_boiler_volume,input_boiler_temperature,checklist_ev,checklist_pv,yesno_pv,
+             checklist_bat,input_bat_capacity,input_bat_power):
+    global conf
+    list_modified = []
+    
+    if dropdown_house != conf['config']['house']:
+        conf['config']['house'] = dropdown_house
+        list_modified.append('dropdown_house')
+        
+    apps = {'td':'TumbleDryer','wm':'WashingMachine','dw':'DishWasher'}
+    for key in apps:
+        if key in checklist_apps and apps[key] not in conf['config']['columns']:
+            conf['config']['columns'].append(apps[key])
+            list_modified.append(apps[key])
+        elif key not in checklist_apps and apps[key] in conf['config']['columns']:
+            conf['config']['columns'].remove(apps[key])
+            list_modified.append(apps[key])
+        if dropdown_flex_appliances=='shiftable':
+            if key in checklist_apps and apps[key] not in conf['config']['TechsShift']:
+                conf['config']['TechsShift'].append(apps[key])
+                list_modified.append(apps[key])    
+            elif key not in checklist_apps and apps[key] in conf['config']['TechsShift']:
+                conf['config']['TechsShift'].remove(apps[key])
+                list_modified.append(apps[key])
+        else:
+            if key in conf['config']['TechsShift']:
+                conf['config']['TechsShift'].remove(apps[key])
+                list_modified.append(apps[key])
+            
+    if len(list_modified) > 0:
+        out = "Modified inputs: " + str(list_modified)
+    else:
+        out = ''
+    
+    return out
+
+
+
 #%%  Callbacks (misc)
 
 
@@ -297,14 +349,12 @@ def display_graph(n_clicks,week,dropdown_house):
     Inputs trigger a callback 
     States are used as parameters but do not trigger a callback
     '''
-    global n_clicks_last,demand_15min, demand_shifted,pflows,totext
+    global n_clicks_last,demand_15min, demand_shifted,pflows,totext,conf
     if n_clicks is None:
         n_clicks = 0
     analyze_button_pressed = n_clicks > n_clicks_last
     n_clicks_last = n_clicks
     
-    inputhpath = __location__ + '/inputs/'
-
     ctx = dash.callback_context
     if not ctx.triggered:
         trigger = ''
@@ -312,37 +362,8 @@ def display_graph(n_clicks,week,dropdown_house):
         trigger = ctx.triggered[0]['prop_id'].split('.')[0]
 
     if trigger!='week':
-        """
-        Loading inputs
-        """
-        N = 1 # Number of stochastic simulations to be run for the demand curves
-        
-        # Case description
-        with open(inputhpath + 'cases.json','r') as f:
-            cases = json.load(f)
-        
-        # PV and battery technology parameters
-        with open(inputhpath + 'pvbatt_param.json','r') as f:
-            pvbatt_param = json.load(f)
-        
-        # Economic parameters
-        with open(inputhpath + 'econ_param.json','r') as f:
-            econ_param = json.load(f)
-        
-        # Time of use tariffs
-        with open(inputhpath + 'tariffs.json','r') as f:
-            tariffs = json.load(f)
-        
-        # Parameters for the dwelling
-        with open(inputhpath + 'housetypes.json','r') as f:
-            housetypes = json.load(f)    
-        
-        
-        """
-        simulation
-        """
-        #global demand_15min, demand_shifted
-        results,demand_15min,demand_shifted,pflows = shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N)
+
+        results,demand_15min,demand_shifted,pflows = shift_load(conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetypes'],conf['N'])
         
         print(json.dumps(results, indent=4))
         

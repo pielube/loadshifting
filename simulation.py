@@ -22,13 +22,64 @@ import defaults
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-def shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N,namecase = 'default'):
+def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',cf_econ='econ_param.json',cf_tariff = 'tariffs.json', cf_house='housetypes.json'):
+    '''
+    Load the config files for a specific simulation
+    
+    Parameters
+    ----------
+    namecase : str
+        case to be exctracted from the configuration (e.g. 'default')
+        
+    Returns
+    -------
+    dictionary with the main inputs   
+
+    '''
+    inputhpath = __location__ + '/inputs/'
+    out = {}
+    
+    out['namecase'] = namecase
+    out['N'] = 1 # Number of stochastic simulations to be run for the demand curves. # to be changed
+    
+    # Case description
+    with open(inputhpath + cf_cases,'r') as f:
+        cases = json.load(f)
+    
+    # PV and battery technology parameters
+    with open(inputhpath + cf_pvbatt,'r') as f:
+        out['pvbatt_param'] = json.load(f)
+    
+    # Economic parameters
+    with open(inputhpath + cf_econ,'r') as f:
+        econ_cases = json.load(f)
+    
+    # Time of use tariffs
+    with open(inputhpath + cf_tariff,'r') as f:
+        out['tariffs'] = json.load(f)
+    
+    # Parameters for the dwelling
+    with open(inputhpath + cf_house,'r') as f:
+        out['housetypes'] = json.load(f)    
+        
+    print('###########################')
+    print('  Loading config: '+ namecase )
+    print('###########################')
+    
+    out['config'] = cases[namecase]
+    out['econ_param'] = econ_cases[namecase]
+        
+    return out
+
+
+
+def shift_load(config,pvbatt_param,econ_param,tariffs,housetypes,N):
     '''
     
     Parameters
     ----------
-    cases : dict
-        Pre-defined simulation cases to be simulated.
+    config : dict
+        Pre-defined simulation case to be simulated.
     pvbatt_param : dict
         PV and battery parameters.
     econ_param : dict
@@ -39,8 +90,6 @@ def shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N,namecase = 'de
         House parameters.
     N : int
         Number of stochastic scenarios to be simulated.
-    namecase : str, optional
-        Short description of the case. The default is 'default'.
 
     Returns
     -------
@@ -49,29 +98,25 @@ def shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N,namecase = 'de
 
     '''
     
-    print('###########################')
-    print('   Simulating: '+ namecase )
-    print('###########################')
+
     
-    house          = cases[namecase]['house']
-    sheet          = cases[namecase]['sheet']
-    row            = cases[namecase]['row']
-    columns        = cases[namecase]['columns'] 
-    TechsShift     = cases[namecase]['TechsShift']
+    house          = config['house']
+    columns        = config['columns'] 
+    TechsShift     = config['TechsShift']
     WetAppShift    = [x for x in TechsShift if x in ['TumbleDryer','DishWasher','WashingMachine']]
     TechsNoShift   = [x for x in columns if x not in TechsShift]
-    WetAppBool     = cases[namecase]['WetAppBool']
-    WetAppManBool  = cases[namecase]['WetAppManBool']
-    WetAppAutoBool = cases[namecase]['WetAppAutoBool']
-    PVBool         = cases[namecase]['PVBool']
-    BattBool       = cases[namecase]['BattBool']
-    DHWBool        = cases[namecase]['DHWBool']
-    HeatingBool    = cases[namecase]['HeatingBool']
-    EVBool         = cases[namecase]['EVBool']
+    WetAppBool     = config['WetAppBool']
+    WetAppManBool  = config['WetAppManBool']
+    WetAppAutoBool = config['WetAppAutoBool']
+    PVBool         = config['PVBool']
+    BattBool       = config['BattBool']
+    DHWBool        = config['DHWBool']
+    HeatingBool    = config['HeatingBool']
+    EVBool         = config['EVBool']
     
-    FixedControl   = econ_param[namecase]['FixedControlCost']
-    AnnualControl  = econ_param[namecase]['AnnualControlCost']
-    thresholdprice = econ_param[namecase]['thresholdprice']
+    FixedControl   = econ_param['FixedControlCost']
+    AnnualControl  = econ_param['AnnualControlCost']
+    thresholdprice = econ_param['thresholdprice']
     
 
     inputs = housetypes[house]
@@ -95,7 +140,7 @@ def shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N,namecase = 'de
     
     #%%
     # Electricity prices array - 15 min timestep
-    scenario = econ_param[namecase]['scenario']
+    scenario = econ_param['scenario']
     timeslots = tariffs['timeslots']
     prices = tariffs['prices']
     yprices_15min = yearlyprices(scenario,timeslots,prices,stepperh_15min) # €/kWh
@@ -106,7 +151,7 @@ def shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N,namecase = 'de
     3) Most representative curve
     """
     
-    idx = MostRepCurve(demands['results'],columns,yprices_15min,ts_15min,econ_param[namecase])
+    idx = MostRepCurve(demands['results'],columns,yprices_15min,ts_15min,econ_param)
     
     # Inputs relative to the most representative curve:
     inputs = demands['input_data'][idx]
@@ -482,36 +527,17 @@ def shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N,namecase = 'de
     #   - energy prices
     #   - fixed and capacity-related tariffs
     
-    outs = ResultsAnalysis(pvbatt_param['pv']['Ppeak'],pvbatt_param['battery']['BatteryCapacity'],pflows,yprices_15min,prices,scenario,econ_param[namecase])
+    outs = ResultsAnalysis(pvbatt_param['pv']['Ppeak'],pvbatt_param['battery']['BatteryCapacity'],pflows,yprices_15min,prices,scenario,econ_param)
 
     return outs,demand_15min,demand_shifted,pflows
 
 
 if __name__ == '__main__':
     
-    N = 1 # Number of stochastic simulations to be run for the demand curves
+    conf = load_config('default')
+    config,pvbatt_param,econ_param,tariffs,housetypes,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetypes'],conf['N']
     
-    # Case description
-    with open('inputs/cases.json','r') as f:
-        cases = json.load(f)
-    
-    # PV and battery technology parameters
-    with open('inputs/pvbatt_param.json','r') as f:
-        pvbatt_param = json.load(f)
-    
-    # Economic parameters
-    with open('inputs/econ_param.json','r') as f:
-        econ_param = json.load(f)
-    
-    # Time of use tariffs
-    with open('inputs/tariffs.json','r') as f:
-        tariffs = json.load(f)
-    
-    # Parameters for the dwelling
-    with open('inputs/housetypes.json','r') as f:
-        housetypes = json.load(f)    
-    
-    results,demand_15min,demand_shifted,pflows = shift_load(cases,pvbatt_param,econ_param,tariffs,housetypes,N)
+    results,demand_15min,demand_shifted,pflows = shift_load(config,pvbatt_param,econ_param,tariffs,housetypes,N)
     
     print(json.dumps(results, indent=4))
     
