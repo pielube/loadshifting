@@ -31,28 +31,6 @@ idx_casestobesim = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 
 idx_casestobesim = [0]
 
 #%% Loading inputs
-
-inputfolder = __location__ + "/inputs/"
-
-# Case description
-with open(inputfolder + 'cases.json','r') as f:
-    cases = json.load(f)
-
-# PV and battery technology parameters
-with open(inputfolder + 'pvbatt_param.json','r') as f:
-    pvbatt_param = json.load(f)
-
-# Economic parameters
-with open(inputfolder + 'econ_param.json','r') as f:
-    econ_param = json.load(f)
-
-# Time of use tariffs
-with open(inputfolder + 'tariffs.json','r') as f:
-    tariffs = json.load(f)
-
-# Parameters for the dwelling
-with open(inputfolder + 'housetypes.json','r') as f:
-    housetypes = json.load(f)
         
 
 for jjj in idx_casestobesim:
@@ -64,20 +42,17 @@ for jjj in idx_casestobesim:
 
     
     house          = config['house']
-    sheet          = config['sheet']
-    row            = config['row']
     columns        = config['columns'] 
     TechsShift     = config['TechsShift']
     WetAppShift    = [x for x in TechsShift if x in ['TumbleDryer','DishWasher','WashingMachine']]
     TechsNoShift   = [x for x in columns if x not in TechsShift]
-    WetAppBool     = config['WetAppBool']
-    WetAppManBool  = config['WetAppManBool']
-    WetAppAutoBool = config['WetAppAutoBool']
-    PVBool         = config['PVBool']
-    BattBool       = config['BattBool']
-    DHWBool        = config['DHWBool']
-    HeatingBool    = config['HeatingBool']
-    EVBool         = config['EVBool']
+    WetAppBool     = len(WetAppShift)>0
+    WetAppManBool  = config['WetAppManualShifting']
+    PVBool         = config['PresenceOfPV']
+    BattBool       = config['PresenceOfBattery']
+    DHWBool        = "DomesticHotWater" in TechsShift
+    HeatingBool    = "HeatPumpPower" in TechsShift
+    EVBool         = "EVCharging" in TechsShift
     
     FixedControl   = econ_param['FixedControlCost']
     AnnualControl  = econ_param['AnnualControlCost']
@@ -231,8 +206,7 @@ for jjj in idx_casestobesim:
     
         if WetAppManBool:
             admtimewin = admprices*admcustom*occupancy_1min
-        
-        if WetAppAutoBool:
+        else:
             admtimewin = admprices*admcustom
             
         # Admissible time window based on pv generation and residual load

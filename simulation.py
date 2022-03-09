@@ -97,22 +97,19 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,housetypes,N):
         Main simulation results.
 
     '''
-    
 
-    
     house          = config['house']
     columns        = config['columns'] 
     TechsShift     = config['TechsShift']
     WetAppShift    = [x for x in TechsShift if x in ['TumbleDryer','DishWasher','WashingMachine']]
     TechsNoShift   = [x for x in columns if x not in TechsShift]
-    WetAppBool     = config['WetAppBool']
-    WetAppManBool  = config['WetAppManBool']
-    WetAppAutoBool = config['WetAppAutoBool']
-    PVBool         = config['PVBool']
-    BattBool       = config['BattBool']
-    DHWBool        = config['DHWBool']
-    HeatingBool    = config['HeatingBool']
-    EVBool         = config['EVBool']
+    WetAppBool     = len(WetAppShift)>0
+    WetAppManBool  = config['WetAppManualShifting']
+    PVBool         = config['PresenceOfPV']
+    BattBool       = config['PresenceOfBattery']
+    DHWBool        = "DomesticHotWater" in TechsShift
+    HeatingBool    = "HeatPumpPower" in TechsShift
+    EVBool         = "EVCharging" in TechsShift
     
     FixedControl   = econ_param['FixedControlCost']
     AnnualControl  = econ_param['AnnualControlCost']
@@ -266,8 +263,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,housetypes,N):
     
         if WetAppManBool:
             admtimewin = admprices*admcustom*occupancy_1min
-        
-        if WetAppAutoBool:
+        else:
             admtimewin = admprices*admcustom
             
         # Admissible time window based on pv generation and residual load
