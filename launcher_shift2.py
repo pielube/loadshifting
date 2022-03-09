@@ -38,9 +38,8 @@ for jjj in idx_casestobesim:
     namecase = 'default'
     
     conf = load_config(namecase)
-    config,pvbatt_param,econ_param,tariffs,housetypes,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetypes'],conf['N']
+    config,pvbatt_param,econ_param,tariffs,inputs,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N']
 
-    
     house          = config['house']
     columns        = config['columns'] 
     TechsShift     = config['TechsShift']
@@ -58,8 +57,6 @@ for jjj in idx_casestobesim:
     AnnualControl  = econ_param['AnnualControlCost']
     thresholdprice = econ_param['thresholdprice']
     
-
-    inputs = housetypes[house]
     demands = compute_demand(inputs,N,inputs['members'],inputs['thermal_parameters'])
     
     config_pv = pvbatt_param['pv']

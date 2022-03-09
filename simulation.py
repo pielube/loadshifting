@@ -60,7 +60,7 @@ def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',c
     
     # Parameters for the dwelling
     with open(inputhpath + cf_house,'r') as f:
-        out['housetypes'] = json.load(f)    
+        housetypes = json.load(f)    
         
     print('###########################')
     print('  Loading config: '+ namecase )
@@ -68,12 +68,13 @@ def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',c
     
     out['config'] = cases[namecase]
     out['econ_param'] = econ_cases[namecase]
+    out['housetype'] = housetypes[cases[namecase]['house']]
         
     return out
 
 
 
-def shift_load(config,pvbatt_param,econ_param,tariffs,housetypes,N):
+def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     '''
     
     Parameters
@@ -86,7 +87,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,housetypes,N):
         Economic parameters.
     tariffs : dict
         Time-of-use electricity tariffs.
-    housetypes : dict
+    inputs : dict
         House parameters.
     N : int
         Number of stochastic scenarios to be simulated.
@@ -115,8 +116,6 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,housetypes,N):
     AnnualControl  = econ_param['AnnualControlCost']
     thresholdprice = econ_param['thresholdprice']
     
-
-    inputs = housetypes[house]
     demands = compute_demand(inputs,N,inputs['members'],inputs['thermal_parameters'])
     
     config_pv = pvbatt_param['pv']
@@ -531,9 +530,9 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,housetypes,N):
 if __name__ == '__main__':
     
     conf = load_config('default')
-    config,pvbatt_param,econ_param,tariffs,housetypes,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetypes'],conf['N']
+    config,pvbatt_param,econ_param,tariffs,housetype,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N']
     
-    results,demand_15min,demand_shifted,pflows = shift_load(config,pvbatt_param,econ_param,tariffs,housetypes,N)
+    results,demand_15min,demand_shifted,pflows = shift_load(config,pvbatt_param,econ_param,tariffs,housetype,N)
     
     print(json.dumps(results, indent=4))
     
