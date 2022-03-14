@@ -24,6 +24,7 @@ server = app.server
 
 # Load config
 conf = load_config('default')
+maintext = ''
 
 app.layout = dbc.Container(
     [
@@ -107,13 +108,13 @@ app.layout = dbc.Container(
                 html.Hr(),
                 
                 dbc.Button(
-                    "Show Raw Coordinates (*.dat format)",
+                    "Résultats bruts",
                     id="coordinates_button"
                 ),
                 dbc.Collapse(
                     dbc.Card(
                         dbc.CardBody(
-                            dcc.Markdown(id="coordinates_output")
+                            html.Div(id="text_raw_outputs", children='')
                         )
                     ),
                     id="coordinates_collapse",
@@ -238,7 +239,7 @@ def toggle_coordinates_collapse(n_clicks, is_open):
 )
 def disable_hp_inputs(yesno_hp):
     if 'auto_hp' in yesno_hp:
-        return True,""
+        return True,defaults.hp_thermal_power
     return False,defaults.hp_thermal_power
 
 ### Callback to activate the HP inputs
@@ -257,7 +258,7 @@ def disable_pv_inputs(yesno_pv):
 #%%  Callbacks relative to the modification of particular input
 inputlist = ['dropdown_house','checklist_apps','dropdown_flex_appliances','checklist_hp','yesno_hp','input_hp_power',
              'checklist_dhw','input_boiler_volume','input_boiler_temperature','checklist_ev','checklist_pv','yesno_pv',
-             'checklist_bat','input_bat_capacity','input_bat_power']
+             'input_pv_power','checklist_bat','input_bat_capacity','input_bat_power']
 
 @app.callback(
     Output("text_inputs_changed", "children"),
@@ -266,14 +267,16 @@ inputlist = ['dropdown_house','checklist_apps','dropdown_flex_appliances','check
 )
 def change_config(dropdown_house,checklist_apps,dropdown_flex_appliances,checklist_hp,yesno_hp,input_hp_power,
              checklist_dhw,input_boiler_volume,input_boiler_temperature,checklist_ev,checklist_pv,yesno_pv,
-             checklist_bat,input_bat_capacity,input_bat_power):
+             input_pv_power,checklist_bat,input_bat_capacity,input_bat_power):
     global conf
     list_modified = []
     
+    #house type:
     if dropdown_house != conf['config']['house']:
         conf['config']['house'] = dropdown_house
         list_modified.append('dropdown_house')
-        
+    
+    #wet appliances:
     apps = {'td':'TumbleDryer','wm':'WashingMachine','dw':'DishWasher'}
     for key in apps:
         if key in checklist_apps and apps[key] not in conf['config']['columns']:
@@ -293,6 +296,99 @@ def change_config(dropdown_house,checklist_apps,dropdown_flex_appliances,checkli
             if key in conf['config']['TechsShift']:
                 conf['config']['TechsShift'].remove(apps[key])
                 list_modified.append(apps[key])
+        
+    # heat pumps:
+    if 'hp_in' in checklist_hp and "HeatPumpPower" not in conf['config']['columns']:
+        conf['config']['columns'].append("HeatPumpPower")
+        list_modified.append("HeatPumpPower")    
+    elif 'hp_in' not in checklist_hp and "HeatPumpPower" in conf['config']['columns']:
+        conf['config']['columns'].remove("HeatPumpPower")
+        list_modified.append("HeatPumpPower")    
+    if 'hp_flex' in checklist_hp and "HeatPumpPower" not in conf['config']['TechsShift']:
+        conf['config']['TechsShift'].append("HeatPumpPower")
+        list_modified.append("HeatPumpPower")    
+    elif 'hp_flex' not in checklist_hp and "HeatPumpPower" in conf['config']['TechsShift']:
+        conf['config']['TechsShift'].remove("HeatPumpPower")
+        list_modified.append("HeatPumpPower")     
+    if "HeatPumpPower" not in conf['config']['columns'] and "HeatPumpPower" in conf['config']['TechsShift']:
+        conf['config']['TechsShift'].remove("HeatPumpPower")
+    if 'auto_hp' in yesno_hp and conf['housetype']['HP']['HeatPumpThermalPower'] is not None:
+        conf['housetype']['HP']['HeatPumpThermalPower'] = None
+        list_modified.append("HeatPumpThermalPower")   
+    elif 'auto_hp' not in yesno_hp:
+        conf['housetype']['HP']['HeatPumpThermalPower']= input_hp_power
+        
+    # DHW:
+    if 'dhw_in' in checklist_dhw and "DomesticHotWater" not in conf['config']['columns']:
+        conf['config']['columns'].append("DomesticHotWater")
+        list_modified.append("DomesticHotWater")    
+    elif 'dhw_in' not in checklist_dhw and "DomesticHotWater" in conf['config']['columns']:
+        conf['config']['columns'].remove("DomesticHotWater")
+        list_modified.append("DomesticHotWater")    
+    if 'dhw_flex' in checklist_dhw and "DomesticHotWater" not in conf['config']['TechsShift']:
+        conf['config']['TechsShift'].append("DomesticHotWater")
+        list_modified.append("DomesticHotWater")    
+    elif 'dhw_flex' not in checklist_dhw and "DomesticHotWater" in conf['config']['TechsShift']:
+        conf['config']['TechsShift'].remove("DomesticHotWater")
+        list_modified.append("DomesticHotWater")    
+    if "DomesticHotWater" not in conf['config']['columns'] and "DomesticHotWater" in conf['config']['TechsShift']:
+        conf['config']['TechsShift'].remove("DomesticHotWater")
+    if input_boiler_volume != conf['housetype']['DHW']['Vcyl']:
+        conf['housetype']['DHW']['Vcyl'] = input_boiler_volume
+        list_modified.append("Vcyl")  
+    if input_boiler_temperature != conf['housetype']['DHW']['Ttarget']:
+        conf['housetype']['DHW']['Ttarget'] = input_boiler_temperature
+        list_modified.append("Ttarget")          
+        
+    # EV:
+    if 'ev_in' in checklist_ev and "EVCharging" not in conf['config']['columns']:
+        conf['config']['columns'].append("EVCharging")
+        list_modified.append("EVCharging")    
+    elif 'ev_in' not in checklist_ev and "EVCharging" in conf['config']['columns']:
+        conf['config']['columns'].remove("EVCharging")
+        list_modified.append("EVCharging")    
+    if 'ev_flex' in checklist_ev and "EVCharging" not in conf['config']['TechsShift']:
+        conf['config']['TechsShift'].append("EVCharging")
+        list_modified.append("EVCharging")    
+    elif 'ev_flex' not in checklist_ev and "EVCharging" in conf['config']['TechsShift']:
+        conf['config']['TechsShift'].remove("EVCharging")
+        list_modified.append("EVCharging")    
+    if "EVCharging" not in conf['config']['columns'] and "EVCharging" in conf['config']['TechsShift']:
+        conf['config']['TechsShift'].remove("EVCharging")
+        
+    #PV
+    if 'pv_in' in checklist_pv and not conf['config']['PresenceOfPV']:
+        conf['config']['PresenceOfPV'] = True
+        list_modified.append("PresenceOfPV")    
+    elif 'pv_in' not in checklist_pv and conf['config']['PresenceOfPV']:
+        conf['config']['PresenceOfPV'] = False
+        list_modified.append("PresenceOfPV")     
+        
+    if 'auto_pv' in yesno_pv and not conf['pvbatt_param']['pv']['AutomaticSizing']:
+        conf['pvbatt_param']['pv']['AutomaticSizing'] = True
+        list_modified.append("pv_AutomaticSizing")   
+    if 'auto_pv' not in yesno_pv and conf['pvbatt_param']['pv']['AutomaticSizing']:
+        conf['pvbatt_param']['pv']['AutomaticSizing'] = False
+        list_modified.append("pv_AutomaticSizing")   
+    if not conf['pvbatt_param']['pv']['AutomaticSizing']:
+        if input_pv_power != conf['pvbatt_param']['pv']['Ppeak']:
+            conf['pvbatt_param']['pv']['Ppeak'] = input_pv_power
+            list_modified.append("Ppeak") 
+        
+    #Battery
+    if 'bat_in' in checklist_bat and not conf['config']['PresenceOfBattery']:
+        conf['config']['PresenceOfBattery'] = True
+        list_modified.append("PresenceOfBattery")    
+    elif 'bat_in' not in checklist_bat and conf['config']['PresenceOfBattery']:
+        conf['config']['PresenceOfBattery'] = False
+        list_modified.append("PresenceOfBattery")     
+        
+    if input_bat_power != conf['pvbatt_param']['battery']['MaxPower']:
+        conf['pvbatt_param']['battery']['MaxPower'] = input_bat_power
+        list_modified.append("BatteryPower")     
+    if input_bat_capacity != conf['pvbatt_param']['battery']['BatteryCapacity']:
+        conf['pvbatt_param']['battery']['BatteryCapacity'] = input_bat_capacity
+        list_modified.append("BatteryCapacity")     
             
     if len(list_modified) > 0:
         out = "Modified inputs: " + str(list_modified)
@@ -334,6 +430,7 @@ statelist = ['dropdown_house']
     Output("display2", "figure"),
     Output("week", "disabled"),
     Output("simulation_output", "children"),
+    Output("text_raw_outputs", "children"),
 #    Output("coordinates_output", "children"),
     [
         Input('analyze', 'n_clicks'),
@@ -349,7 +446,7 @@ def display_graph(n_clicks,week,dropdown_house):
     Inputs trigger a callback 
     States are used as parameters but do not trigger a callback
     '''
-    global n_clicks_last,demand_15min, demand_shifted,pflows,totext,conf
+    global n_clicks_last,demand_15min, demand_shifted,pflows,totext,maintext,conf
     if n_clicks is None:
         n_clicks = 0
     analyze_button_pressed = n_clicks > n_clicks_last
@@ -363,7 +460,7 @@ def display_graph(n_clicks,week,dropdown_house):
 
     if trigger!='week':
 
-        results,demand_15min,demand_shifted,pflows = shift_load(conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetypes'],conf['N'])
+        results,demand_15min,demand_shifted,pflows = shift_load(conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N'])
         
         print(json.dumps(results, indent=4))
         
@@ -390,8 +487,9 @@ def display_graph(n_clicks,week,dropdown_house):
         for key in results:
             totext.append(key + ": " + str(results[key]))
             totext.append(html.Br())   
+        maintext = "Facture d'électricité: {:.2f} EUR/an".format(-results['el_netexpend'])
         
-        return fig,fig2,False,totext     # Number of returns must be equal to the number of outputs
+        return fig,fig2,False,maintext,totext     # Number of returns must be equal to the number of outputs
 
     else:
         n_middle = int(len(demand_15min)/2)
@@ -402,7 +500,7 @@ def display_graph(n_clicks,week,dropdown_house):
             pv = None    
         fig = make_demand_plot(idx,demand_15min,PV = pv,title='Consommation sans déplacement de charge')
         fig2 = make_demand_plot(idx,demand_shifted,PV = pv,title='Consommation avec déplacement de charge')
-        return fig,fig2,False,totext
+        return fig,fig2,False,maintext,totext
     
 
 # The following function, although it works with some versions of Dash, is not allowed because it adds a callback on the display outputs, which is not allowed.

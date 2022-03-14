@@ -383,7 +383,10 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
         Tset = np.full(n1min,defaults.T_sp_low) + np.full(n1min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_1min
         
         # Heat pump sizing
-        QheatHP = HPSizing(inputs,defaults.fracmaxP) # W
+        if inputs['HP']['HeatPumpThermalPower'] is not None:
+            QheatHP = inputs['HP']['HeatPumpThermalPower']
+        else:
+            QheatHP = HPSizing(inputs,defaults.fracmaxP) # W
         
         if PVBool: # strategy based on enhancing self-consumption
         

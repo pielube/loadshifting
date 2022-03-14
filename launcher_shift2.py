@@ -324,7 +324,10 @@ for jjj in idx_casestobesim:
         Tset = np.full(n1min,defaults.T_sp_low) + np.full(n1min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_1min
         
         # Heat pump sizing
-        QheatHP = HPSizing(inputs,defaults.fracmaxP) # W
+        if inputs['HP']['HeatPumpThermalPower'] is not None:
+            QheatHP = inputs['HP']['HeatPumpThermalPower']
+        else:
+            QheatHP = HPSizing(inputs,defaults.fracmaxP) # W
         
         if PVBool: # strategy based on enhancing self-consumption
         
@@ -476,7 +479,7 @@ for jjj in idx_casestobesim:
     
     # Saving results to excel
     file = __location__ + '/simulations/test'+house+'.xlsx'
-    WriteResToExcel(file,sheet,outs,econ_param,prices[scenario],row)
+    WriteResToExcel(file,conf['config']['sheet'],outs,econ_param,prices[scenario],conf['config']['row'])
 
 
 exectime = (time.time() - start_time)
