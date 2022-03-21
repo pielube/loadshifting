@@ -54,7 +54,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         # Thermal parameters of the dwelling
         # Taken from Procebar .xls files
         if thermal_parameters is not None:
-            inputs['HP'] = {**thermal_parameters,**procebinp}
+            inputs['HP'] = {**inputs['HP'],**thermal_parameters}
         else:
             procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'],True)
             inputs['HP'] = {**inputs['HP'],**procebinp}
