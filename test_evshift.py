@@ -12,11 +12,10 @@ import time
 import numpy as np
 from pv import pvgis_hist
 import json
-import math
 import matplotlib.pyplot as plt
 
 """
-Charge profile
+Inputs
 """
 
 # Get simulation data
@@ -34,51 +33,26 @@ index10min = pd.date_range(start='2015-01-01',end='2015-12-31 23:50:00',freq='10
 # Define required inputs
 # TODO check this values
 Pcharge = 3.7 #kW charging power 
-margin = 0.5 # -
-battery_eff = 0.9
 
-# From RAMP - battery capacities
-Battery_cap = {}
-Battery_cap['small']  = 37 #kWh
-Battery_cap['medium'] = 60 #kWh
-Battery_cap['large']  = 100 #kWh
-
-# From RAMP - Definition of battery limits to avoid degradation
-SOC_max = 0.8 # Maximum SOC
-SOC_min = 0.25 # Minimum SOC
-
+"""
+RAMP-mobility
+"""
 # Running RAMP-mobility    
-charge_home,charge_gen,SOC,MD = ramp.EVCharging(inputs, occupancy)
+out = ramp.EVCharging(inputs, occupancy)
+
+MD  = out['main_driver']
+charge_home = out['charge_profile_home']
+charge_home = charge_home.iloc[:,0].to_numpy()
+
+"""
+Occupancy of the main driver
+"""
 
 # Occupancy of main driver
 # 1 at home (active or inactive) 0 not at home
 occupancy_10min = occupancy[inputs['members'].index(MD)][:-1]
 occupancy_10min = pd.Series(data=np.where(occupancy_10min<3,1,0),index=index10min)
 occupancy_1min = occupancy_10min.reindex(index1min,method='pad').to_numpy()
-
-# Selecting the non-empty SOC profile
-for key, value in SOC.items():
-    if value:
-        SOC = value[0]
-        if 'Large' in key:
-            CP = Battery_cap['large']
-        elif 'Medium' in key:
-            CP = Battery_cap['medium']
-        elif 'Small' in key:
-            CP = Battery_cap['small']
-
-# TODO why max SOC > 0.8           
-SOC_max=max(np.max(SOC),SOC_max)
-SOC_min=min(np.min(SOC),SOC_min)
-
-print('Max SOC: {:.2f}'.format(np.max(SOC)))            
-print('Min SOC: {:.2f}'.format(np.min(SOC)))
-
-# Removing dummy days   
-dummy = int((len(SOC)-days*24*60)/2)
-SOC = SOC[dummy:-dummy] 
-
-charge_home = charge_home.iloc[:,0].to_numpy()
 
 """
 PV
@@ -91,7 +65,7 @@ config_pv = pvbatt_param['pv']
 pvadim = pvgis_hist(config_pv) 
 pv_15min = pvadim*10.
 index1min  = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='T')
-pv_1min = pv_15min.resample('T').pad().reindex(index1min,method='nearest')#.to_numpy() # kW
+pv_1min = pv_15min.resample('T').pad().reindex(index1min,method='nearest').to_numpy() # kW
 
 """
 At-home time windows
@@ -140,12 +114,6 @@ ends   = np.where(stopping_times)[0]
 Consumptions when charging at home
 """
 
-# # Faster, for some reason less precise and requires SOC
-# consumptions = (SOC[ends]-SOC[starts-1])*CP #kWh
-# # Minor fix TODO this should not be required, check what happens ()
-# consumptions[consumptions<0] = 0
-
-# slower, more precise and does not require SOC
 consumptions = np.zeros(len(starts))
 for i in range(len(starts)):
     consumptions[i] = np.sum(charge_home[starts[i]:ends[i]])/60
@@ -161,7 +129,7 @@ for i in range(len(starts)):
     ramps[starts[i]-1:ends[i]] += add
 
 """
-At-home windows
+Finding in which at-home time windows each charging window is
 """   
  
 idx_athomewindows = np.zeros(len(starts),dtype=int)
@@ -170,36 +138,21 @@ for i in range(len(starts)):
     idx_athomewindows[i] = idx
 
 """
-Min LOC
+Minimum Level Of Charge
 """    
 LOC_min = ramps.copy()
 for i in range(len(starts)):
     LOC_min[ends[i]:leave[idx_athomewindows[i]]] += ramps[ends[i]-1]
 
-
-idx_s_e = 2
-idx_a_l = np.searchsorted(leave,[ends[idx_s_e]-1],side='right')[0]
-
-x = np.arange(arrive[idx_a_l]-1,leave[idx_a_l])
-y1 = LOC_min[arrive[idx_a_l]-1:leave[idx_a_l]]
-
-fig, ax1 = plt.subplots()
-ax1.plot(x, y1)
-  
-"""
-Define inputs for shifting function
-"""
-
-param = {}
-param['BatteryCapacity'] = CP
-param['MaxPower'] = np.max(charge_home)#Pcharge
-param['BatteryEfficiency'] = battery_eff
-param['InverterEfficiency'] = 1.
-param['timestep'] = 1/60
-
+# idx_s_e = 2
+# idx_a_l = np.searchsorted(leave,[ends[idx_s_e]-1],side='right')[0]
+# x = np.arange(arrive[idx_a_l]-1,leave[idx_a_l])
+# y1 = LOC_min[arrive[idx_a_l]-1:leave[idx_a_l]]
+# fig, ax1 = plt.subplots()
+# ax1.plot(x, y1)
 
 """
-Max battery capacity based on consumptions
+Maximum Level Of Charge
 """
 
 LOC_max = np.zeros(len(consumptions))
@@ -219,8 +172,44 @@ for i in range(len(consumptions)):
     oldidx = idx_athomewindows[i]
     LOC_max[i+1-count:i+1] = LOC_max_t
         
+"""
+Define inputs for shifting function
+"""
 
-def shift(pv,arrive,leave,starts,ends,LOC_min,param,idx_athomewindows,LOC_max,return_series=False):
+param = {}
+param['MaxPower'] = np.max(charge_home) # Pcharge
+param['InverterEfficiency'] = 1.
+param['timestep'] = 1/60
+
+
+
+def EVshift_PV(pv,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,param,return_series=False):
+    
+    """
+    Function to shift at-home charging based on PV production
+    It requires start and end indexes of at-home time windows and charging events and
+    to which at-home time window each charging event belongs. 
+    For each at home time window LOC_min is defined as the charge obtained from reference at-home charging events
+    and LOC_max as the total consumption of charging events in that at-home time window.
+    
+    Parameters:
+        pv (numpy array): vector Nsteps long with residual PV production, kW DC
+        arrive (numpy array): vector of indexes, start at-home time windows  
+        leave  (numpy array): vector of indexes, end   at-home time windows
+        starts (numpy array): vector of indexes, start charging at-home time windows
+        ends   (numpy array): vector of indexes, end   charging at-home time windows
+        idx_athomewindows (numpy array): vector with which at-home window corresponds to each charging window
+        LOC_min (numpy array): vector Nsteps long with min LOC, kWh
+        LOC_max (numpy array): vector long as the number of at-home time windows with max LOC, kWh
+        param (dict): dictionary with charge power [kW], inverter efficiency [-] and timestep [h]
+        return_series (bool): if True then the return will be a dictionary of series. 
+                              Otherwise it will be a dictionary of ndarrays.
+                              It is reccommended to return ndarrays if speed is an issue (e.g. for batch runs).
+                              Default is False.
+
+    Returns:
+        out (dict): dict with numpy arrays or pandas series with energy fluxes and LOC 
+    """
     
     bat_size_p_adj = param['MaxPower']
     n_inv = param['InverterEfficiency']
@@ -234,49 +223,42 @@ def shift(pv,arrive,leave,starts,ends,LOC_min,param,idx_athomewindows,LOC_max,re
     grid2store = np.zeros(Nsteps)
     LOC = np.zeros(Nsteps)
     
-    testing = 0.
-    testing2 = 0.
-    
+    # Not going twice through the same at-home time window    
     idx_athomewindows,idxs = np.unique(idx_athomewindows,return_index=True)
     LOC_max = LOC_max[idxs]
     
-    for i in range(len(idx_athomewindows)):
+    for i in range(len(idx_athomewindows)): # iter over at-home time windows
         
         LOC[arrive[idx_athomewindows[i]]-1] = 0
         
-        for j in range(arrive[idx_athomewindows[i]],leave[idx_athomewindows[i]]):
+        for j in range(arrive[idx_athomewindows[i]],leave[idx_athomewindows[i]]): # iter inside at-home time windows
                         
             pv2inv[j] = pv[j] # kW
             
-            inv2store_t = min(pv2inv[j]*n_inv,bat_size_p_adj)            
-            LOC_t = LOC[j-1] + inv2store_t*timestep
+            inv2store_t = min(pv2inv[j]*n_inv,bat_size_p_adj) # kW          
+            LOC_t = LOC[j-1] + inv2store_t*timestep # kWh
             
             if LOC_t < LOC_min[j]:
                 
-                inv2store[j]  = inv2store_t
-                grid2store[j] = (LOC_min[j]-LOC_t)/timestep
-                
-                LOC[j] = LOC[j-1] + inv2store[j]*timestep + grid2store[j]*timestep
-                if LOC[j]<LOC_min[j]:
-                    print(LOC_min[j]-LOC[j])
+                inv2store[j]  = inv2store_t # kW
+                grid2store[j] = min(bat_size_p_adj-inv2store[j],(LOC_min[j]-LOC_t)/timestep) # kW
+                                
+                LOC[j] = LOC[j-1] + inv2store[j]*timestep + grid2store[j]*timestep # kWh
             
             elif  LOC_min[j] <= LOC_t <= LOC_max[i]:
                 
-                inv2store[j]  = inv2store_t
+                inv2store[j]  = inv2store_t # kW
                 
-                LOC[j] = LOC_t
+                LOC[j] = LOC_t # kWh
                                 
             elif LOC_t > LOC_max[i]:
                     
-                inv2store[j] = (LOC_max[i]-LOC[j-1]) /timestep
-                LOC[j] = LOC_max[i]
-
-    
-    inv2grid = pv2inv*n_inv - inv2store
-    
-    print(testing)
-    print(testing2)
-    
+                inv2store[j] = (LOC_max[i]-LOC[j-1]) /timestep # kW
+                
+                LOC[j] = LOC_max[i] # kWh
+   
+    inv2grid = pv2inv*n_inv - inv2store # kW
+        
     out = {'pv2inv': pv2inv,
            'inv2grid': inv2grid,
            'inv2store': inv2store,
@@ -292,7 +274,7 @@ def shift(pv,arrive,leave,starts,ends,LOC_min,param,idx_athomewindows,LOC_max,re
     return out
 
 time1 = time.time()
-out = shift(pv_1min,arrive,leave,starts,ends,LOC_min,param,idx_athomewindows,LOC_max,return_series=False)
+out = EVshift_PV(pv_1min,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,param,return_series=False)
 time2 = time.time()
 print('It required {:.2f} seconds to shift EV charging'.format(time2-time1))
 
@@ -302,14 +284,5 @@ print('It required {:.2f} seconds to shift EV charging'.format(time2-time1))
 aa = np.sum(out['inv2store'])/60  
 bb = np.sum(out['grid2store'])/60
 cc = np.sum(charge_home)/60
-
-# check: cc = dd
-# PASSED
-dd = np.sum(charge_home*occupancy_1min)/60
-
-# check: cc = ee
-# PASSED
-ee = np.sum(consumptions)
-
 
 
