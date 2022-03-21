@@ -114,4 +114,4 @@ def EVCharging(inputs,occupancy):
                                                     country, year)
         Charging_profile_home_df= Charging_profile_home_df.rename(columns={'Charging Profile': 'EVCharging'})
 
-    return Charging_profile_home_df
+    return Charging_profile_home_df,Charging_profile_df,SOC_user,MD

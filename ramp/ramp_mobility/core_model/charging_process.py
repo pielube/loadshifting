@@ -268,7 +268,7 @@ def Charging_Process(Profiles_user, User_list, country, year, dummy_days, residu
             
             charging_power = np.where(power<0, 0, power) # Filtering only for the charging power 
             
-            # SOC_user[Us.user_name].append(SOC)
+            SOC_user[Us.user_name].append(SOC)
             # Charging_profile_user[Us.user_name].append(power_pos)
             # plug_in_user[Us.user_name].append(plug_in)
             
