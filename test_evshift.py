@@ -14,6 +14,10 @@ from pv import pvgis_hist
 import json
 import matplotlib.pyplot as plt
 
+from simulation import load_config
+from temp_functions import yearlyprices
+
+
 """
 Inputs
 """
@@ -182,18 +186,41 @@ param['InverterEfficiency'] = 1.
 param['timestep'] = 1/60
 
 
+"""
+Electricity prices
+"""
+
+namecase = 'default'
+conf = load_config(namecase)
+tariffs = conf['tariffs']
+econ_param = conf['econ_param']
+
+scenario = econ_param['scenario']
+timeslots = tariffs['timeslots']
+prices = tariffs['prices']
+stepperh_1min = 60
+yprices_1min = yearlyprices(scenario,timeslots,prices,stepperh_1min) # €/kWh
+yprices_1min = pd.Series(data=yprices_1min, index=index1min)
+
+thresholdprice = econ_param['thresholdprice']
+pricelim = prices[scenario][thresholdprice]
+
+"""
+Shifting functions
+"""
 
 def EVshift_PV(pv,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,param,return_series=False):
     
     """
     Function to shift at-home charging based on PV production
+    Charging when PV power is available and LOC < LOC_max or when LOC < LOC_min regardless PV production.
     It requires start and end indexes of at-home time windows and charging events and
     to which at-home time window each charging event belongs. 
     For each at home time window LOC_min is defined as the charge obtained from reference at-home charging events
     and LOC_max as the total consumption of charging events in that at-home time window.
     
     Parameters:
-        pv (numpy array): vector Nsteps long with residual PV production, kW DC
+        pv (pandas Series): vector Nsteps long with residual PV production, kW DC
         arrive (numpy array): vector of indexes, start at-home time windows  
         leave  (numpy array): vector of indexes, end   at-home time windows
         starts (numpy array): vector of indexes, start charging at-home time windows
@@ -216,6 +243,7 @@ def EVshift_PV(pv,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,par
     timestep = param['timestep']
     
     Nsteps = len(pv)
+    pv_np = pv.to_numpy()
      
     pv2inv = np.zeros(Nsteps)
     inv2grid = np.zeros(Nsteps)
@@ -233,7 +261,7 @@ def EVshift_PV(pv,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,par
         
         for j in range(arrive[idx_athomewindows[i]],leave[idx_athomewindows[i]]): # iter inside at-home time windows
                         
-            pv2inv[j] = pv[j] # kW
+            pv2inv[j] = pv_np[j] # kW
             
             inv2store_t = min(pv2inv[j]*n_inv,bat_size_p_adj) # kW          
             LOC_t = LOC[j-1] + inv2store_t*timestep # kWh
@@ -273,16 +301,98 @@ def EVshift_PV(pv,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,par
         out = out_pd
     return out
 
+
+def EVshift_tariffs(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,param,return_series=False):
+    
+    """
+    Function to shift at-home charging based on tariffs
+    Charging when energy price <= pricelim and LOC < LOC_max or when LOC < LOC_min regardless of energy price.
+    It requires start and end indexes of at-home time windows and charging events and
+    to which at-home time window each charging event belongs. 
+    For each at home time window LOC_min is defined as the charge obtained from reference at-home charging events
+    and LOC_max as the total consumption of charging events in that at-home time window.
+    
+    
+    Parameters:
+        yprices_1min (pandas Series): vector Nsteps long with energy prices, €
+        arrive (numpy array): vector of indexes, start at-home time windows  
+        leave  (numpy array): vector of indexes, end   at-home time windows
+        starts (numpy array): vector of indexes, start charging at-home time windows
+        ends   (numpy array): vector of indexes, end   charging at-home time windows
+        idx_athomewindows (numpy array): vector with which at-home window corresponds to each charging window
+        LOC_min (numpy array): vector Nsteps long with min LOC, kWh
+        LOC_max (numpy array): vector long as the number of at-home time windows with max LOC, kWh
+        param (dict): dictionary with charge power [kW], inverter efficiency [-] and timestep [h]
+        return_series (bool): if True then the return will be a dictionary of series. 
+                              Otherwise it will be a dictionary of ndarrays.
+                              It is reccommended to return ndarrays if speed is an issue (e.g. for batch runs).
+                              Default is False.
+
+    Returns:
+        out (dict): dict with numpy arrays or pandas series with energy fluxes and LOC 
+    """
+    
+    bat_size_p_adj = param['MaxPower']
+    n_inv = param['InverterEfficiency']
+    timestep = param['timestep']
+    
+    Nsteps = len(yprices_1min)
+    yprices_1min_np = yprices_1min.to_numpy()
+
+    grid2store = np.zeros(Nsteps)
+    LOC = np.zeros(Nsteps)
+    
+    # Not going twice through the same at-home time window    
+    idx_athomewindows,idxs = np.unique(idx_athomewindows,return_index=True)
+    LOC_max = LOC_max[idxs]
+    
+    for i in range(len(idx_athomewindows)): # iter over at-home time windows
+        
+        LOC[arrive[idx_athomewindows[i]]-1] = 0
+        
+        for j in range(arrive[idx_athomewindows[i]],leave[idx_athomewindows[i]]): # iter inside at-home time windows
+            
+            if yprices_1min_np[j] <= pricelim:
+                grid2store[j] = min((LOC_max[i]-LOC[j-1])/timestep,bat_size_p_adj) # kW
+                
+            else:
+                if LOC[j-1] < LOC_min[j]:
+                    grid2store[j] = min((LOC_min[j]-LOC[j-1])/timestep,bat_size_p_adj) # kW
+
+            LOC[j] = LOC[j-1] + grid2store[j]*timestep # kWh
+        
+    out = {'grid2store': grid2store,
+           'LevelOfCharge': LOC
+            }
+    
+    if return_series:
+        out_pd = {}
+        for k, v in out.items():  # Create dictionary of pandas series with same index as the input pv
+            out_pd[k] = pd.Series(v, index=yprices_1min.index)
+        out = out_pd
+    return out
+
+"""
+Run
+"""
+
 time1 = time.time()
-out = EVshift_PV(pv_1min,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,param,return_series=False)
+out_pv = EVshift_PV(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,param,return_series=False)
 time2 = time.time()
 print('It required {:.2f} seconds to shift EV charging'.format(time2-time1))
 
-
 # check: aa+bb=cc
 # PASSED
-aa = np.sum(out['inv2store'])/60  
-bb = np.sum(out['grid2store'])/60
+aa = np.sum(out_pv['inv2store'])/60  
+bb = np.sum(out_pv['grid2store'])/60
 cc = np.sum(charge_home)/60
 
+time3 = time.time()
+out_tariffs = EVshift_tariffs(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,param,return_series=False)
+time4 = time.time()
+print('It required {:.2f} seconds to shift EV charging'.format(time4-time3))
 
+# check: dd=ee
+# PASSED
+dd = np.sum(out_tariffs['grid2store'])/60  
+ee = np.sum(charge_home)/60
