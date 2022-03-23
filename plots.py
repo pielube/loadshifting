@@ -59,7 +59,7 @@ def make_demand_plot(idx,data,PV = None,title='Consumption'):
            ))
     
 
-    fig.update_layout(title = 'Consommation avec déplacement de charge',
+    fig.update_layout(title = title,
                       xaxis_title = 'Dates',
                       yaxis_title = 'Puissance (kW)'
                       )
