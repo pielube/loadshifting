@@ -331,7 +331,12 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pflows,ElPrices,prices,scenario,ec
     # All shifting must have already been modelled, including battery
     # param_tech is hence defined here and battery forced to be 0
     
-    pv,demand_ref,demand=pflows.pv,pflows.demand_noshift,pflows.fromgrid
+    pv,demand_ref = pflows.pv,pflows.demand_noshift
+    
+    if batt_capacity > 0:
+        demand = pflows.demand_shifted
+    else:
+        demand = pflows.demand_shifted_nobatt
     
     param_tech = {'BatteryCapacity': 0.,
                   'BatteryEfficiency': 1.,
@@ -372,8 +377,7 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pflows,ElPrices,prices,scenario,ec
     Epspy_pv['FromGrid']     = res_pspy_pv['grid2load']
     Epspy_pv['SC']           = res_pspy_pv['inv2load']
     
-    res_EA_pv = EconomicAnalysisRefPV(Epspy,econ_param,ElPrices,timestep,Epspy_pv)
-    
+    res_EA_pv = EconomicAnalysisRefPV(Epspy,econ_param,ElPrices,timestep,Epspy_pv)   
     
     # Preparing function outputs
     

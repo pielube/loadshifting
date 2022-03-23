@@ -21,7 +21,7 @@ __location__ = os.path.realpath(
 
 #%% Main simulation parameters
 
-N = 1 # Number of stochastic simulations to be run for the demand curves
+N = 10 # Number of stochastic simulations to be run for the demand curves
 
 idx_casestobesim = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
         17, 18, 19, 20, 22, 24, 26, 28, 30, 32,
@@ -207,7 +207,8 @@ for jjj in idx_casestobesim:
             admtimewin = admprices*admcustom
             
         # Admissible time window based on pv generation and residual load
-        admtimewin_pv = (pv_1min_res > 0)
+        if PVBool:
+            admtimewin_pv = (pv_1min_res > 0)
     
         """
         Shifting wet appliances
@@ -453,10 +454,14 @@ for jjj in idx_casestobesim:
         pflows['togrid'] = pd.Series(data=dispatch_bat['inv2grid'],index=index15min) # kW
         
         pflows['demand_shifted'] = demand_shifted.sum(axis=1)
+        
+    else:
+        
+         pflows['demand_shifted'] = pflows['demand_shifted_nobatt']
   
     
     """
-    9) Final analisys of the results (including economic analysis)
+    9) Final analysis of the results (including economic analysis)
     """
     
     # TODO

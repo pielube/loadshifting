@@ -88,6 +88,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         
         # Dataframe of demands
         df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging','InternalGains'],dtype=object)
+        
         res_ramp_charge_home.loc[df.index[-1],'EVCharging']=0
         
         for key in df.columns:
