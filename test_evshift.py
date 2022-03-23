@@ -69,7 +69,7 @@ config_pv = pvbatt_param['pv']
 pvadim = pvgis_hist(config_pv) 
 pv_15min = pvadim*10.
 index1min  = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='T')
-pv_1min = pv_15min.resample('T').pad().reindex(index1min,method='nearest').to_numpy() # kW
+pv_1min = pv_15min.resample('T').pad().reindex(index1min,method='nearest') # kW
 
 """
 At-home time windows
@@ -123,16 +123,6 @@ for i in range(len(starts)):
     consumptions[i] = np.sum(charge_home[starts[i]:ends[i]])/60
 
 """
-Ramps
-"""
-
-chargelen = ends - starts
-ramps = np.zeros(n1min) # kWh
-for i in range(len(starts)):
-    add = np.linspace(0,consumptions[i],num=chargelen[i]+1)
-    ramps[starts[i]-1:ends[i]] += add
-
-"""
 Finding in which at-home time windows each charging window is
 """   
  
@@ -141,9 +131,17 @@ for i in range(len(starts)):
     idx = np.searchsorted(leave,[ends[i]-1],side='right')[0]
     idx_athomewindows[i] = idx
 
+
 """
 Minimum Level Of Charge
-"""    
+"""
+
+chargelen = ends - starts
+ramps = np.zeros(n1min) # kWh
+for i in range(len(starts)):
+    add = np.linspace(0,consumptions[i],num=chargelen[i]+1)
+    ramps[starts[i]:ends[i]] += add[1:]
+
 LOC_min = ramps.copy()
 for i in range(len(starts)):
     LOC_min[ends[i]:leave[idx_athomewindows[i]]] += ramps[ends[i]-1]
@@ -375,9 +373,8 @@ def EVshift_tariffs(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewin
 """
 Run
 """
-
 time1 = time.time()
-out_pv = EVshift_PV(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,param,return_series=False)
+out_pv = EVshift_PV(pv_1min,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,param,return_series=False)
 time2 = time.time()
 print('It required {:.2f} seconds to shift EV charging'.format(time2-time1))
 
