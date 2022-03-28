@@ -13,7 +13,7 @@ hp_thermal_power = 7000
 
 # Sanitary hot water:
 Vol_DHW = 200
-T_sp_DHW = 53
+T_sp_DHW = 60
 
 # Set points without/with occupancy
 T_sp_low = 15

@@ -34,10 +34,10 @@
     "loadshift": true,
     "type": "ElectricBoiler",
     "PowerElMax": 2000.0,
-    "Ttarget": 53.0, 
+    "Ttarget": 60.0, 
     "Tcw": 10.0,     
-    "Vcyl": 50.0,    
-    "Hloss": 0.5
+    "Vcyl": 160.0,    
+    "Hloss": 2.0
     },
 
 "HP": 
