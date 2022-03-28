@@ -21,18 +21,18 @@ __location__ = os.path.realpath(
 
 #%% Main simulation parameters
 
-# N = 10 # Number of stochastic simulations to be run for the demand curves
-N = 1
+N = 10 # Number of stochastic simulations to be run for the demand curves
+# N = 1
 
-# idx_casestobesim = [i for i in range(83)]
-idx_casestobesim = [0]
+idx_casestobesim = [i for i in range(83)]
+# idx_casestobesim = [0]
 
 #%% Loading inputs
         
 
 for jjj in idx_casestobesim:
-    # namecase = 'case'+str(jjj+1)
-    namecase = 'default'
+    namecase = 'case'+str(jjj+1)
+    # namecase = 'default'
     
     conf = load_config(namecase)
     config,pvbatt_param,econ_param,tariffs,inputs,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N']
@@ -281,7 +281,7 @@ for jjj in idx_casestobesim:
         else: # strategy based on tariffs
             
             # prosumpy inspired tariffs based function
-            outs = DHWShiftTariffs(demand_dhw, yprices_15min, prices[scenario][thresholdprice], param_tech_dhw, return_series=False)
+            outs = DHWShiftTariffs(demand_dhw, yprices_15min, prices[scenario][thresholdprice]/1000, param_tech_dhw, return_series=False)
             demand_dhw_shift = outs['grid2load']+outs['grid2store'] # kW
             demand_dhw_shift = demand_dhw_shift.astype('float64')   # kW
             
