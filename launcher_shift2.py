@@ -6,7 +6,7 @@ import json
 import time
 from prosumpy import dispatch_max_sc,print_analysis
 from temp_functions import yearlyprices,HPSizing,COP_Tamb
-from launcher_shift_functions import MostRepCurve,DHWShiftTariffs,HouseHeating,ResultsAnalysis,WriteResToExcel,load_climate_data
+from launcher_shift_functions import MostRepCurve,DHWShiftTariffs,HouseHeating,EVshift_PV,EVshift_tariffs,ResultsAnalysis,WriteResToExcel,load_climate_data
 from temp_functions import shift_appliance,scale_timeseries
 from pv import pvgis_hist
 from demands import compute_demand
@@ -22,20 +22,17 @@ __location__ = os.path.realpath(
 #%% Main simulation parameters
 
 N = 10 # Number of stochastic simulations to be run for the demand curves
+# N = 1
 
-idx_casestobesim = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
-        17, 18, 19, 20, 22, 24, 26, 28, 30, 32,
-        34, 36, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
-        51, 52, 53, 54, 55, 56, 57, 58, 60, 62, 64, 66,
-        68, 70, 72, 74, 76, 77, 78, 79, 80, 81, 82]
-idx_casestobesim = [0]
+idx_casestobesim = [i for i in range(83)]
+# idx_casestobesim = [0]
 
 #%% Loading inputs
         
 
 for jjj in idx_casestobesim:
     namecase = 'case'+str(jjj+1)
-    namecase = 'default'
+    # namecase = 'default'
     
     conf = load_config(namecase)
     config,pvbatt_param,econ_param,tariffs,inputs,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N']
@@ -67,6 +64,7 @@ for jjj in idx_casestobesim:
     
     # Various array sizes and timesteps used throughout the code
     index1min  = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='T')
+    index10min = pd.date_range(start='2015-01-01',end='2015-12-31 23:50:00',freq='10T')
     index15min = pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')
     n1min  = len(index1min)
     n10min = int(n1min/10)
@@ -283,7 +281,7 @@ for jjj in idx_casestobesim:
         else: # strategy based on tariffs
             
             # prosumpy inspired tariffs based function
-            outs = DHWShiftTariffs(demand_dhw, yprices_15min, prices[scenario][thresholdprice], param_tech_dhw, return_series=False)
+            outs = DHWShiftTariffs(demand_dhw, yprices_15min, prices[scenario][thresholdprice]/1000, param_tech_dhw, return_series=False)
             demand_dhw_shift = outs['grid2load']+outs['grid2store'] # kW
             demand_dhw_shift = demand_dhw_shift.astype('float64')   # kW
             
@@ -361,8 +359,8 @@ for jjj in idx_casestobesim:
             idx_z = np.r_[idx_z,len(Tset)]
             
             timeleftarr = np.zeros(len(Tset), dtype=int)
-            idx = np.searchsorted(idx_z, idx_nz)
-            timeleftarr[~mask_z] = idx_z[idx] - idx_nz
+            idx_r = np.searchsorted(idx_z, idx_nz)
+            timeleftarr[~mask_z] = idx_z[idx_r] - idx_nz
             
             admtimes = (timeleftarr<defaults.t_preheat*60)
             
@@ -405,7 +403,7 @@ for jjj in idx_casestobesim:
         if PVBool:        
             # Updating residual PV
             pv_15min_res = np.maximum(0,pv_15min_res-demand_HP_shift) # kW
-            #pv_1min_res  = scale_timeseries(pv_15min_res,index1min) # kW 
+            pv_1min_res  = scale_timeseries(pv_15min_res,index1min) # kW 
         
             
     
@@ -413,9 +411,140 @@ for jjj in idx_casestobesim:
     8D) Load shifting - EV
     """
     
-    #TODO
-    #demand_shifted['EVCharging'] = demand_15min['EVCharging']              # temporary value to run the rest of the code
+    #demand_shifted['EVCharging'] = demand_15min['EVCharging']  # temporary value to run the rest of the code        
     
+    if EVBool:
+        
+        # Main driver - household member using the car
+        MD = inputs['EV']['MainDriver']
+        
+        # Home charging profile
+        charge_home = demands['results'][idx]['EVCharging']/1000. # kW
+        charge_home = charge_home.to_numpy()
+        
+        # Occupancy of the main driver profile
+        # 1 at home (active or inactive) 0 not at home
+        occ_10min_MD = demands['occupancy'][idx].iloc[:,inputs['members'].index(MD)][:-1]
+        occ_10min_MD = pd.Series(data=np.where(occ_10min_MD<3,1,0),index=index10min)
+        occ_1min_MD  = occ_10min_MD.reindex(index1min,method='pad').to_numpy()
+        
+        # At-home time windows
+        # Find arrival and departure times of MD from home
+        
+        # shift occupancy vector by one time step
+        occ_1min_MD_s  = np.roll(occ_1min_MD,1)
+        
+        # locate all the points whit a start or a shutdown
+        arriving_times_MD = (occ_1min_MD>0) * (occ_1min_MD_s==0)
+        leaving_times_MD  = (occ_1min_MD_s>0) * (occ_1min_MD==0)
+        
+        # List the indexes of all start-ups and shutdowns
+        arrive = np.where(arriving_times_MD)[0]
+        leave  = np.where(leaving_times_MD)[0]
+        
+        # Forcing arrays to have the same size
+        # Forcing first thing to be an arrival (at time 0 if already at home)
+        if len(arrive)>len(leave):
+            leave = np.append(leave,n1min-1)
+        elif len(arrive)<len(leave):
+            arrive = np.insert(arrive,0,0)
+        else:
+            if leave[0]<arrive[0]:
+                arrive = np.insert(arrive,0,0)
+                leave = np.append(leave,n1min-1)
+                
+        #  Charging at-home time window: find starting and stopping charge times
+        # Shift the app consumption vector by one time step:
+        charge_home_s  = np.roll(charge_home,1)
+        
+        # locate all the points whit a start or a end
+        starting_times_chhome = (charge_home>0) * (charge_home_s==0)
+        stopping_times_chhome = (charge_home_s>0) * (charge_home==0)
+        
+        # List the indexes of all start and end charging
+        starts_chhome = np.where(starting_times_chhome)[0]
+        ends_chhome   = np.where(stopping_times_chhome)[0]
+        
+        # Consumptions when charging at home
+        consumptions = np.zeros(len(starts_chhome))
+        for i in range(len(starts_chhome)):
+            consumptions[i] = np.sum(charge_home[starts_chhome[i]:ends_chhome[i]])/60
+        
+        # Finding in which at-home time windows each charging window is
+        idx_athomewindows = np.zeros(len(starts_chhome),dtype=int)
+        for i in range(len(starts_chhome)):
+            idx_i = np.searchsorted(leave,[ends_chhome[i]-1],side='right')[0]
+            idx_athomewindows[i] = idx_i
+        
+        # Minimum level of charge
+        # LOC ramps when charging
+        chargelen = ends_chhome - starts_chhome
+        ramps = np.zeros(n1min) # kWh
+        for i in range(len(starts_chhome)):
+            add = np.linspace(0,consumptions[i],num=chargelen[i]+1)
+            ramps[starts_chhome[i]:ends_chhome[i]] += add[1:]
+        # LOC_min
+        LOC_min_EV = ramps.copy()
+        for i in range(len(starts_chhome)):
+            LOC_min_EV[ends_chhome[i]:leave[idx_athomewindows[i]]] += ramps[ends_chhome[i]-1]
+        
+        # LOC_max
+        LOC_max_EV = np.zeros(len(consumptions))
+        oldidx = 0
+        count = 0
+        LOC_max_EV_t = 0
+        
+        for i in range(len(consumptions)): 
+            if idx_athomewindows[i] == oldidx:
+                LOC_max_EV_t += consumptions[i]
+                count += 1
+            else:
+                LOC_max_EV_t = consumptions[i]
+                count = 1
+            oldidx = idx_athomewindows[i]
+            LOC_max_EV[i+1-count:i+1] = LOC_max_EV_t
+            
+        
+        # Define inputs for shifting function
+        paramEVshift = {}
+        paramEVshift['MaxPower'] = np.max(charge_home) # Pcharge
+        paramEVshift['InverterEfficiency'] = 1.
+        paramEVshift['timestep'] = 1/60
+        
+        if PVBool:
+            out_EV = EVshift_PV(pv_1min_res,
+                                arrive,leave,
+                                starts_chhome,ends_chhome,
+                                idx_athomewindows,
+                                LOC_min_EV,LOC_max_EV,
+                                paramEVshift,return_series=False)
+            
+            demand_EV_shift = out_EV['inv2store']+out_EV['grid2store']
+            
+        else:
+            
+            yprices_1min = yearlyprices(scenario,timeslots,prices,stepperh_1min) # €/kWh
+            yprices_1min = pd.Series(data=yprices_1min,index=index1min)
+            pricelim = prices[scenario][thresholdprice]/1000
+            
+            out_EV = EVshift_tariffs(yprices_1min,pricelim,
+                                     arrive,leave,
+                                     starts_chhome,ends_chhome,
+                                     idx_athomewindows,
+                                     LOC_min_EV,LOC_max_EV,
+                                     paramEVshift,return_series=False)
+            
+            demand_EV_shift = out_EV['grid2store']
+
+        demand_EV_shift = pd.Series(data=demand_EV_shift,index=index1min)
+        demand_shifted['EVCharging'] = demand_EV_shift.resample('15Min').mean().to_numpy()/1000. # kW
+        
+        if PVBool:        
+            # Updating residual PV
+            pv_15min_res = np.maximum(0,pv_15min_res-demand_HP_shift) # kW
+            pv_1min_res  = scale_timeseries(pv_15min_res,index1min) # kW 
+            
+
     """
     8E) Final aggregated demand before battery shifting
     """

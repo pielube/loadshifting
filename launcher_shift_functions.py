@@ -325,6 +325,171 @@ def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,hea
     return Qheat, Tinside
 
 
+def EVshift_PV(pv,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,param,return_series=False):
+    
+    """
+    Function to shift at-home charging based on PV production
+    Charging when PV power is available and LOC < LOC_max or when LOC < LOC_min regardless PV production.
+    It requires start and end indexes of at-home time windows and charging events and
+    to which at-home time window each charging event belongs. 
+    For each at home time window LOC_min is defined as the charge obtained from reference at-home charging events
+    and LOC_max as the total consumption of charging events in that at-home time window.
+    
+    Parameters:
+        pv (pandas Series): vector Nsteps long with residual PV production, kW DC
+        arrive (numpy array): vector of indexes, start at-home time windows  
+        leave  (numpy array): vector of indexes, end   at-home time windows
+        starts (numpy array): vector of indexes, start charging at-home time windows
+        ends   (numpy array): vector of indexes, end   charging at-home time windows
+        idx_athomewindows (numpy array): vector with which at-home window corresponds to each charging window
+        LOC_min (numpy array): vector Nsteps long with min LOC, kWh
+        LOC_max (numpy array): vector long as the number of at-home time windows with max LOC, kWh
+        param (dict): dictionary with charge power [kW], inverter efficiency [-] and timestep [h]
+        return_series (bool): if True then the return will be a dictionary of series. 
+                              Otherwise it will be a dictionary of ndarrays.
+                              It is reccommended to return ndarrays if speed is an issue (e.g. for batch runs).
+                              Default is False.
+
+    Returns:
+        out (dict): dict with numpy arrays or pandas series with energy fluxes and LOC 
+    """
+    
+    bat_size_p_adj = param['MaxPower']
+    n_inv = param['InverterEfficiency']
+    timestep = param['timestep']
+    
+    Nsteps = len(pv)
+    pv_np = pv.to_numpy()
+     
+    pv2inv = np.zeros(Nsteps)
+    inv2grid = np.zeros(Nsteps)
+    inv2store = np.zeros(Nsteps)
+    grid2store = np.zeros(Nsteps)
+    LOC = np.zeros(Nsteps)
+    
+    # Not going twice through the same at-home time window    
+    idx_athomewindows,idxs = np.unique(idx_athomewindows,return_index=True)
+    LOC_max = LOC_max[idxs]
+    
+    for i in range(len(idx_athomewindows)): # iter over at-home time windows
+        
+        LOC[arrive[idx_athomewindows[i]]-1] = 0
+        
+        for j in range(arrive[idx_athomewindows[i]],leave[idx_athomewindows[i]]): # iter inside at-home time windows
+                        
+            pv2inv[j] = pv_np[j] # kW
+            
+            inv2store_t = min(pv2inv[j]*n_inv,bat_size_p_adj) # kW          
+            LOC_t = LOC[j-1] + inv2store_t*timestep # kWh
+            
+            if LOC_t < LOC_min[j]:
+                
+                inv2store[j]  = inv2store_t # kW
+                grid2store[j] = min(bat_size_p_adj-inv2store[j],(LOC_min[j]-LOC_t)/timestep) # kW
+                                
+                LOC[j] = LOC[j-1] + inv2store[j]*timestep + grid2store[j]*timestep # kWh
+            
+            elif  LOC_min[j] <= LOC_t <= LOC_max[i]:
+                
+                inv2store[j]  = inv2store_t # kW
+                
+                LOC[j] = LOC_t # kWh
+                                
+            elif LOC_t > LOC_max[i]:
+                    
+                inv2store[j] = (LOC_max[i]-LOC[j-1]) /timestep # kW
+                
+                LOC[j] = LOC_max[i] # kWh
+   
+    inv2grid = pv2inv*n_inv - inv2store # kW
+        
+    out = {'pv2inv': pv2inv,
+           'inv2grid': inv2grid,
+           'inv2store': inv2store,
+           'grid2store': grid2store,
+           'LevelOfCharge': LOC
+            }
+    
+    if return_series:
+        out_pd = {}
+        for k, v in out.items():  # Create dictionary of pandas series with same index as the input pv
+            out_pd[k] = pd.Series(v, index=pv.index)
+        out = out_pd
+    return out
+
+
+def EVshift_tariffs(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,param,return_series=False):
+    
+    """
+    Function to shift at-home charging based on tariffs
+    Charging when energy price <= pricelim and LOC < LOC_max or when LOC < LOC_min regardless of energy price.
+    It requires start and end indexes of at-home time windows and charging events and
+    to which at-home time window each charging event belongs. 
+    For each at home time window LOC_min is defined as the charge obtained from reference at-home charging events
+    and LOC_max as the total consumption of charging events in that at-home time window.
+    
+    
+    Parameters:
+        yprices_1min (pandas Series): vector Nsteps long with energy prices, €
+        arrive (numpy array): vector of indexes, start at-home time windows  
+        leave  (numpy array): vector of indexes, end   at-home time windows
+        starts (numpy array): vector of indexes, start charging at-home time windows
+        ends   (numpy array): vector of indexes, end   charging at-home time windows
+        idx_athomewindows (numpy array): vector with which at-home window corresponds to each charging window
+        LOC_min (numpy array): vector Nsteps long with min LOC, kWh
+        LOC_max (numpy array): vector long as the number of at-home time windows with max LOC, kWh
+        param (dict): dictionary with charge power [kW], inverter efficiency [-] and timestep [h]
+        return_series (bool): if True then the return will be a dictionary of series. 
+                              Otherwise it will be a dictionary of ndarrays.
+                              It is reccommended to return ndarrays if speed is an issue (e.g. for batch runs).
+                              Default is False.
+
+    Returns:
+        out (dict): dict with numpy arrays or pandas series with energy fluxes and LOC 
+    """
+    
+    bat_size_p_adj = param['MaxPower']
+    n_inv = param['InverterEfficiency']
+    timestep = param['timestep']
+    
+    Nsteps = len(yprices_1min)
+    yprices_1min_np = yprices_1min.to_numpy()
+
+    grid2store = np.zeros(Nsteps)
+    LOC = np.zeros(Nsteps)
+    
+    # Not going twice through the same at-home time window    
+    idx_athomewindows,idxs = np.unique(idx_athomewindows,return_index=True)
+    LOC_max = LOC_max[idxs]
+    
+    for i in range(len(idx_athomewindows)): # iter over at-home time windows
+        
+        LOC[arrive[idx_athomewindows[i]]-1] = 0
+        
+        for j in range(arrive[idx_athomewindows[i]],leave[idx_athomewindows[i]]): # iter inside at-home time windows
+            
+            if yprices_1min_np[j] <= pricelim:
+                grid2store[j] = min((LOC_max[i]-LOC[j-1])/timestep,bat_size_p_adj) # kW
+                
+            else:
+                if LOC[j-1] < LOC_min[j]:
+                    grid2store[j] = min((LOC_min[j]-LOC[j-1])/timestep,bat_size_p_adj) # kW
+
+            LOC[j] = LOC[j-1] + grid2store[j]*timestep # kWh
+        
+    out = {'grid2store': grid2store,
+           'LevelOfCharge': LOC
+            }
+    
+    if return_series:
+        out_pd = {}
+        for k, v in out.items():  # Create dictionary of pandas series with same index as the input pv
+            out_pd[k] = pd.Series(v, index=yprices_1min.index)
+        out = out_pd
+    return out
+
+
+
 def ResultsAnalysis(pv_capacity,batt_capacity,pflows,ElPrices,prices,scenario,econ_param):
     
     # Running prosumpy to get SC and SSR and energy fluxes for economic analysis

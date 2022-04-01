@@ -54,7 +54,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         # Thermal parameters of the dwelling
         # Taken from Procebar .xls files
         if thermal_parameters is not None:
-            inputs['HP'] = {**thermal_parameters,**procebinp}
+            inputs['HP'] = {**inputs['HP'],**thermal_parameters}
         else:
             procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'],True)
             inputs['HP'] = {**inputs['HP'],**procebinp}
@@ -72,8 +72,10 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         # RAMP-mobility
         if inputs['EV']['loadshift']:
             result_ramp = ramp.EVCharging(inputs, result['occupancy'][n_scen])
+            res_ramp_charge_home = result_ramp['charge_profile_home']
+            inputs['EV']['MainDriver'] = result_ramp['main_driver']
         else:
-            result_ramp=pd.DataFrame()
+            res_ramp_charge_home = pd.DataFrame()
     
         """
         Creating dataframe with the results
@@ -86,13 +88,14 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         
         # Dataframe of demands
         df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging','InternalGains'],dtype=object)
-        result_ramp.loc[df.index[-1],'EVCharging']=0
+        
+        res_ramp_charge_home.loc[df.index[-1],'EVCharging']=0
         
         for key in df.columns:
             if key in result:
                 df[key] = result[key][n_scen,:]
-            elif key in result_ramp:
-                df[key] = result_ramp[key]* 1000
+            elif key in res_ramp_charge_home:
+                df[key] = res_ramp_charge_home[key]* 1000
             else:
                 df[key] = 0
         # Dataframe with the occupancy data
