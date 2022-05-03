@@ -35,90 +35,110 @@ def scale_timeseries(data,index):
 
 def EconomicAnalysis(E,econ_param,ElPrices,timestep,demand_ref):
     '''
-    Calculation of the profits linked to the PV/battery installation, user perspective
+    Economic analysis
+    NPV analysis and mean electricity price
        
-    :param E: Output of the "EnergyFlows" function: dictionary of the computed yearly qunatities relative to the PV battery installation 
-    :param econ_param: Dictionary with the financial variables of the considered country   
-    :param econ_param: Investment data. Defined as a dictionary with the fields 'FixedPVCost','PVCost_kW','FixedBatteryCost','BatteryCost_kWh','PVLifetime','BatteryLifetime','OM'
-    :array demand: Energy consumption in the reference case
-    :return: List comprising the Profitability Ratio and the system LCOE
+    E: dictionary of yearly arrays of energy flows and PV and battery capacity 
+    econ_param: Dictionary with economic param required for the analysis   
+    ElPrices: array of yearly energy prices
+    timestep: timestep of the arrays
+    demand_ref: power demand curve in the reference scenario
+    
+    out: dictionary with results of the economic analysis
     '''
         
     # Defining output dictionnary
     out = {}
     
-    # Updating the fixed costs if PV or batteries capacities = 0
+    # Adding PV and battery capacities to outputs
+    out['PVCapacity'] = E['PVCapacity']
+    out['BatteryCapacity'] = E['BatteryCapacity']
+    
+    # Updating fixed costs if PV or battery capacities = 0
+    
     if E['PVCapacity'] == 0:
         FixedPVCost = 0
+        FixedInverterCost = 0
     else:
         FixedPVCost = econ_param['FixedPVCost']
+        FixedInverterCost = econ_param['FixedInverterCost']
         
     if E['BatteryCapacity'] == 0:
         FixedBatteryCost = 0
     else:
         FixedBatteryCost = econ_param['FixedBatteryCost']
-        
-    out['PVCapacity'] = E['PVCapacity']
-    out['BatteryCapacity'] = E['BatteryCapacity']
      
-    # Load economic data:
+    # Load economic data
 
     # General
-    interest = econ_param['WACC'] # Discount rate, -
+    interest = econ_param['WACC']              # Discount rate, -
     net_metering = econ_param['net_metering']  # Boolean variable for the net metering scheme 
-    years = econ_param['time_horizon'] # time horizon for the investment
+    years = econ_param['time_horizon']         # Time horizon of the investment
 
     # Grid connection
     C_grid_fixed = econ_param['C_grid_fixed']  # Fixed grid tariff per year, €
     C_grid_kW    = econ_param['C_grid_kW']     # Fixed cost per installed grid capacity, €/kW 
 
-    # Sell to the grid
-    P_FtG      = econ_param['P_FtG']       # Purchase price of electricity fed to the grid, €/MWh  (price of energy sold to the grid)
-    C_grid_FtG = 0.  # Grid fees for electricity fed to the grid, €/MWh      (cost to sell electricity to the grid)  
-    C_TL_FtG   = 0.    # Tax and levies for electricity fed to the grid, €/MWh (cost to sell electricity to the grid)
+    # Selling to the grid
+    P_FtG      = econ_param['P_FtG'] # Purchase price of electricity fed to the grid, €/MWh  (price of energy sold to the grid)
+    C_grid_FtG = 0.                  # Grid fees for electricity fed to the grid, €/MWh      (cost to sell electricity to the grid)  
+    C_TL_FtG   = 0.                  # Tax and levies for electricity fed to the grid, €/MWh (cost to sell electricity to the grid)
 
-    # Buy from the grid
-    P_retail = ElPrices # array, it was econ_param['P_retail']
+    # Buying from the grid
+    P_retail = ElPrices # Array of prices
 
     # PV and batteries supports
-    supportPV_INV  = 0.  # Investment support, % of investment
-    supportPV_kW   = 0.  # Investment support proportional to the size, €/kW
-    supportBat_INV = 0.  # to be added
-    supportBat_kW  = 0.  # to be added
+    supportPV_INV   = 0.  # Investment support, % of investment
+    supportPV_kW    = 0.  # Investment support proportional to the size, €/kW
+    supportBat_INV  = 0.  # Investment support, % of investment
+    supportBat_kWh  = 0.  # Investment support proportional to the size, €/kW
 
     # Self consumption
-    P_support_SC = 0.    # Support to self-consumption, €/MWh                    (incentive to self consumption)  
-    C_grid_SC    = 0.    # Grid fees for self-consumed electricity, €/MWh        (cost to do self consumption)
-    C_TL_SC      = 0.    # Tax and levies for self-consumed electricity, €/MWh   (cost to do self consumption)
-    
-    
-    # Initialize cash flows array 
-    CashFlows = np.zeros(int(years)+1)    
+    P_support_SC = 0. # Support to self-consumption, €/MWh                  (incentive to self consumption)  
+    C_grid_SC    = 0. # Grid fees for self-consumed electricity, €/MWh      (cost to do self consumption)
+    C_TL_SC      = 0. # Tax and levies for self-consumed electricity, €/MWh (cost to do self consumption)
+ 
+    # Investment and replacement costs  
 
-    # PV investment, no replacements:
+    # PV investment cost
     PVInvestment = FixedPVCost + econ_param['PVCost_kW'] * E['PVCapacity']
-    
-    # Battery investment with one replacement after the battery lifetime (10 years)
-    BatteryInvestment  = (FixedBatteryCost + econ_param['BatteryCost_kWh'] * E['BatteryCapacity'])
-    
     out['CostPV'] = PVInvestment
+
+    # Battery investment cost
+    BatteryInvestment  = FixedBatteryCost + econ_param['BatteryCost_kWh'] * E['BatteryCapacity']
     out['CostBattery'] = BatteryInvestment
     
-    # Inverter
-    # Inverter should be considered as well, with a lifetime of 10 years
+    # Inverter investment cost
+    InverterInvestment = FixedInverterCost + econ_param['InverterCost_kW'] * E['PVCapacity']
+    out['CostInverter'] = InverterInvestment
     
     # Control strategy initial investment
     ControlInvestment = econ_param['FixedControlCost']   
 
     # Initial investment
-    InitialInvestment =  PVInvestment + BatteryInvestment + ControlInvestment
+    InitialInvestment =  PVInvestment + BatteryInvestment + InverterInvestment + ControlInvestment
 
-    # Adding investment costs to cash flows array
+    # Initialize cashflows array 
+    CashFlows = np.zeros(int(years)+1)   
+
+    # Adding initial investment costs to cashflows array
     CashFlows[0]  = - InitialInvestment
-    CashFlows[10] = - BatteryInvestment
     
-    # O&M
-    CashFlows[1:21] = CashFlows[1:21] - econ_param['OM'] * (BatteryInvestment + PVInvestment)
+    # Adding replacement costs to cashflows array
+    NBattRep = int((years-1)/econ_param['BatteryLifetime'])
+    for i in range(NBattRep):
+        iyear = (i+1)*econ_param['BatteryLifetime']
+        CashFlows[iyear] = - BatteryInvestment
+    
+    NInvRep = int((years-1)/econ_param['InverterLifetime'])
+    for i in range(NInvRep):
+        iyear = (i+1)*econ_param['InverterLifetime']
+        CashFlows[iyear] = - InverterInvestment
+        
+    # Other costs
+    
+    # O&Ms
+    CashFlows[1:21] = CashFlows[1:21] - econ_param['OM'] * (PVInvestment + BatteryInvestment)
     
     # Annual costs for controller
     CashFlows[1:21] = CashFlows[1:21] - econ_param['AnnualControlCost']
@@ -134,46 +154,44 @@ def EconomicAnalysis(E,econ_param,ElPrices,timestep,demand_ref):
         # Revenues selling to the grid
         # Fixed selling price and cost
         Income_FtG = np.maximum(0,sum(E['ACGeneration']-E['Load'])*timestep) * (P_FtG - C_grid_FtG - C_TL_FtG)/1000
-        Income_SC = 0
-        """
-        Old equations:
-        Income_FtG = np.maximum(0,E['ACGeneration']-E['Load']) * (P_FtG - C_grid_FtG - C_TL_FtG)/1000
-        Income_SC = (P_support_SC + P_retail - C_grid_SC - C_TL_SC) * np.minimum(E['ACGeneration'],E['Load'])/1000  # the retail price on the self-consumed part is included here since it can be considered as a support to SC    
-        """
+        Income_SC = (P_support_SC - C_grid_SC - C_TL_SC)*sum(E['SC']*timestep)/1000
         # Expenditures buying from the grid
         Cost_BtG = np.maximum(sum(P_retail*(E['Load']-E['ACGeneration'])*timestep),0)      
     else:
         # Revenues selling to the grid
         # Fixed selling price and cost
         Income_FtG = sum(E['ToGrid']*timestep) * (P_FtG - C_grid_FtG - C_TL_FtG)/1000
-        Income_SC = 0
-        """
-        Old equations:
-        Income_FtG = E['ToGrid'] * (P_FtG - C_grid_FtG - C_TL_FtG)/1000
-        Income_SC = (P_support_SC + P_retail - C_grid_SC - C_TL_SC) * E['SC']/1000  # the retail price on the self-consumed part is included here since it can be considered as a support to SC
-        """
+        Income_SC = (P_support_SC - C_grid_SC - C_TL_SC)*sum(E['SC']*timestep)/1000
         # Expenditures buying from the grid
         Cost_BtG = sum(P_retail * E['FromGrid']*timestep)
     
+       
+    # Adding energy revenues and expenditures 
+    CashFlows[1:21] = CashFlows[1:21] + Income_FtG + Income_SC - Cost_BtG - AnnualCostGrid 
     
     # Reference case energy expenditure
+    # Buying all energy from the grid
     RefEnExpend = sum(demand_ref*ElPrices*timestep)
     
-    CashFlows[1:21] = CashFlows[1:21] + Income_FtG + Income_SC - Cost_BtG - AnnualCostGrid + RefEnExpend
+    # Adding energy expenditure from reference case as savings
+    CashFlows[1:21] = CashFlows[1:21] + RefEnExpend
+        
+    # Actualized cashflows
     CashFlowsAct = np.zeros(len(CashFlows))
-    NPVcurve = np.zeros(len(CashFlows))
-
     for i in range(len(CashFlows)):
         CashFlowsAct[i] = CashFlows[i]/(1+interest)**(i)
 
+    # NPV curve        
+    NPVcurve = np.zeros(len(CashFlows))
     NPVcurve[0] = CashFlowsAct[0]
-
     for i in range(len(CashFlows)-1):
         NPVcurve[i+1] = NPVcurve[i]+CashFlowsAct[i+1]
-        
+
+    # Final NPV        
     NPV = npf.npv(interest,CashFlows)
     out['NPV'] = NPV
-    
+
+    # Pay Back Period    
     zerocross = np.where(np.diff(np.sign(NPVcurve)))[0]
     if len(zerocross) > 0: 
         x1 = zerocross[0]
@@ -184,13 +202,14 @@ def EconomicAnalysis(E,econ_param,ElPrices,timestep,demand_ref):
         ys = [y1,y2]
         PBP = np.interp(0,ys,xs)
     else:
-        PBP = None #9999.
-    
+        PBP = None  
     out['PBP'] = PBP
     
+    # Internal Rate of Return
     IRR = npf.irr(CashFlows)
     out['IRR'] = IRR
-    
+
+    # Profit Index    
     if InitialInvestment == 0:
         PI = None
     else:
@@ -204,16 +223,43 @@ def EconomicAnalysis(E,econ_param,ElPrices,timestep,demand_ref):
     out['ElBill'] = Income_FtG - Cost_BtG - AnnualCostGrid # eur/y
        
     # LCOE equivalent, as if the grid was a generator
-    NPV_Battery_reinvestment = (FixedBatteryCost + econ_param['BatteryCost_kWh'] * E['BatteryCapacity']) / (1+interest)**econ_param['BatteryLifetime']
-    BatteryInvestment += NPV_Battery_reinvestment
-    CRF = interest * (1+interest)**econ_param['PVLifetime']/((1+interest)**econ_param['PVLifetime']-1)
+    
+    # Total actualized battery investment, accounting for replacements
+    TotActBatteryInvestment = BatteryInvestment   
+    for i in range(NBattRep):
+        iyear = (i+1)*econ_param['BatteryLifetime']
+        NPV_Battery_reinvestment = (BatteryInvestment) / (1+interest)**iyear
+        TotActBatteryInvestment += NPV_Battery_reinvestment
+
+    # Total actualized inverter investment, accounting for replacements    
+    TotActInverterInvestment = InverterInvestment
+    for i in range(NInvRep):
+        iyear = (i+1)*econ_param['InverterLifetime']
+        NPV_Inverter_reinvestment = (InverterInvestment) / (1+interest)**iyear
+        TotActInverterInvestment += NPV_Inverter_reinvestment
+    
+    # Net system costs
     NetSystemCost = PVInvestment * (1 - supportPV_INV) - supportPV_kW * E['PVCapacity']  \
-                    + BatteryInvestment * (1 - supportBat_INV) - supportBat_kW * E['BatteryCapacity']
-    AnnualInvestment = NetSystemCost * CRF + econ_param['OM'] * (BatteryInvestment + PVInvestment)
-    out['costpermwh'] = ((AnnualInvestment + AnnualCostGrid - Income_FtG - (P_support_SC - C_grid_SC - C_TL_SC)*sum(E['SC']*timestep)/1000 + Cost_BtG) / sum(E['Load']*timestep))*1000. #eur/MWh
+                  + TotActBatteryInvestment * (1 - supportBat_INV) - supportBat_kWh * E['BatteryCapacity'] \
+                  + TotActInverterInvestment
+                  
+    # Capital Recovery Factor
+    CRF = interest * (1+interest)**years/((1+interest)**years-1)
+    
+    # Annual investment costs             
+    AnnualInvestment = NetSystemCost * CRF + econ_param['OM'] * (PVInvestment + BatteryInvestment)
+    
+    # Electricity price per MWh
+    ECost = AnnualInvestment + AnnualCostGrid + Cost_BtG - Income_FtG - Income_SC
+    
+    # LCOE equivalent, electricity price per MWhh
+    out['costpermwh'] = (ECost / sum(E['Load']*timestep))*1000. #eur/MWh
+    
+    # Grid cost component of the final energy price
     out['cost_grid'] = AnnualCostGrid/sum(E['Load']*timestep)*1000
     
     return out
+
 
 def EconomicAnalysisRefPV(E,econ_param,ElPrices,timestep,E_ref):
     '''
