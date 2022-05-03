@@ -14,10 +14,10 @@
         "InverterCost_kW": 100.0,
         "PVLifetime": 30,
         "BatteryLifetime": 10,
-		"InverterLifetime": 15,
+        "InverterLifetime": 15,
         "OM": 0.0,
-        "FixedControlCost": 0,
-        "AnnualControlCost": 0,
+        "FixedControlCost": 0.0,
+        "AnnualControlCost": 0.0,
         "scenario": "test",
         "thresholdprice": "hollow"
     },

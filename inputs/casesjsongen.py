@@ -19,17 +19,39 @@ case=    {
 		   "row": 0,
            "columns": [],
 		   "TechsShift": [],
-		   "WetAppBool": False, 
-           "WetAppManBool": False,
-           "WetAppAutoBool": False,
-           "PVBool": False,
-           "BattBool": False,
-           "DHWBool": False,
-           "HeatingBool": False,
-           "EVBool": False
+           "WetAppManualShifting": False,
+           "PresenceOfPV": False,
+           "PresenceOfBattery": False,
            }
 
+case_default = {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 0,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "WetAppManualShifting": True,
+        "PresenceOfPV": True,
+        "PresenceOfBattery": True
+    }
+
 cases ={}
+cases['default'] = case_default
 
 econparam = {
 		   "WACC": 0.04,
@@ -55,6 +77,7 @@ econparam = {
            }
 
 econparams = {}
+econparams['default'] = econparam
 
 for i in range(83):
     
@@ -84,26 +107,20 @@ for i in range(83):
         columns_shift.append('TumbleDryer')
         columns_shift.append('DishWasher')
         columns_shift.append('WashingMachine')
-        newcase['WetAppBool'] = True
     if data['wetapp_shift_manual'][i] == 1:
-        newcase['WetAppManBool'] = True
-    if data['wetapp_shift_auto'][i] == 1:
-        newcase['WetAppAutoBool'] = True
+        newcase['WetAppManualShifting'] = True
     if data['dhw_shift'][i] == 1:
         columns_shift.append('DomesticHotWater')
-        newcase['DHWBool'] = True
     if data['househeat_shift'][i] == 1:
         columns_shift.append('HeatPumpPower')
-        newcase['HeatingBool'] = True
     if data['ev_shift'][i] == 1:
         columns_shift.append('EVCharging')
-        newcase['EVBool'] = True
     newcase['TechsShift'] = columns_shift
 
     if data['pv'][i] == 1:
-        newcase['PVBool'] =True
+        newcase['PresenceOfPV'] =True
     if data['battery'][i] ==1:
-        newcase['BattBool'] = True
+        newcase['PresenceOfBattery'] = True
 
     cases['case'+str(i+1)] = newcase
     
