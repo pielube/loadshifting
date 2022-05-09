@@ -10,11 +10,12 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from datetime import timedelta 
+from simulation.py import load_config
 
 
 
 def realcases() :
-    questionnaires = ['Data_consumer_0{}.xlsx'.format(i) for i in range(1,6)]
+    questionnaires = ['inputs\Data_consumer_0{}.xlsx'.format(i) for i in range(1,6)]
     
     case=    {
     	       "house": "f",
@@ -66,9 +67,10 @@ def realcases() :
         i=i+1
     return  (cases_real)
 
+
 cases_real = realcases()
 
-with open ('cases.json') as test :
+with open ('inputs\cases.json') as test :
     cases = json.load(test)
     
 
@@ -91,6 +93,18 @@ if (len_shared_dict==total_dict_count/2):
 else:
     print("The dictionaries are non-identical")
 
+
+
+filename = 'inputs\cases_real.json'
+with open(filename, 'w',encoding='utf-8') as f:
+    json.dump(cases_real, f,ensure_ascii=False, indent=4)
+
+
+
+
+
+
+out = load_config(1,cf_cases='inputs\cases_real.json',cf_pvbatt = 'pvbatt_param.json',cf_econ='econ_param.json',cf_tariff = 'tariffs.json', cf_house='housetypes.json')
 # for case_test in cases :
 #     for case_real in cases_real :
 #         if case_test == case_real :

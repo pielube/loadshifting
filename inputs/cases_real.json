@@ -1,0 +1,118 @@
+{
+    "case1": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 0,
+        "columns": [
+            "StaticLoad",
+            "DishWasher",
+            "WashingMachine",
+            "TumbleDryer"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case2": {
+        "house": "1f",
+        "sheet": "1F",
+        "row": 1,
+        "columns": [
+            "StaticLoad",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case3": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 2,
+        "columns": [
+            "StaticLoad",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case4": {
+        "house": "1f",
+        "sheet": "1F",
+        "row": 3,
+        "columns": [
+            "StaticLoad",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case5": {
+        "house": "1f",
+        "sheet": "1F",
+        "row": 4,
+        "columns": [
+            "StaticLoad",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    },
+    "case6": {
+        "house": "2f",
+        "sheet": "2F",
+        "row": 5,
+        "columns": [
+            "StaticLoad",
+            "DishWasher",
+            "WashingMachine"
+        ],
+        "TechsShift": [],
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
+    }
+}
