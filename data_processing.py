@@ -193,38 +193,84 @@ with open(filename, 'w',encoding='utf-8') as f:
 
 
 #Configuration of the simulation
-conf = load_config('case1',cf_cases='cases_real.json',cf_pvbatt = 'pvbatt_param.json',cf_econ='econ_param.json',cf_tariff = 'tariffs.json', cf_house='housetypes_real.json')
-config,pvbatt_param,econ_param,tariffs,housetype,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N']
- 
-out = compute_demand(housetype,10)
+# conf = load_config('case1',cf_cases='cases_real.json',cf_pvbatt = 'pvbatt_param.json',cf_econ='econ_param.json',cf_tariff = 'tariffs.json', cf_house='housetypes_real.json')
+# config,pvbatt_param,econ_param,tariffs,housetype,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N']
+N=5
+out = compute_demand(housetypes_real['case1'],N)
 results,occupancy,input_data = out['results'],out['occupancy'],out['input_data']
 
-data = results[1]
+
+#Statement comsuption 
+def real_consumption ():
+    statement_consumption = {}
+    questionnaires = ['inputs\Data_consumer_0{}.xlsx'.format(i+1) for i in range(6)]
+    i=1
+    for consumer in questionnaires :
+        statement_consumption_f={}
+        if i == 1 :
+            sheet_name = "AOU19_JUI21"
+            colonne1 = 'Volume (kWh)'
+            colonne2 = 'FromDate (GMT+1)'
+        else :
+            sheet_name = "data"
+            colonne1 ='Volume en kWh'
+            colonne2 = 'Date & Heure'
+        df = pd.read_excel(consumer, sheet_name, header=0)
+        statement_consumption_f['Date'] = df[colonne2]
+        statement_consumption_f['Consumption'] = df[colonne1]*[10000]
+        statement_consumption['consumer{}'.format(i)]=statement_consumption_f
+        i=i+1
+    return (statement_consumption)
+
+
+
+data = results[0]
 date = data.index.tolist()
 comsuption = {}
 
 columns=data.columns.tolist()
-rows = data.index.tolist()
-i=0
+
+i=1
 figure = {}
+statement_consumption = real_consumption ()
 for data in results :
-    fig = make_demand_plot(date,data)
-    figure['figure {}'.format(i)] =  fig
+    
+    comsuption['case{}'.format(i)]= []
+    
+    for k in range (len(date)) :
+        sum_kWh = data.iloc[k:k+1,:].sum(axis=1)
+        comsuption['case{}'.format(i)].append(sum_kWh)
+        if round((100*k/len(date)),3)%1==0 :
+            print('Chargement à {} %'.format((i-1)*20+(100/N)*k/len(date)))
+        
+    plt.plot(date,comsuption['case{}'.format(i)], label = '{} simulation consumption for consumer 1'.format(i))
     i=i+1
-    print(i)
-    fig.show()
+    
+i=1
+for k in range(1) :        
+    plt.plot(statement_consumption['consumer{}'.format(i)]['Date'],statement_consumption['consumer{}'.format(i)]['Consumption'],ls =':',label='Real consumption for consumer {}'.format(i))
+    i=i+1
+plt.legend()
+plt.show()
+    
+
     
     
-for fig in figure :
-    fig.show()
-#     comsuption['case{}'.format(i)]= []
-#     for k in range (len(rows)) :
-#         sum_kWh = data.iloc[k:k+1,:].sum(axis=1)
-#         comsuption['case{}'.format(i)].append(sum_kWh)
-#         print(k)
-#     plt.plot(date,comsuption['case{}'.format(i)])
-#     i=i+1
-# plt.show()
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
 
 
 
