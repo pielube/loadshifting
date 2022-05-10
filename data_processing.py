@@ -117,7 +117,11 @@ def realcases() :
         
         #Home feature
         newhousetype["name"] = str(df['Unnamed: 2'][45])
-        newhousetype["members"] = None #df['Unnamed: 2'][110]
+        members={}
+        members["child"] = df['Unnamed: 2'][106]
+        members["adult"] = df['Unnamed: 2'][105]
+        members["total"] = df['Unnamed: 2'][106] + df['Unnamed: 2'][105]
+        newhousetype["members"] = members
         newhousetype["HP"]["dwelling_type"] = str(df['Unnamed: 2'][45])
         
         #Type of dwelling
@@ -192,10 +196,11 @@ with open(filename, 'w',encoding='utf-8') as f:
 
 
 
-#Configuration of the simulation
-# conf = load_config('case1',cf_cases='cases_real.json',cf_pvbatt = 'pvbatt_param.json',cf_econ='econ_param.json',cf_tariff = 'tariffs.json', cf_house='housetypes_real.json')
-# config,pvbatt_param,econ_param,tariffs,housetype,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N']
+
+#Nombre de simulation stochastique
 N=10
+print(housetypes_real)
+#Stochastic Simulation
 out = compute_demand(housetypes_real['case1'],N)
 results,occupancy,input_data = out['results'],out['occupancy'],out['input_data']
 
@@ -217,13 +222,13 @@ def real_consumption ():
             colonne2 = 'Date & Heure'
         df = pd.read_excel(consumer, sheet_name, header=0)
         statement_consumption_f['Date'] = df[colonne2]
-        statement_consumption_f['Consumption'] = df[colonne1]*[1000]
+        statement_consumption_f['Consumption'] = df[colonne1]*[1000*4]
         statement_consumption['consumer{}'.format(i)]=statement_consumption_f
         i=i+1
     return (statement_consumption)
 
 
-
+#Display and recuperation of results
 data = results[0]
 date = data.index.tolist()
 comsuption = {}
@@ -240,7 +245,7 @@ for data in results :
     for k in range (len(date)) :
         sum_kWh = data.iloc[k:k+1,:].sum(axis=1)
         comsuption['case{}'.format(i)].append(sum_kWh)
-        if round(((100/N)*(k/len(date)+(i-1))),5)%1==0 :
+        if round(((100/N)*(k/len(date)+(i-1))),4)%1==0 :
             print('Chargement à {} %'.format(round((100/N)*(k/len(date)+(i-1)))))
         
     plt.plot(date,comsuption['case{}'.format(i)], label = '{} simulation consumption for consumer 1'.format(i))
