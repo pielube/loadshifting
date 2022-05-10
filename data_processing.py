@@ -195,7 +195,7 @@ with open(filename, 'w',encoding='utf-8') as f:
 #Configuration of the simulation
 # conf = load_config('case1',cf_cases='cases_real.json',cf_pvbatt = 'pvbatt_param.json',cf_econ='econ_param.json',cf_tariff = 'tariffs.json', cf_house='housetypes_real.json')
 # config,pvbatt_param,econ_param,tariffs,housetype,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N']
-N=5
+N=10
 out = compute_demand(housetypes_real['case1'],N)
 results,occupancy,input_data = out['results'],out['occupancy'],out['input_data']
 
@@ -217,7 +217,7 @@ def real_consumption ():
             colonne2 = 'Date & Heure'
         df = pd.read_excel(consumer, sheet_name, header=0)
         statement_consumption_f['Date'] = df[colonne2]
-        statement_consumption_f['Consumption'] = df[colonne1]*[10000]
+        statement_consumption_f['Consumption'] = df[colonne1]*[1000]
         statement_consumption['consumer{}'.format(i)]=statement_consumption_f
         i=i+1
     return (statement_consumption)
@@ -240,8 +240,8 @@ for data in results :
     for k in range (len(date)) :
         sum_kWh = data.iloc[k:k+1,:].sum(axis=1)
         comsuption['case{}'.format(i)].append(sum_kWh)
-        if round((100*k/len(date)),3)%1==0 :
-            print('Chargement à {} %'.format((i-1)*20+(100/N)*k/len(date)))
+        if round(((100/N)*(k/len(date)+(i-1))),5)%1==0 :
+            print('Chargement à {} %'.format(round((100/N)*(k/len(date)+(i-1)))))
         
     plt.plot(date,comsuption['case{}'.format(i)], label = '{} simulation consumption for consumer 1'.format(i))
     i=i+1

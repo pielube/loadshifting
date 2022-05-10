@@ -46,9 +46,12 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
     
         # People living in the dwelling
         # taken from strobe list
+        print ('Il y a {} membres dans la maison'.format(members))
         if members is not None:
-            inputs['members'] = members
+            print('Il y a pas de soucis')
+            
         else:
+            print('Il y a un soucis')
             inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
                
         # Thermal parameters of the dwelling
@@ -82,9 +85,9 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         """
         
         n_steps = np.size(result['StaticLoad'][n_scen,:])
-        index = pd.date_range(start='2015-01-01 00:00', periods=n_steps, freq='1min')
+        index = pd.date_range(start='2019-08-01 00:00', periods=n_steps, freq='1min')
         
-        index_10min = pd.date_range(start='2015-01-01 00:00', periods=len(result['occupancy'][n_scen][0]), freq='10min')
+        index_10min = pd.date_range(start='2019-08-01 00:00', periods=len(result['occupancy'][n_scen][0]), freq='10min')
         
         # Dataframe of demands
         df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging','InternalGains'],dtype=object)
