@@ -127,6 +127,22 @@ def ProcebarExtractor(buildtype,wellinsulated):
     
     return outputs
 
+def HouseholdMembers_real (members) :
+    adults = ['FTE','PTE','Retired','Unemployed']
+    nhouseholds = members["adult"]
+    print("Le nombre total de membres est {}".format(nhouseholds))
+    output = []
+    
+    # picking one random composition from strobe's list
+    # and checking that there is at least one adult
+    
+    finished = False
+    while not finished: 
+        subset = {key: value for key, value in households.items() if np.size(value) == nhouseholds}
+        output = random.choice(list(subset.values()))
+        finished = not set(output).isdisjoint(adults)
+    
+    return output
 
 def HouseholdMembers(buildtype):
     

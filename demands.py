@@ -6,7 +6,7 @@ import pandas as pd
 import strobe
 import ramp
 import json
-from preprocess import ProcebarExtractor,HouseholdMembers
+from preprocess import ProcebarExtractor,HouseholdMembers, HouseholdMembers_real
 import os
 import pickle
 from joblib import Memory
@@ -16,8 +16,8 @@ __location__ = os.path.realpath(
 
 memory = Memory(__location__ + '/cache/', verbose=1)
 
-@memory.cache
-def compute_demand(inputs,N,members= None,thermal_parameters=None):
+#@memory.cache
+def compute_demand(inputss,N,members= None,thermal_parameters=None):
     '''
     Function that generates the stochastic time series for
     - The occupancy profiles
@@ -43,14 +43,19 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
     out = {'results':[],'occupancy':[],'input_data':[]}
 
     for jj in range(N):          # run the simulation N times and append the results to the list
-    
+        inputs=inputss.copy()
         # People living in the dwelling
         # taken from strobe list
-        if members is not None:
-            inputs['members'] = members
+        print ('Il y a {} membres dans la maison'.format(inputs["members"]))
+        if inputs["members"] is not None:
+            newcase=inputs["members"]["child"]*['U12']
+            newcase.extend( HouseholdMembers_real(inputs["members"]))
+            inputs["members"] = newcase
+            print(inputs["members"])
         else:
+            
             inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
-               
+              
         # Thermal parameters of the dwelling
         # Taken from Procebar .xls files
         if thermal_parameters is not None:
@@ -82,9 +87,9 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         """
         
         n_steps = np.size(result['StaticLoad'][n_scen,:])
-        index = pd.date_range(start='2015-01-01 00:00', periods=n_steps, freq='1min')
+        index = pd.date_range(start='2019-08-01 00:00', periods=n_steps, freq='1min')
         
-        index_10min = pd.date_range(start='2015-01-01 00:00', periods=len(result['occupancy'][n_scen][0]), freq='10min')
+        index_10min = pd.date_range(start='2019-08-01 00:00', periods=len(result['occupancy'][n_scen][0]), freq='10min')
         
         # Dataframe of demands
         df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging','InternalGains'],dtype=object)
