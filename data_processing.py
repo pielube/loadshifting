@@ -68,10 +68,10 @@ def realcases() :
             "TV1": 0,
             "TumbleDryer": 0,
             "DishWasher": 0,
-            "WashingMachine": 0,
+            "WashingMachine":0,
             "WasherDryer": 0,
-            "FridgeFreezer": 1,
-            "Refrigerator": 1,
+            "FridgeFreezer": 0,
+            "Refrigerator": 0,
             "ChestFreezer": 0,
             "UprightFreezer": 0
             } 
@@ -102,7 +102,7 @@ def realcases() :
     
     "EV": 
         {
-        "loadshift": True
+        "loadshift": False
         }
     
     }
@@ -154,10 +154,10 @@ def realcases() :
         
         
         #Home appliance
-        Appliance_list = ["PC","TV1","Hob","Microwave","WashingMachine","TumbleDryer","DishWasher","Refrigerator","ChestFreezer"]
-        k=23
+        Appliance_list = ["PC","TV1","Hob","Microwave","Oven","voiture1","voiture2","vélo","WashingMachine","TumbleDryer","DishWasher",'littleappliances','pro',"Refrigerator","ChestFreezer",'Kettle']
+        k=22
         for appliance in Appliance_list :
-            if str(df['Unnamed: 5'][k]) != 'nan' :
+            if df['Unnamed: 6'][k] == 1 :
                 newhousetype["appliances"]["prob_own"][appliance] = 1
             k=k+1   
                 
@@ -171,10 +171,10 @@ def realcases() :
         housetypes_real['case'+str(i+1)] = newhousetype
      
         i=i+1
-    return  (cases_real,housetypes_real)
+    return  (cases_real,housetypes_real,df)
 
 
-cases_real,housetypes_real = realcases()
+cases_real,housetypes_real,df = realcases()
 
 
 with open ('inputs\cases.json') as test :
@@ -198,10 +198,11 @@ with open(filename, 'w',encoding='utf-8') as f:
 
 
 #Nombre de simulation stochastique
-N=10
-print(housetypes_real)
+N=1
+
 #Stochastic Simulation
-out = compute_demand(housetypes_real['case1'],N)
+
+out = compute_demand(housetypes_real['case6'],N)
 results,occupancy,input_data = out['results'],out['occupancy'],out['input_data']
 
 
@@ -222,7 +223,7 @@ def real_consumption ():
             colonne2 = 'Date & Heure'
         df = pd.read_excel(consumer, sheet_name, header=0)
         statement_consumption_f['Date'] = df[colonne2]
-        statement_consumption_f['Consumption'] = df[colonne1]*[1000*4]
+        statement_consumption_f['Consumption'] = df[colonne1]*1000
         statement_consumption['consumer{}'.format(i)]=statement_consumption_f
         i=i+1
     return (statement_consumption)
@@ -244,15 +245,15 @@ for data in results :
     
     for k in range (len(date)) :
         sum_kWh = data.iloc[k:k+1,:].sum(axis=1)
-        comsuption['case{}'.format(i)].append(sum_kWh)
-        if round(((100/N)*(k/len(date)+(i-1))),4)%1==0 :
+        comsuption['case{}'.format(i)].append(sum_kWh-data.iloc[k:k+1,7])
+        if round(((100/N)*(k/len(date)+(i-1))),3)%1==0 :
             print('Chargement à {} %'.format(round((100/N)*(k/len(date)+(i-1)))))
         
-    plt.plot(date,comsuption['case{}'.format(i)], label = '{} simulation consumption for consumer 1'.format(i))
+    plt.plot(date,comsuption['case{}'.format(i)], label = '{} simulation consumption for consumer 2'.format(i))
     i=i+1
     
 i=1
-for k in range(1) :        
+for k in range(2,3) :        
     plt.plot(statement_consumption['consumer{}'.format(i)]['Date'],statement_consumption['consumer{}'.format(i)]['Consumption'],ls =':',label='Real consumption for consumer {}'.format(i))
     i=i+1
 plt.legend()

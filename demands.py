@@ -16,7 +16,7 @@ __location__ = os.path.realpath(
 
 memory = Memory(__location__ + '/cache/', verbose=1)
 
-@memory.cache
+#@memory.cache
 def compute_demand(inputss,N,members= None,thermal_parameters=None):
     '''
     Function that generates the stochastic time series for
@@ -48,7 +48,7 @@ def compute_demand(inputss,N,members= None,thermal_parameters=None):
         # taken from strobe list
         print ('Il y a {} membres dans la maison'.format(inputs["members"]))
         if inputs["members"] is not None:
-            newcase=inputs["members"]["child"]*['School']
+            newcase=inputs["members"]["child"]*['U12']
             newcase.extend( HouseholdMembers_real(inputs["members"]))
             inputs["members"] = newcase
             print(inputs["members"])
