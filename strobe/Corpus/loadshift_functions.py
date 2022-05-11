@@ -287,6 +287,7 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
 
     PowerElMax = inputs['DHW']['PowerElMax']   # W  
     Ttarget    = inputs['DHW']['Ttarget'] #°C
+    Tfaucet    = inputs['DHW']['Tfaucet'] #°C
     Tcw        = inputs['DHW']['Tcw']     #°C
     Vcyl       = inputs['DHW']['Vcyl']    # l
     Hloss      = inputs['DHW']['Hloss']  # W/K
@@ -296,7 +297,8 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
     
     # Inizialization
     Tcyl = 60. + random.random()*2. #°C
-    resV = mDHW / 1000. / 60. # from l/min to m3/s
+    m_hot = mDHW * (Tfaucet-Tcw)/(Ttarget-Tcw) # DHW is used at Tfaucet which is obtained mixing water from boiler and acqueduct
+    resV = m_hot / 1000. / 60. # from l/min to m3/s
     resM = resV * 1000.       # from m3/s to kg/s
     resH = resM * 4200.       # from kg/s to W/K, cp = 4200. J/kg/K
     Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
