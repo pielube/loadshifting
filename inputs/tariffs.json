@@ -22,51 +22,24 @@
 
 "prices":
          {
-         "ASIS":
-                 {
-                 "fixed": 12.56,
-                 "peak": 96.82,
-                 "full": 72.61,
-                 "hollow": 48.41,
-                 "heel": 24.20,
-                 "capacity": 0.0
-                 },
-         "CR":
-                 {
-                 "fixed": 22.60,
-                 "peak": 0.0,
-                 "full": 8.15,
-                 "hollow": 0.0,
-                 "heel": 4.08,
-                 "capacity": 22.31
-                 },
-         "CRC5050":
-                 {
-                 "fixed": 0.0,
-                 "peak": 51.26,
-                 "full": 38.44,
-                 "hollow": 25.63,
-                 "heel": 12.81,
-                 "capacity": 13.07
-                 },
-         "CRC2080":
-                 {
-                 "fixed": 0.0,
-                 "peak": 82.01,
-                 "full": 61.51,
-                 "hollow": 41.01,
-                 "heel": 20.50,
-                 "capacity": 4.65
-                 },
         "test":
                 {
-                 "fixed": 0.0,
-                 "peak": 330.70,
-                 "full": 289.00,
-                 "hollow": 247.30,
-                 "heel": 205.60,
-                 "capacity": 0.00
+                 "peak": 217.8,
+                 "full": 193.6,
+                 "hollow": 169.4,
+                 "heel": 145.2
                 }
-         }
+         },
+         
+"gridfees":
+         {
+        "test":
+                {
+                 "peak": 204.9,
+                 "full": 170.5,
+                 "hollow": 136.0,
+                 "heel": 101.5
+                }
+         }            
 
 }

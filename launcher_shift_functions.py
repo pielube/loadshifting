@@ -47,7 +47,7 @@ def load_climate_data(datapath = __location__ + '/strobe/Data'):
     return temp,irr
 
 
-def MostRepCurve(demands,columns,ElPrices,timestep,econ_param):
+def MostRepCurve(demands,columns,yenprices,ygridfees,timestep,econ_param):
     
     """
     Choosing most representative curve among a list of demand curves
@@ -109,7 +109,7 @@ def MostRepCurve(demands,columns,ElPrices,timestep,econ_param):
         inputs['SC'] = outputs['inv2load']
         inputs['FromBattery'] = outputs['store2inv']
         
-        out = EconomicAnalysis(inputs,econ_param,ElPrices,timestep,inputs['Load'])
+        out = EconomicAnalysis(inputs,econ_param,yenprices,ygridfees,timestep,inputs['Load'])
         results.append(out['ElBill'])
     
     meanelbill = mean(results)
@@ -490,8 +490,11 @@ def EVshift_tariffs(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewin
 
 
 
-def ResultsAnalysis(pv_capacity,batt_capacity,pflows,ElPrices,prices,scenario,econ_param):
+def ResultsAnalysis(pv_capacity,batt_capacity,pflows,yenprices,ygridfees,enprices,gridfees,scenario,econ_param):
     
+    # Yearly total electricity prices
+    ElPrices = yenprices + ygridfees
+
     # Running prosumpy to get SC and SSR and energy fluxes for economic analysis
     # All shifting must have already been modelled, including battery
     # param_tech is hence defined here and battery forced to be 0
@@ -524,7 +527,7 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pflows,ElPrices,prices,scenario,ec
     
     timestep = 0.25
     
-    res_EA = EconomicAnalysis(Epspy,econ_param,ElPrices,timestep,demand_ref)
+    res_EA = EconomicAnalysis(Epspy,econ_param,yenprices,ygridfees,timestep,demand_ref)
     
     # Running prosumpy for reference case with only PV
     # Used in another economic analysis to get NPV, PBP and PI
@@ -548,10 +551,20 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pflows,ElPrices,prices,scenario,ec
     
     out = {}
 
-    heel   = np.where(ElPrices == prices[scenario]['heel']/1000,1.,0.)
-    hollow = np.where(ElPrices == prices[scenario]['hollow']/1000,1.,0.)
-    full   = np.where(ElPrices == prices[scenario]['full']/1000,1.,0.)
-    peak   = np.where(ElPrices == prices[scenario]['peak']/1000,1.,0.)
+    price_heel   = (enprices[scenario]['heel']+gridfees[scenario]['heel'])/1000
+    price_hollow = (enprices[scenario]['hollow']+gridfees[scenario]['hollow'])/1000
+    price_full   = (enprices[scenario]['full']+gridfees[scenario]['full'])/1000
+    price_peak   = (enprices[scenario]['peak']+gridfees[scenario]['peak'])/1000
+
+    # heel   = np.where(ElPrices == price_heel,1.,0.)
+    # hollow = np.where(ElPrices == price_hollow,1.,0.)
+    # full   = np.where(ElPrices == price_full,1.,0.)
+    # peak   = np.where(ElPrices == price_peak,1.,0.)
+    
+    heel   = np.where(abs(ElPrices-price_heel)<0.01,1.,0.)
+    hollow = np.where(abs(ElPrices-price_hollow)<0.01,1.,0.)
+    full   = np.where(abs(ElPrices-price_full)<0.01,1.,0.)
+    peak   = np.where(abs(ElPrices-price_peak)<0.01,1.,0.)
    
     consrefheel   = np.sum(demand_ref*heel)*timestep
     consrefhollow = np.sum(demand_ref*hollow)*timestep
@@ -591,12 +604,18 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pflows,ElPrices,prices,scenario,ec
         out['selfconsrate'] = 0
     else:
         out['selfconsrate'] = out['el_selfcons']/out['el_prod']
+
+    out["EnSold"]     = res_EA["EnSold"]         
+    out["CostToSell"] = res_EA["CostToSell"]
+    out["TotalSell"]  = res_EA["TotalSell"] 
     
-    out['el_soldtogrid_rev']      = res_EA['RevSelling']
-    out['el_boughtfromgrid_cost'] = res_EA['CostBuying']
-    out['annualgridcosts']        = res_EA['AnnualGridCosts']
-    out['el_netexpend']           = res_EA['ElBill']
-    out['el_costperkwh']          = res_EA['costpermwh']/1000.
+    out["EnBought"]  = res_EA["EnBought"] 
+    out["CostToBuy"] = res_EA["CostToBuy"]
+    out["TotalBuy"]  = res_EA["TotalBuy"]
+    
+    out['el_netexpend'] = res_EA['ElBill']
+    
+    out['el_costperkwh'] = res_EA['costpermwh']/1000.
     
     out['PBP'] = res_EA['PBP']
     out['NPV'] = res_EA['NPV']
@@ -612,18 +631,21 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pflows,ElPrices,prices,scenario,ec
     return out
 
 
-def WriteResToExcel(file,sheet,results,econ_param,tariff,row):
+def WriteResToExcel(file,sheet,results,econ_param,enprices,gridfees,row):
     
     df = pd.read_excel(file,sheet_name=sheet,header=0,index_col=0)
     
     df.at[row,'Investissement fixe pilotage [€]'] = econ_param['FixedControlCost']
     df.at[row,'Investissement annuel pilotage [€] (abonnement, … )'] = econ_param['AnnualControlCost']
     df.at[row,"Année d'étude"] = econ_param['time_horizon']
+    
     df.at[row,"Valeur de vendue de l'élec [€/kWh]"] = econ_param['P_FtG']/1000.
-    df.at[row,'Heure Talon [1h-7h]  [€/kWh]'] = tariff['heel']/1000.
-    df.at[row,'Heure creuse [23h-1h et 7h-10h]  [€/kWh]'] = tariff['hollow']/1000.
-    df.at[row,'Heure pleine [10h-18h et 21h-23h]  [€/kWh]'] = tariff['full']/1000.
-    df.at[row,'Heure pointe [18h-21h]  [€/kWh]'] = tariff['peak']/1000.
+    
+    df.at[row,'Heure Talon [1h-7h]  [€/kWh]'] = (enprices['heel']+gridfees['heel'])/1000.
+    df.at[row,'Heure creuse [23h-1h et 7h-10h]  [€/kWh]'] = (enprices['hollow']+gridfees['hollow'])/1000.
+    df.at[row,'Heure pleine [10h-18h et 21h-23h]  [€/kWh]'] = (enprices['full']+gridfees['full'])/1000.
+    df.at[row,'Heure pointe [18h-21h]  [€/kWh]'] = (enprices['peak']+gridfees['peak'])/1000.
+    
     df.at[row,'Fixe [€/an]'] = econ_param['C_grid_fixed']
     df.at[row,'Capacitaire [€/kW]'] = econ_param['C_grid_kW']
     
@@ -656,12 +678,16 @@ def WriteResToExcel(file,sheet,results,econ_param,tariff,row):
     df.at[row,'Taux autocons [%]']  = results['selfconsrate']
     
     df.at[row,'Electricitédéplacée [kWh]'] = results['el_shifted']
+        
+    df.at[row,'Electricté vendue [€]']      = results['EnSold']
+    df.at[row,'Coûts du réseau vendre [€]'] = results["CostToSell"]
+    df.at[row,'Electricté vendue net [€]']  = results["TotalSell"]
     
-    df.at[row,'Electricté vendue [€] '] = results['el_soldtogrid_rev']
-    df.at[row,'Electricté achetée [€] '] = results['el_boughtfromgrid_cost']
-    df.at[row,'Electricté couts du réseau [€]'] = results['annualgridcosts']
+    df.at[row,'Electricté achetée [€]']      = results["EnBought"]
+    df.at[row,'Coûts du réseau acheter [€]'] = results["CostToBuy"]
+    df.at[row,'Electricté achetée net [€]']  = results["TotalBuy"]
 
-    df.at[row,'Elec dépenses [€] = Vend-Ach-CoutsRes'] = results['el_netexpend']
+    df.at[row,'Elec dépenses [€]'] = results['el_netexpend']
     df.at[row,"Coût de l'électricité [€/kWh]"] = results['el_costperkwh']
         
     df.at[row,'PBP [years]'] = results['PBP']

@@ -21,18 +21,18 @@ __location__ = os.path.realpath(
 
 #%% Main simulation parameters
 
-N = 10 # Number of stochastic simulations to be run for the demand curves
+# N = 10 # Number of stochastic simulations to be run for the demand curves
 # N = 1
 
-idx_casestobesim = [i for i in range(83)]
-# idx_casestobesim = [0]
+# idx_casestobesim = [i for i in range(83)]
+idx_casestobesim = [0]
 
 #%% Loading inputs
         
 
 for jjj in idx_casestobesim:
-    namecase = 'case'+str(jjj+1)
-    # namecase = 'default'
+    # namecase = 'case'+str(jjj+1)
+    namecase = 'default'
     
     conf = load_config(namecase)
     config,pvbatt_param,econ_param,tariffs,inputs,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N']
@@ -77,8 +77,11 @@ for jjj in idx_casestobesim:
     # Electricity prices array - 15 min timestep
     scenario = econ_param['scenario']
     timeslots = tariffs['timeslots']
-    prices = tariffs['prices']
-    yprices_15min = yearlyprices(scenario,timeslots,prices,stepperh_15min) # €/kWh
+    enprices = tariffs['prices']
+    gridfees = tariffs['gridfees']
+    yenprices_15min = yearlyprices(scenario,timeslots,enprices,stepperh_15min) # €/kWh
+    ygridfees_15min = yearlyprices(scenario,timeslots,gridfees,stepperh_15min) # €/kWh
+    yprices_15min = yenprices_15min + ygridfees_15min  # €/kWh
     
     #%%
     
@@ -86,7 +89,7 @@ for jjj in idx_casestobesim:
     3) Most representative curve
     """
     
-    idx = MostRepCurve(demands['results'],columns,yprices_15min,ts_15min,econ_param)
+    idx = MostRepCurve(demands['results'],columns,yenprices_15min,ygridfees_15min,ts_15min,econ_param)
     
     # Inputs relative to the most representative curve:
     inputs = demands['input_data'][idx]
@@ -190,8 +193,11 @@ for jjj in idx_casestobesim:
         """
         
         # Admissible time window based on electricity prices
-        yprices_1min = yearlyprices(scenario,timeslots,prices,stepperh_1min) # €/kWh
-        admprices = np.where(yprices_1min <= prices[scenario][thresholdprice]/1000,1.,0.)
+        yenprices_1min = yearlyprices(scenario,timeslots,enprices,stepperh_1min) # €/kWh
+        ygridfees_1min = yearlyprices(scenario,timeslots,gridfees,stepperh_1min) # €/kWh
+        yprices_1min = yenprices_1min + ygridfees_1min  # €/kWh
+        admprice = (enprices[scenario][thresholdprice] + gridfees[scenario][thresholdprice])/1000
+        admprices = np.where(yprices_1min <= admprice+0.001,1.,0.) #TODO fix this
     
         # Reducing prices adm time window as not to be on the final hedge of useful windows
         admcustom = np.ones(n1min)
@@ -281,7 +287,8 @@ for jjj in idx_casestobesim:
         else: # strategy based on tariffs
             
             # prosumpy inspired tariffs based function
-            outs = DHWShiftTariffs(demand_dhw, yprices_15min, prices[scenario][thresholdprice]/1000, param_tech_dhw, return_series=False)
+            admprice = (enprices[scenario][thresholdprice] + gridfees[scenario][thresholdprice])/1000
+            outs = DHWShiftTariffs(demand_dhw, yprices_15min, admprice, param_tech_dhw, return_series=False)
             demand_dhw_shift = outs['grid2load']+outs['grid2store'] # kW
             demand_dhw_shift = demand_dhw_shift.astype('float64')   # kW
             
@@ -345,8 +352,11 @@ for jjj in idx_casestobesim:
             # tariffs are low
             
             # Hours with admissible prices
-            yprices_1min = yearlyprices(scenario,timeslots,prices,stepperh_1min) # €/kWh
-            admprices = np.where(yprices_1min <= prices[scenario][thresholdprice]/1000,1.,0.)
+            yenprices_1min = yearlyprices(scenario,timeslots,enprices,stepperh_1min) # €/kWh
+            ygridfees_1min = yearlyprices(scenario,timeslots,gridfees,stepperh_1min) # €/kWh
+            yprices_1min = yenprices_1min + ygridfees_1min  # €/kWh
+            admprice = (enprices[scenario][thresholdprice] + gridfees[scenario][thresholdprice])/1000
+            admprices = np.where(yprices_1min <= admprice+0.01,1.,0.)
             
             # Hours close enough to when heating will be required
             offset = Tset.min()
@@ -523,9 +533,11 @@ for jjj in idx_casestobesim:
             
         else:
             
-            yprices_1min = yearlyprices(scenario,timeslots,prices,stepperh_1min) # €/kWh
+            yenprices_1min = yearlyprices(scenario,timeslots,enprices,stepperh_1min) # €/kWh
+            ygridfees_1min = yearlyprices(scenario,timeslots,gridfees,stepperh_1min) # €/kWh
+            yprices_1min = yenprices_1min + ygridfees_1min  # €/kWh            
             yprices_1min = pd.Series(data=yprices_1min,index=index1min)
-            pricelim = prices[scenario][thresholdprice]/1000
+            pricelim = (enprices[scenario][thresholdprice] + gridfees[scenario][thresholdprice])/1000
             
             out_EV = EVshift_tariffs(yprices_1min,pricelim,
                                      arrive,leave,
@@ -600,7 +612,7 @@ for jjj in idx_casestobesim:
     #   - energy prices
     #   - fixed and capacity-related tariffs
     
-    outs = ResultsAnalysis(pvbatt_param['pv']['Ppeak'],pvbatt_param['battery']['BatteryCapacity'],pflows,yprices_15min,prices,scenario,econ_param)
+    outs = ResultsAnalysis(config_pv['Ppeak'],config_bat['BatteryCapacity'],pflows,yenprices_15min,ygridfees_15min,enprices,gridfees,scenario,econ_param)
     
     """
     10) Saving results to Excel
@@ -613,7 +625,7 @@ for jjj in idx_casestobesim:
     
     # Saving results to excel
     file = __location__ + '/simulations/test'+house+'.xlsx'
-    WriteResToExcel(file,conf['config']['sheet'],outs,econ_param,prices[scenario],conf['config']['row'])
+    WriteResToExcel(file,conf['config']['sheet'],outs,econ_param,enprices[scenario],gridfees[scenario],conf['config']['row'])
 
 
 exectime = (time.time() - start_time)

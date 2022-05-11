@@ -57,10 +57,13 @@ cases['default'] = case_default
 
 econparam = {
 		   "WACC": 0.04,
+           "elpriceincr": 0.02,
            "net_metering": False,
+           "start_year": 2022,
            "time_horizon": 30,
            "C_grid_fixed": 0.0,
            "C_grid_kW": 0.0,
+           "C_pros_tax": 88.81,
            "P_FtG": 40.0,
 		   "FixedPVCost": 0.0,
            "PVCost_kW": 1300.0,
