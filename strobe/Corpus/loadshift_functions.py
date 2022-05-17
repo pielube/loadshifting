@@ -7,27 +7,14 @@ Created on Tue Sep 14 11:46:20 2021
 
 import os
 import numpy as np
-import datetime
 import random
 from .residential import Household
 from ..RC_BuildingSimulator import Zone
-
 
 import pathlib
 strobepath = pathlib.Path(__file__).parent.parent.resolve()
 datapath = os.path.join(strobepath,'Data')
 
-from strobe.Data.Dwellings import dwellings
-
-def convert_occupancy(occ):
-    
-    """Convert occupancy as number of inhabitants currently in house."""
-    
-    for i in range(len(occ)):
-        arr = occ[i]
-        arr[arr < 3] = 1 # active (1) or sleeping (2) are both present =1
-        arr[arr == 3] = 0 # absent (3) =0
-    return sum(occ)
 
 
 def simulate_scenarios(n_scen,inputs):
@@ -186,23 +173,11 @@ def simulate_scenarios(n_scen,inputs):
         if inputs['HP']['loadshift']:
             if inputs['HP']['model'] == 'CREST':
                 
-                # Thermostat timer setting
-                # 1) According to CREST
-                # timersetting = HeatingTimer(inputs)
-                # 2) No timer
-                # ressize = 527041 # should be defined once and for all not here
-                # timersetting = np.ones(ressize)
-                # 3) According to Aerts
-                timersetting = AertsThermostatTimer(ndays)
-                
-                # Thermostat temperature setting according to Aerts
-                # Look inside HouseThermalModel() if actually used, around line 310
-                Tthermostat  = AertsThermostatTemp(occupancy)
-    
-                Qspace[i,:],Temitter = HouseThermalModel(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,timersetting,Tthermostat)
-                thermal_load = int(sum(Qspace[i,:])/1000./60.)
+                Qspace[i,:] = 0
+                thermal_load = 0
+                print('WARNING: CREST thermal model deprecated - Thermal demand forced to be null')
                 print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-                textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
+                textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh') 
                 
             elif inputs['HP']['model'] == '5R1C':
             
@@ -264,6 +239,24 @@ def simulate_scenarios(n_scen,inputs):
 
     return result,textoutput
 
+
+def ambientdata():
+    temp = np.loadtxt(datapath + '/Climate/temperature.txt')
+    temp=np.append(temp,temp[-24*60:]) # add december 31 to end of year in case of leap year
+    irr = np.loadtxt(datapath + '/Climate/irradiance.txt')
+    irr=np.append(irr,irr[-24*60:]) # add december 31 to end of year in case of leap year
+    return temp,irr
+
+def ElLoadHP(temp,phi_h_space):
+    phi_hp= np.zeros(np.size(phi_h_space))
+    for i in range(np.size(phi_h_space)):   
+        phi_hp[i] = phi_h_space[i]/COP_Tamb(temp[i])
+    return phi_hp
+
+
+def COP_Tamb(Temp):
+    COP = 0.001*Temp**2 + 0.0471*Temp + 2.1259
+    return COP
 
 
 def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
@@ -330,284 +323,6 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
             Tcyl += deltaTcyl
       
     return phi_a
-
-
-def HouseThermalModel(inputs,ressize,To,Go, phi_c,timersetting,Tthermostat):
-    
-    """
-    inputs            dictionary with input data from JSON
-    ressize           size of the reuslts vector
-    To        °C      array of outdoor temperature
-    Go        Wm-2    array of outdoor global radiation (horizontal)
-    phi_c     W       casual thermal gains Qrad+Qconv, missing component from occupants
-    day_of_week       array sized 365 or 366 with days of the week (0-6)
-    typeofdwelling    string with the name of the type of dwelling
-    """
-
-    tstep = 60.             # s
-    
-    Tthermostatsetpoint = inputs['HP']['Tthermostatsetpoint'] #°C to be updated with data from Strobe or distrib probability
-    ThermostatDeadband  = inputs['HP']['ThermostatDeadband']  #°C
-    Temittersetpoint    = inputs['HP']['Temittersetpoint']    #°C
-    EmitterDeadband     = inputs['HP']['EmitterDeadband']     #°C
-
-    typeofdwelling = inputs['HP']['dwelling_type']
-
-    # Dwelling parameters
-        
-    Hob = dwellings[typeofdwelling]['Hob']   # W/K Thermal transfer coefficient between outside air and external building thermal capacitance
-    Hbi = dwellings[typeofdwelling]['Hbi']   # W/K Thermal transfer coefficient between external building thermal capacitance and internal building thermal capacitance
-    Cb  = dwellings[typeofdwelling]['Cb']    # J/K External building thermal capacitance (Building thermal mass)
-    Ci  = dwellings[typeofdwelling]['Ci']    # J/K Internal building thermal capacitance (Indoor air thermal mass)
-    A_s = dwellings[typeofdwelling]['A_s']   # m2  Global irradiance multiplier       
-    # Nvent = 1.0     # 1/h  Ventilation rate
-    # A_liv = 136.    # m2
-    # L_liv = 4.2     # m
-    Hv  = dwellings[typeofdwelling]['Hv']    # W/K Thermal transfer coefficient representing ventilation heat loss between outside air and internal building thermal capacitance
-
-    Tin_design = 20. # sizing temperatures
-    Tout_design = -2. # sizing temperatures
-    phi_design = (1/(1/Hob + 1/Hbi)+Hv)*(Tin_design-Tout_design)
-    Hem = phi_design/(Temittersetpoint-Tin_design)
-    mem = 14.*phi_design/1000.
-    Cem = mem*4200.
-       
-    # Temperatures inizialization
-
-    Ti = min([max([19.,To[0]]),25.]) + random.random()*2. #°C
-    Tem = Ti  #°C
-    Tem_target = Temittersetpoint + EmitterDeadband #°C
-    Tb = max(16.,To[0])  + random.random()*2. #°C
-
-    # Space heating vector inizialization
-
-    phi_h_space = np.zeros(ressize)
-    Tem_test =  np.zeros(ressize)
-    
-    
-    # Space thermostat inizialization
-    if Ti > Tthermostatsetpoint:
-        SpaceThermostatState = False
-    else:
-        SpaceThermostatState = True
-
-    # Emitter thermostat inizialization
-    if Tem > Tem_target:
-        EmitterThermostatState = False
-    else:
-        EmitterThermostatState = True           
-    
-    
-
-    for i in range(ressize):
-        
-        Tem_test[i] = Tem
-        
-        if SpaceThermostatState == True  and Ti < (Tthermostatsetpoint + ThermostatDeadband) or \
-            SpaceThermostatState == False and Ti < (Tthermostatsetpoint - ThermostatDeadband): # Tthermostat[i]
-               
-            SpaceThermostatState = True
-        else:
-            SpaceThermostatState = False
-
-
-        if EmitterThermostatState == True  and Tem < (Temittersetpoint + EmitterDeadband) or \
-            EmitterThermostatState == False and Tem < (Temittersetpoint - EmitterDeadband):
-               
-            EmitterThermostatState = True
-        else:
-            EmitterThermostatState = False
-            
-        SpaceTimerState = timersetting[i]
-                           
-        SpaceHeatingOnOff = SpaceThermostatState * SpaceTimerState * EmitterThermostatState
-
-        if SpaceHeatingOnOff:
-            phi_h_space_target = Cem/tstep * (Tem_target - Tem) + Hem * (Tem - Ti)
-            phi_h_space[i] = max([0.,min([inputs['HeatPumpThermalPower'],phi_h_space_target])])
-    
-        
-        phi_s = A_s * Go[i]
-        
-        deltaTb = tstep/Cb * (- (Hob+Hbi)*Tb + Hbi*Ti + Hob*To[i])
-        deltaTi = tstep/Ci * (Hbi*Tb - (Hv+Hbi+Hem)*Ti + Hv*To[i] + Hem*Tem + phi_s + phi_c[i])     
-        deltaTem = tstep/Cem * (Hem*Ti - Hem*Tem + phi_h_space[i])
-        
-        Tb  += deltaTb
-        Ti  += deltaTi
-        Tem += deltaTem
-
-    
-    return phi_h_space,Tem_test
-
-
-        
-def ambientdata():
-    temp = np.loadtxt(datapath + '/Climate/temperature.txt')
-    temp=np.append(temp,temp[-24*60:]) # add december 31 to end of year in case of leap year
-    irr = np.loadtxt(datapath + '/Climate/irradiance.txt')
-    irr=np.append(irr,irr[-24*60:]) # add december 31 to end of year in case of leap year
-    return temp,irr
-
-
-def TransitionProbMatrix():
-    time_transprob = np.loadtxt(datapath+'/Heating/timer.txt', dtype = float)
-    return time_transprob
-
-
-def HeatingTimer(inputs):
-
-    year = inputs['year']
-    nday = inputs['ndays']    
-
-    time_transprob = TransitionProbMatrix()
-
-    # Days of the year
-    fdoy = datetime.datetime(year-1,12,31).weekday()
-    fweek = list(range(7))[fdoy:]
-    day_of_week = (fweek+53*list(range(7)))[:nday]
-
-
-    # Weekday timer
-    
-    column = 0
-    
-    # Inizialization. For weekdays: prob heating on at 00:00 is 0.09
-    
-    timersetting_wd = np.zeros(48)
-    rnd = random.random()
-    if rnd <0.09:
-        timersetting_wd[0] = True
-    else:
-        timersetting_wd[0] = False
-
-
-    for i in range(47):
-        currentstate = timersetting_wd[i]
-        row = int(i*2 + currentstate)
-        rnd = random.random()
-        if rnd < time_transprob[row,column]:
-            nextstate = 0
-        else:
-            nextstate = 1
-        timersetting_wd[i+1] = nextstate
-    
-    
-    # Weekend timer
-    
-    column = 2
-    
-    # Inizialization. For weekends: prob heating on at 00:00 is 0.10
-    
-    timersetting_we = np.zeros(48)
-    rnd = random.random()
-    if rnd <0.09:
-        timersetting_we[0] = True
-    else:
-        timersetting_we[0] = False
-    
-    for i in range(47):
-        currentstate = timersetting_we[i]
-        row = int(i*2 + currentstate)
-        rnd = random.random()
-        if rnd < time_transprob[row,column]:
-            nextstate = 0
-        else:
-            nextstate = 1
-        timersetting_we[i+1] = nextstate
-    
-    # 30 min to 1 min array
-    
-    timersetting_wd_min = np.zeros(1440)
-    timersetting_we_min = np.zeros(1440)
-    
-    for i in range(np.size(timersetting_wd)):
-        for j in range(30):
-            timersetting_wd_min[i*30+j] = timersetting_wd[i]
-            timersetting_we_min[i*30+j] = timersetting_we[i]
-    
-    # whole year timer array
-    
-    ressize = 527041 # should be defined once and for all not here
-    timersetting = np.zeros(ressize)
-    
-    for i in range(np.size(day_of_week)):
-        if day_of_week[i] <= 4:
-            for j in range(np.size(timersetting_wd_min)):
-                timersetting[i*np.size(timersetting_wd_min)+j]=timersetting_wd_min[j]
-        else:
-            for k in range(np.size(timersetting_we_min)):
-                timersetting[i*np.size(timersetting_we_min)+k]=timersetting_we_min[k]  
-    
-    return timersetting
-
-
-def ElLoadHP(temp,phi_h_space):
-    phi_hp= np.zeros(np.size(phi_h_space))
-    for i in range(np.size(phi_h_space)):   
-        phi_hp[i] = phi_h_space[i]/COP_Tamb(temp[i])
-    return phi_hp
-
-
-def COP_Tamb(Temp):
-    COP = 0.001*Temp**2 + 0.0471*Temp + 2.1259
-    return COP
-
-
-def AertsThermostatTemp(occupancy):
-    
-    """
-    Function that returns thermostat temperature setting based on occupancy.
-    20°C if someone is at home
-    15°C otherwise
-    
-    occupancy : numpy array, shape (n_scen, tenminutes)
-    DHW demands scenarios, sampled at a
-    10 minute time-step
-    
-    Tthermostat: numpy array, shape (nminutes)
-    Thermostat temperature setting, one minute timestep
-
-    """
-    
-    # Length of 1-min array based on 10-min array 
-    ntenmin = len(occupancy[0][0]) 
-    nmin = (ntenmin-1)*10+1 # strobe uses N+1 sized vectors
-    # Initializing thermostat Ts array
-    Tthermostat = np.zeros(nmin)
-    # Initializing resulting occupancy 
-    occupancy_tot = np.zeros(ntenmin)
-    
-    # occupancy_tot[i] = 1 if at least 1 person at home, otherwise 0
-    for i in range(len(occupancy[0])):
-        occupancy_tot = np.multiply(occupancy_tot,np.where(occupancy[0][i] >= 3,0,1))
-    
-    # Thermostat = 20. if someone at home, otherwise 15.
-    for i in range(len(occupancy_tot)-1):
-        for j in range(10):
-            if occupancy_tot[i] > 0:
-                Tthermostat[i*10+j]=20.
-            else:
-                Tthermostat[i*10+j]=15.
-    
-    # Last element would otherwise be 0.
-    Tthermostat[nmin-1] = Tthermostat[nmin-2] 
-    
-    return Tthermostat
-
-    
-def AertsThermostatTimer(ndays):
-    
-    timer_day = np.zeros(1440)
-    
-    for i in range(len(timer_day)):
-        if (360 <= i <= 1380):
-            timer_day[i] = 1
-    timer_year = np.tile(timer_day,ndays)
-    timer_year = np.append(timer_year,timer_year[len(timer_year)-1])
-    
-    return timer_year
-
 
 
 def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains,occupancys):
