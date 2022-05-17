@@ -285,6 +285,12 @@ def EconomicAnalysis(E,econ_param,yenprices,ygridfees,timestep,demand_ref):
     # Electricity price per MWh
     ECost = AnnualInvestment - (Total_FtG - Total_BtG - AnnualCostGrid + Income_SC)
     
+    # If change of tarification after 2030, Ecost averaged pre-post 2030
+    if (E['PVCapacity'] > 0 and start_year < 2024):
+        yearspre2030 = 2030-start_year
+        ECost_pre2030 = AnnualInvestment - (Total_FtG_pre2030 - Total_BtG - AnnualCostGrid + Income_SC)
+        ECost = (ECost_pre2030*yearspre2030+ECost*(years-yearspre2030)) / years
+ 
     # LCOE equivalent, electricity price per MWhh
     out['costpermwh'] = (ECost / sum(E['Load']*timestep))*1000. #eur/MWh
     
@@ -293,155 +299,205 @@ def EconomicAnalysis(E,econ_param,yenprices,ygridfees,timestep,demand_ref):
     
     return out
 
-
-def EconomicAnalysisRefPV(E,econ_param,ElPrices,timestep,E_ref):
+def EconomicAnalysisRefPV(E,econ_param,yenprices,ygridfees,timestep,E_ref):
     '''
-    Calculation of the profits linked to the PV/battery installation, user perspective
+    Economic analysis with PV panels being reference case
+    NPV analysis and mean electricity price
+    
        
-    :param E: Output of the "EnergyFlows" function: dictionary of the computed yearly qunatities relative to the PV battery installation 
-    :param econ_param: Dictionary with the financial variables of the considered country   
-    :param econ_param: Investment data. Defined as a dictionary with the fields 'FixedPVCost','PVCost_kW','FixedBatteryCost','BatteryCost_kWh','PVLifetime','BatteryLifetime','OM'
-    :array demand: Energy consumption in the reference case
-    :return: List comprising the Profitability Ratio and the system LCOE
+    E: dictionary of yearly arrays of energy flows and PV and battery capacity 
+    econ_param: Dictionary with economic param required for the analysis   
+    ElPrices: array of yearly energy prices
+    timestep: timestep of the arrays
+    E_ref:  dictionary of yearly arrays of energy flows in ref scenario (only PV)
+    
+    out: dictionary with results of the economic analysis
     '''
         
     # Defining output dictionnary
     out = {}
     
-    # Fixed PV costs always 0 as PV also in the reference case
-
-    # Updating the fixed costs if PV or batteries capacities = 0
+    # Adding PV and battery capacities to outputs
+    out['PVCapacity'] = E['PVCapacity']
+    out['BatteryCapacity'] = E['BatteryCapacity']
+    
+    # If PV capacity is zero, no need to calcuate anything
     if E['PVCapacity'] == 0:
-        FixedPVCost = 0
-    else:
-        FixedPVCost = econ_param['FixedPVCost']
+        out['PBP'] = 0
+        out['IRR'] = 0
+        out['PI']  = 0
         
+    
+    # Updating fixed costs if battery caapcity = 0
     if E['BatteryCapacity'] == 0:
         FixedBatteryCost = 0
     else:
         FixedBatteryCost = econ_param['FixedBatteryCost']
-        
-    out['PVCapacity'] = E['PVCapacity']
-    out['BatteryCapacity'] = E['BatteryCapacity']
      
-    # Load economic data:
+    # Load economic data
 
     # General
-    interest = econ_param['WACC'] # Discount rate, -
+    interest = econ_param['WACC']              # Discount rate, -
+    elpriceincr = econ_param['elpriceincr']    # Annual electricity price increase, -
     net_metering = econ_param['net_metering']  # Boolean variable for the net metering scheme 
-    years = econ_param['time_horizon'] # time horizon for the investment
+    years = econ_param['time_horizon']         # Time horizon of the investment
+    start_year = econ_param['start_year']      # year in which the analysis start
 
-    # Grid connection
-    C_grid_fixed = econ_param['C_grid_fixed']  # Fixed grid tariff per year, €
-    C_grid_kW    = econ_param['C_grid_kW']     # Fixed cost per installed grid capacity, €/kW 
+    # Buying from the grid
+    P_retail = yenprices + ygridfees # Array of prices
+    C_grid_fixed = econ_param['C_grid_fixed'] # Fixed grid tariff per year, €
+    C_grid_kW    = econ_param['C_grid_kW']    # Fixed cost per installed grid capacity, €/kW 
 
-    # Sell to the grid
-    P_FtG      = econ_param['P_FtG']       # Purchase price of electricity fed to the grid, €/MWh  (price of energy sold to the grid)
-    C_grid_FtG = 0.  # Grid fees for electricity fed to the grid, €/MWh      (cost to sell electricity to the grid)  
-    C_TL_FtG   = 0.    # Tax and levies for electricity fed to the grid, €/MWh (cost to sell electricity to the grid)
-
-    # Buy from the grid
-    P_retail = ElPrices # array, it was econ_param['P_retail']
-
-    # PV and batteries supports
-    supportPV_INV  = 0.  # Investment support, % of investment
-    supportPV_kW   = 0.  # Investment support proportional to the size, €/kW
-    supportBat_INV = 0.  # to be added
-    supportBat_kW  = 0.  # to be added
+    # Selling to the grid
+    P_FtG      = econ_param['P_FtG'] # Purchase price of electricity fed to the grid, €/MWh  (price of energy sold to the grid)
+    C_grid_FtG = 0.                  # Grid fees for electricity fed to the grid, €/MWh      (cost to sell electricity to the grid)  
+    C_TL_FtG   = 0.                  # Tax and levies for electricity fed to the grid, €/MWh (cost to sell electricity to the grid)
+    C_pros_tax = econ_param['C_pros_tax'] # Prosumer tax, €/kW  fixed cost per min power installed between PV and inverter
 
     # Self consumption
-    P_support_SC = 0.    # Support to self-consumption, €/MWh                    (incentive to self consumption)  
-    C_grid_SC    = 0.    # Grid fees for self-consumed electricity, €/MWh        (cost to do self consumption)
-    C_TL_SC      = 0.    # Tax and levies for self-consumed electricity, €/MWh   (cost to do self consumption)
-    
-    
-    # Initialize cash flows array 
-    CashFlows = np.zeros(int(years)+1)    
+    P_support_SC = 0. # Support to self-consumption, €/MWh                  (incentive to self consumption)  
+    C_grid_SC    = 0. # Grid fees for self-consumed electricity, €/MWh      (cost to do self consumption)
+    C_TL_SC      = 0. # Tax and levies for self-consumed electricity, €/MWh (cost to do self consumption)
+ 
+    # Investment and replacement costs
+    # We do not evaluate PV and inverter investments as they are part of the ref case
 
-    # PV investment, no replacements:
-    PVInvestment = 0.
-    
-    # Battery investment with one replacement after the battery lifetime (10 years)
-    BatteryInvestment  = (FixedBatteryCost + econ_param['BatteryCost_kWh'] * E['BatteryCapacity'])
-    
-    out['CostPV'] = PVInvestment
+    # Battery investment cost
+    BatteryInvestment  = FixedBatteryCost + econ_param['BatteryCost_kWh'] * E['BatteryCapacity']
     out['CostBattery'] = BatteryInvestment
-    
-    # Inverter
-    # Inverter should be considered as well, with a lifetime of 10 years
-    
+
     # Control strategy initial investment
     ControlInvestment = econ_param['FixedControlCost']   
 
     # Initial investment
-    InitialInvestment =  PVInvestment + BatteryInvestment + ControlInvestment
+    InitialInvestment =  BatteryInvestment + ControlInvestment
 
-    # Adding investment costs to cash flows array
+    # Initialize cashflows array 
+    CashFlows = np.zeros(int(years)+1)   
+
+    # Adding initial investment costs to cashflows array
     CashFlows[0]  = - InitialInvestment
-    CashFlows[10] = - BatteryInvestment
     
-    # O&M
-    CashFlows[1:21] = CashFlows[1:21] - econ_param['OM'] * (BatteryInvestment + PVInvestment)
+    # Adding replacement costs to cashflows array
+    NBattRep = int((years-1)/econ_param['BatteryLifetime'])
+    for i in range(NBattRep):
+        iyear = (i+1)*econ_param['BatteryLifetime']
+        CashFlows[iyear] = - BatteryInvestment
+        
+    # Other costs
+    
+    # O&Ms
+    CashFlows[1:years+1] = CashFlows[1:years+1] - econ_param['OM'] * BatteryInvestment
     
     # Annual costs for controller
-    CashFlows[1:21] = CashFlows[1:21] - econ_param['AnnualControlCost']
-    
-    # Annual costs for grid connection
-    Capacity = np.max(E['Load'])
-    AnnualCostGrid = C_grid_fixed + C_grid_kW * Capacity
-    
+    CashFlows[1:years+1] = CashFlows[1:years+1] - econ_param['AnnualControlCost']
+   
     # Energy expenditure and revenues
     # Both in case of net metering or not
     
     if net_metering:
-        
-        # Case analyzed
-        # Revenues selling to the grid
-        Income_FtG = np.maximum(0,sum(E['ACGeneration']-E['Load'])*timestep) * (P_FtG - C_grid_FtG - C_TL_FtG)/1000
-        Income_SC = 0
-        # Expenditures buying from the grid
-        Cost_BtG = np.maximum(sum(P_retail*(E['Load']-E['ACGeneration'])*timestep),0)
-        
-        # Reference case
-        # Revenues selling to the grid
-        Income_FtG_ref = np.maximum(0,sum(E_ref['ACGeneration']-E_ref['Load'])*timestep) * (P_FtG - C_grid_FtG - C_TL_FtG)/1000
-        Income_SC_ref = 0
-        # Expenditures buying from the grid
-        Cost_BtG_ref = np.maximum(sum(P_retail*(E_ref['Load']-E_ref['ACGeneration'])*timestep),0) 
-        
+        print('WARNING: net metering to be revised')
+        # # Revenues selling to the grid
+        # # Fixed selling price and cost
+        # Income_FtG = np.maximum(0,sum(E['ACGeneration']-E['Load'])*timestep) * (P_FtG - C_grid_FtG - C_TL_FtG)/1000        
+        # Income_SC = (P_support_SC - C_grid_SC - C_TL_SC)*sum(E['SC']*timestep)/1000
+        # # Energy expenditure buying from the grid
+        # Cost_BtG_energy = np.maximum(sum(yenprices*(E['Load']-E['ACGeneration'])*timestep),0)
+        # Cost_BtG_grid   = np.maximum(sum(ygridfees*(E['Load']-E['ACGeneration'])*timestep),0)
+        # Cost_BtG = Cost_BtG_energy + Cost_BtG_grid
+
     else:
         
-        # Case analyzed
-        # Revenues selling to the grid
-        Income_FtG = sum(E['ToGrid']*timestep) * (P_FtG - C_grid_FtG - C_TL_FtG)/1000
-        Income_SC = 0
-        # Expenditures buying from the grid
-        Cost_BtG = sum(P_retail * E['FromGrid']*timestep)
+        ### Considered case ###
         
-        # Reference case
-        # Revenues selling to the grid
-        Income_FtG_ref = sum(E_ref['ToGrid']*timestep) * (P_FtG - C_grid_FtG - C_TL_FtG)/1000
-        Income_SC_ref = 0
-        # Expenditures buying from the grid
-        Cost_BtG_ref = sum(P_retail * E_ref['FromGrid']*timestep)
-    
-    CashFlows[1:21] = CashFlows[1:21] + Income_FtG + Income_SC -Cost_BtG -(Income_FtG_ref + Income_SC_ref - Cost_BtG_ref - AnnualCostGrid)- AnnualCostGrid
-    CashFlowsAct = np.zeros(len(CashFlows))
-    NPVcurve = np.zeros(len(CashFlows))
+        # Selling to the grid
+        Income_FtG = sum(E['ToGrid']*timestep) * P_FtG/1000
+        Cost_FtG = sum(E['ToGrid']*timestep) * (C_grid_FtG + C_TL_FtG)/1000
+        Total_FtG = Income_FtG - Cost_FtG 
+        # Buying from the grid
+        Cost_BtG_energy = sum(yenprices * E['FromGrid']*timestep)
+        Cost_BtG_grid   = sum(ygridfees * E['FromGrid']*timestep)
+        Total_BtG = Cost_BtG_energy + Cost_BtG_grid
+        # Self-consumption support schemes
+        Income_SC = (P_support_SC - C_grid_SC - C_TL_SC)*sum(E['SC']*timestep)/1000
 
+        # Pre 2030 revenues for selling to the grid if PV installed before 2024
+        if (E['PVCapacity'] > 0 and start_year < 2024):
+            
+            # Selling to the grid
+            Income_FtG_pre2030 = sum(E['ToGrid']*yenprices*timestep)
+            Cost_FtG_pre2030 = np.maximum(sum(E['ToGrid']*ygridfees*timestep),C_pros_tax*E['PVCapacity'])
+            Total_FtG_pre2030 = Income_FtG_pre2030 - Cost_FtG_pre2030
+
+        ### Reference case ###
+            
+        # Selling to the grid
+        Income_FtG_ref = sum(E_ref['ToGrid']*timestep) * P_FtG/1000
+        Cost_FtG_ref = sum(E_ref['ToGrid']*timestep) * (C_grid_FtG + C_TL_FtG)/1000
+        Total_FtG_ref = Income_FtG_ref - Cost_FtG_ref 
+        # Buying from the grid
+        Cost_BtG_energy_ref = sum(yenprices * E_ref['FromGrid']*timestep)
+        Cost_BtG_grid_ref   = sum(ygridfees * E_ref['FromGrid']*timestep)
+        Total_BtG_ref = Cost_BtG_energy_ref + Cost_BtG_grid_ref
+        # Self-consumption support schemes
+        Income_SC_ref = (P_support_SC - C_grid_SC - C_TL_SC)*sum(E_ref['SC']*timestep)/1000
+
+        # Pre 2030 revenues for selling to the grid if PV installed before 2024
+        if (E['PVCapacity'] > 0 and start_year < 2024):
+            
+            # Selling to the grid
+            Income_FtG_pre2030_ref = sum(E_ref['ToGrid']*yenprices*timestep)
+            Cost_FtG_pre2030_ref = np.maximum(sum(E_ref['ToGrid']*ygridfees*timestep),C_pros_tax*E_ref['PVCapacity'])
+            Total_FtG_pre2030_ref = Income_FtG_pre2030_ref - Cost_FtG_pre2030_ref
+
+
+    # Annual costs for grid connection
+    Capacity = np.max(E['Load'])
+    AnnualCostGrid = C_grid_fixed + C_grid_kW * Capacity 
+       
+    # Adding revenues and expenditures from buying and selling  
+    if (E['PVCapacity'] > 0 and start_year < 2024):
+        end2030 = 2030-start_year
+        for i in range(1,end2030+1):
+            CashFlows[i] = CashFlows[i] + Income_SC - AnnualCostGrid + (Total_FtG_pre2030 - Total_BtG)*(1+elpriceincr)**(i-1)
+        for i in range(end2030+2,years+1):
+            CashFlows[i] = CashFlows[i] + Income_SC - AnnualCostGrid + (Total_FtG         - Total_BtG)*(1+elpriceincr)**(i-1)
+    else:
+        for i in range(1,years+1):
+            CashFlows[i] = CashFlows[i] + Income_SC - AnnualCostGrid + (Total_FtG         - Total_BtG)*(1+elpriceincr)**(i-1)
+    
+    # Reference case energy expenditure
+    # PV panels with no load shifting or batteries
+    # Inverted sign as considered as savings
+    
+    if (E['PVCapacity'] > 0 and start_year < 2024):
+        end2030 = 2030-start_year
+        for i in range(1,end2030+1):
+            CashFlows[i] = CashFlows[i] - (Income_SC_ref - AnnualCostGrid + (Total_FtG_pre2030_ref - Total_BtG_ref)*(1+elpriceincr)**(i-1))
+        for i in range(end2030+2,years+1):
+            CashFlows[i] = CashFlows[i] - (Income_SC_ref - AnnualCostGrid + (Total_FtG_ref         - Total_BtG_ref)*(1+elpriceincr)**(i-1))
+    else:
+        for i in range(1,years+1):
+            CashFlows[i] = CashFlows[i] - (Income_SC_ref - AnnualCostGrid + (Total_FtG_ref         - Total_BtG_ref)*(1+elpriceincr)**(i-1))    
+    
+    # Actualized cashflows
+    CashFlowsAct = np.zeros(len(CashFlows))
     for i in range(len(CashFlows)):
         CashFlowsAct[i] = CashFlows[i]/(1+interest)**(i)
 
+    # NPV curve        
+    NPVcurve = np.zeros(len(CashFlows))
     NPVcurve[0] = CashFlowsAct[0]
-
     for i in range(len(CashFlows)-1):
         NPVcurve[i+1] = NPVcurve[i]+CashFlowsAct[i+1]
-        
+
+    # Final NPV        
     NPV = npf.npv(interest,CashFlows)
     out['NPV'] = NPV
-         
+
+    # Pay Back Period    
     zerocross = np.where(np.diff(np.sign(NPVcurve)))[0]
-    if len(zerocross) > 0:
+    if len(zerocross) > 0: 
         x1 = zerocross[0]
         x2 = zerocross[0]+1
         xs = [x1,x2]
@@ -450,35 +506,19 @@ def EconomicAnalysisRefPV(E,econ_param,ElPrices,timestep,E_ref):
         ys = [y1,y2]
         PBP = np.interp(0,ys,xs)
     else:
-        PBP = None #9999.
-    
+        PBP = None  
     out['PBP'] = PBP
     
+    # Internal Rate of Return
     IRR = npf.irr(CashFlows)
     out['IRR'] = IRR
-    
+
+    # Profit Index    
     if InitialInvestment == 0:
         PI = None
     else:
         PI = NPV/InitialInvestment
     out['PI'] = PI
-
-    # Annual electricity bill
-    out['RevSelling'] = Income_FtG
-    out['CostBuying'] = Cost_BtG
-    out['AnnualGridCosts'] = AnnualCostGrid
-    out['ElBill'] = Income_FtG ++ Income_SC - Cost_BtG - AnnualCostGrid # eur/y
-    out['ElBill_ref'] = Income_FtG_ref + Income_SC_ref - Cost_BtG_ref - AnnualCostGrid
-       
-    # LCOE equivalent, as if the grid was a generator
-    NPV_Battery_reinvestment = (FixedBatteryCost + econ_param['BatteryCost_kWh'] * E['BatteryCapacity']) / (1+interest)**econ_param['BatteryLifetime']
-    BatteryInvestment += NPV_Battery_reinvestment
-    CRF = interest * (1+interest)**econ_param['PVLifetime']/((1+interest)**econ_param['PVLifetime']-1)
-    NetSystemCost = PVInvestment * (1 - supportPV_INV) - supportPV_kW * E['PVCapacity']  \
-                    + BatteryInvestment * (1 - supportBat_INV) - supportBat_kW * E['BatteryCapacity']
-    AnnualInvestment = NetSystemCost * CRF + econ_param['OM'] * (BatteryInvestment + PVInvestment)
-    out['costpermwh'] = ((AnnualInvestment + AnnualCostGrid - Income_FtG - (P_support_SC - C_grid_SC - C_TL_SC)*sum(E['SC']*timestep)/1000 + Cost_BtG) / sum(E['Load']*timestep))*1000. #eur/MWh
-    out['cost_grid'] = AnnualCostGrid/sum(E['Load']*timestep)*1000
     
     return out
 

@@ -545,7 +545,7 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pflows,yenprices,ygridfees,enprice
     Epspy_pv['FromGrid']     = res_pspy_pv['grid2load']
     Epspy_pv['SC']           = res_pspy_pv['inv2load']
     
-    res_EA_pv = EconomicAnalysisRefPV(Epspy,econ_param,ElPrices,timestep,Epspy_pv)   
+    res_EA_pv = EconomicAnalysisRefPV(Epspy,econ_param,yenprices,ygridfees,timestep,Epspy_pv)
     
     # Preparing function outputs
     
@@ -624,9 +624,6 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pflows,yenprices,ygridfees,enprice
     out['PBP_onlyshift'] = res_EA_pv['PBP']
     out['NPV_onlyshift'] = res_EA_pv['NPV']
     out['PI_onlyshift']  = res_EA_pv['PI']
-
-    out['el_netexpend_onlyshift'] = res_EA_pv['ElBill']    
-    out['el_netexpend_onlyshift_ref'] = res_EA_pv['ElBill_ref']
     
     return out
 

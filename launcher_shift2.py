@@ -21,18 +21,18 @@ __location__ = os.path.realpath(
 
 #%% Main simulation parameters
 
-# N = 10 # Number of stochastic simulations to be run for the demand curves
+N = 10 # Number of stochastic simulations to be run for the demand curves
 # N = 1
 
-# idx_casestobesim = [i for i in range(83)]
-idx_casestobesim = [0]
+idx_casestobesim = [i for i in range(83)]
+# idx_casestobesim = [0]
 
 #%% Loading inputs
         
 
 for jjj in idx_casestobesim:
-    # namecase = 'case'+str(jjj+1)
-    namecase = 'default'
+    namecase = 'case'+str(jjj+1)
+    # namecase = 'default'
     
     conf = load_config(namecase)
     config,pvbatt_param,econ_param,tariffs,inputs,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N']
@@ -622,6 +622,9 @@ for jjj in idx_casestobesim:
     #   - add columns with el prices
     #   - add columns with capacity-related prices
     #   - add in previous passages overall electricity shifted (right here set to 0)   
+    
+    if jjj > 38:
+        print('wait')
     
     # Saving results to excel
     file = __location__ + '/simulations/test'+house+'.xlsx'
