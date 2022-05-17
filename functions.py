@@ -1,14 +1,17 @@
 
 import random
+import datetime
+
 import numpy as np
 import pandas as pd
 from statistics import mean
 from itertools import chain
 
 from prosumpy import dispatch_max_sc
+from strobe.Data.Households import households
 from strobe.RC_BuildingSimulator import Zone
 
-from temp_functions import EconomicAnalysis,EconomicAnalysisRefPV
+from economics import EconomicAnalysis,EconomicAnalysisRefPV
 
 import os
 __location__ = os.path.realpath(
@@ -16,6 +19,7 @@ __location__ = os.path.realpath(
 
 from joblib import Memory
 memory = Memory(__location__ + '/cache/', verbose=1)
+
 
 # List of functions this .py file should contain
 
@@ -36,6 +40,24 @@ memory = Memory(__location__ + '/cache/', verbose=1)
 # - comment all functions
 # - change name of this file
 
+
+def scale_timeseries(data,index):
+    ''' 
+    Function that takes a pandas Dataframe as input and interpolates it to the proper datetime index
+    '''
+    if isinstance(data,pd.Series):
+        data_df = pd.DataFrame(data)
+    elif isinstance(data,pd.DataFrame):
+        data_df = data
+    else:
+        raise Exception("The input must be a pandas series or dataframe")
+    dd = data_df.reindex(data_df.index.union(index)).interpolate(method='time').reindex(index)
+    if isinstance(data,pd.Series):
+        return dd.iloc[:,0]
+    else:
+        return dd
+
+
 @memory.cache
 def load_climate_data(datapath = __location__ + '/strobe/Data'):
     '''
@@ -46,6 +68,223 @@ def load_climate_data(datapath = __location__ + '/strobe/Data'):
     irr  = np.loadtxt(datapath + '/Climate/irradiance.txt')   
     return temp,irr
 
+def ProcebarExtractor(buildtype,wellinsulated):
+    
+    """
+    Given the building type, input data required by the 5R1C model 
+    are obtained based on a simple elaboration of Procebar data.
+    Thermal and geometric characteristics are randomly picked from 
+    Procebar data according to Procebar's probability distribution
+    of the given building type to have such characteristics
+    
+    input:
+    buildtype   str defining building type (according to Procebar types('Freestanding','Semi-detached','Terraced','Apartment'))
+    wellinsulated   bool if true only well insulated houses considered (according to column fitforHP in the excel file)
+    
+    output:
+    output      dict with params needed by the 5R1C model
+    """
+
+    
+    # Opening building stock excel file
+    # Selecting type of building wanted
+    # Getting random (weighted) house thermal parameters
+    # Getting corresponding reference geometry
+                
+    filename1 = __location__ + '/inputs/Building Stock arboresence_SG_130118_EME.xls'
+    sheets1 = ['Freestanding','Semi-detached','Terraced','Apartment']
+    data1 = pd.read_excel (filename1,sheet_name=sheets1,header=0)
+        
+    df = data1[buildtype]
+    df.columns = df.columns.str.rstrip()
+    
+    df["Occurence"].replace({np.nan: 0, -1: 0}, inplace=True)
+    df['fitforHP'].replace({np.nan: 0, -1: 0}, inplace=True)
+
+    if wellinsulated:
+        df["Occurence"]=df["Occurence"]*df['fitforHP']
+    totprob = df["Occurence"].sum()
+    df["Occurence"] = df["Occurence"]/totprob
+    
+    rndrow = df["Occurence"].sample(1,weights=df["Occurence"])
+    rowind = rndrow.index.values[0]
+    rowgeom = df.iloc[rowind]['Geometry reference']
+    
+    # Opening geometry excel file
+    # Getting geometry parameters based on reference geometry just obtained
+    
+    filename2 = __location__ + '/inputs/Arborescence_geometry_SG_130118.xls'
+    sheets2 = [101,102,103,104,201,202,203,204,301,302,303,304,401,402,403,404]
+    sheets2 = [str(i) for i in sheets2]
+    data2 = pd.read_excel (filename2,sheet_name=sheets2)
+    
+    df2 = data2[str(rowgeom)]
+    
+    df3 = df2.iloc[0:7].iloc[:,0:2]
+    df3 = df3.set_index(df3.iloc[:,0])
+    df3 = df3.drop('General characteristics',axis=1)
+    
+    df4 = df2.iloc[9:16].iloc[:,0:3]
+    df4.columns = df4.iloc[0]
+    df4 = df4.drop(9)
+    df4 = df4.reset_index(drop=True)
+    df4 = df4.set_index(df4.iloc[:,0])
+    df4 = df4.drop(np.nan,axis=1)
+    
+    df5 = df2.iloc[18:26].iloc[:,0:7]
+    df5.columns = df5.iloc[0]
+    df5 = df5.drop(18)
+    df5 = df5.reset_index(drop=True)
+    df5 = df5.set_index(df5.iloc[:,0])
+    df5 = df5.drop(np.nan,axis=1)
+    
+    # Obtaining the parameters needed by the RC model
+    # Single circuit
+    
+    heatedareas1 = ['Life','Night','Kitchen','Bathroom']
+    heatedareas2 = ['Alife','Anight','Akitchen','Abathroom']
+    
+    Awindows  = df5[heatedareas1].loc['Awind'].sum() 
+    Aglazed   = Awindows
+    Awalls    = df5[heatedareas1].loc['Awall'].sum()
+    Aroof     = df5[heatedareas1].loc['Aroof'].sum()
+    Aopaque   = Awalls + Aroof
+    Afloor    = df5[heatedareas1].loc['Afloor'].sum()
+    Ainternal = df5[heatedareas1].loc['Aint'].sum()
+    
+    volume = df4['Volume [m3]'].loc[heatedareas2].sum()
+    
+    Atotal = Aglazed+Aopaque+Afloor+Ainternal
+    
+    Uwalls = df.iloc[rowind]['U_Wall']
+    Uwindows = df.iloc[rowind]['U_Window']
+    
+    ACH_vent = 0.6 # Air changes per hour through ventilation [Air Changes Per Hour]
+    ACH_infl = 0.6 # Air changes per hour through infiltration [Air Changes Per Hour]
+    VentEff = 0. # The efficiency of the heat recovery system for ventilation. Set to 0 if there is no heat recovery []
+    
+    Ctot = df.iloc[rowind]['C_Roof'] + df.iloc[rowind]['C_Wall'] + \
+            df.iloc[rowind]['C_Floor'] + df.iloc[rowind]['C_Window'] + \
+            df.iloc[rowind]['C_Door']
+    
+    outputs = {
+        'Aglazed': Awindows,
+        'Aopaque': Aopaque,
+        'Afloor': Afloor,
+        'volume': volume,
+        'Atotal': Atotal,
+        'Uwalls': Uwalls,
+        'Uwindows': Uwindows,
+        'ACH_vent': ACH_vent,
+        'ACH_infl': ACH_infl,
+        'VentEff': VentEff,
+        'Ctot': Ctot
+        }
+    
+    return outputs
+
+
+def HouseholdMembers(buildtype):
+    
+    """
+    Given the building type, household members are obtained.
+    The number of household per type of  building is defined according to Profils_Definition.xlsx
+    Semi-detached houses not considered since not considered in Profils_Definition.xlsx
+    Household members are randomly picked from StRoBe list of dwellings with 
+    the specified number of inhabitants
+    
+    input:
+    buildtype   str defining building type (according to Procebar types('Freestanding','Terraced','Apartment'))
+                + for 'Semi-detached' 3 household members considered
+    
+    output:
+    output      list of dwelling members
+
+    """
+    
+    adults = ['FTE','PTE','Retired','Unemployed']
+
+    nhouseholds = 0    
+
+    if buildtype == 'Apartment':
+        nhouseholds = 1
+    elif buildtype == 'Terraced':
+        nhouseholds = 2
+    elif buildtype == 'Semi-detached':
+        nhouseholds = 3
+    elif buildtype == 'Freestanding':
+        nhouseholds = 4
+  
+    output = []
+    
+    # picking one random composition from strobe's list
+    # and checking that there is at least one adult
+    
+    finished = False
+    while not finished: 
+        subset = {key: value for key, value in households.items() if np.size(value) == nhouseholds}
+        output = random.choice(list(subset.values()))
+        finished = not set(output).isdisjoint(adults)
+    
+    return output
+  
+
+def yearlyprices(scenario,timeslots,prices,stepperhour):
+    
+    stepperhour = int(stepperhour)
+
+    endday = datetime.datetime.strptime('1900-01-02 00:00:00',"%Y-%m-%d %H:%M:%S")
+
+    HSdayhours = []
+    HSdaytariffs = []
+    CSdayhours = []
+    CSdaytariffs = []
+    
+    for i in timeslots['HSday']:
+        starthour = datetime.datetime.strptime(i[0],'%H:%M:%S')
+        HSdayhours.append(starthour)
+    
+    for i in range(len(HSdayhours)):
+        start = HSdayhours[i]
+        end = HSdayhours[i+1] if i < len(HSdayhours)-1 else endday
+        delta = end - start
+        for j in range(stepperhour*int(delta.seconds/3600)):
+            price = prices[scenario][timeslots['HSday'][i][1]]/1000.
+            HSdaytariffs.append(price)
+    
+    for i in timeslots['CSday']:
+        starthour = datetime.datetime.strptime(i[0],'%H:%M:%S')
+        CSdayhours.append(starthour)
+    
+    for i in range(len(CSdayhours)):
+        start = CSdayhours[i]
+        end = CSdayhours[i+1] if i < len(CSdayhours)-1 else endday
+        delta = end - start
+        for j in range(stepperhour*int(delta.seconds/3600)):
+            price = prices[scenario][timeslots['CSday'][i][1]]/1000.
+            CSdaytariffs.append(price)
+    
+    startyear = datetime.datetime.strptime('2015-01-01 00:00:00',"%Y-%m-%d %H:%M:%S")
+    HSstart = datetime.datetime.strptime(timeslots['HSstart'],"%Y-%m-%d %H:%M:%S")
+    CSstart = datetime.datetime.strptime(timeslots['CSstart'],"%Y-%m-%d %H:%M:%S")
+    endyear = datetime.datetime.strptime('2016-01-01 00:00:00',"%Y-%m-%d %H:%M:%S")
+    
+    ytariffs = []
+    
+    deltaCS1 = HSstart - startyear
+    deltaHS  = CSstart - HSstart
+    deltaCS2 = endyear - CSstart
+    
+    for i in range(deltaCS1.days):
+        ytariffs.extend(CSdaytariffs)
+    for i in range(deltaHS.days):
+        ytariffs.extend(HSdaytariffs)
+    for i in range(deltaCS2.days):
+        ytariffs.extend(CSdaytariffs)
+    
+    out = np.asarray(ytariffs)
+            
+    return out
 
 def MostRepCurve(demands,columns,yenprices,ygridfees,timestep,econ_param):
     
@@ -201,6 +440,168 @@ def AdmTimeWinShift(app,admtimewin,probshift):
     print("Unable to shift {:} cycles".format(ncycnotshift))
                 
     return app_n,enshift
+
+@memory.cache
+def shift_appliance(app,admtimewin,probshift,max_shift=None,threshold_window=0,verbose=False):
+    '''
+    This function shifts the duty duty cycles of a particular appliances according
+    to a vector of admitted time windows.
+
+    Parameters
+    ----------
+    app : numpy.array
+        Original appliance consumption vector to be shifted
+    admtimewin : numpy.array
+        Vector of admitted time windows, where load should be shifted.
+    probshift : float
+        Probability (between 0 and 1) of a given cycle to be shifted
+    max_shift : int
+        Maximum number of time steps over which a duty cycle can be shifted
+    threshold_window: float [0,1]
+        Share of the average cycle length below which an admissible time window is considered as unsuitable and discarded
+    verbose : bool
+        Print messages or not. The default is False.
+
+    Returns
+    -------
+    tuple with the shifted appliance load, the total number of duty cycles and 
+    the number of shifted cycles
+
+    '''
+    ncycshift = 0                   # initialize the counter of shifted duty cycles
+    if max_shift is None:
+        max_shift = 24*60                    # maximmum time over which load can be shifted
+    
+    #remove offset from consumption vector:
+    offset = app.min()
+    app = app - offset
+    
+    # check if admtimewin is boolean:
+    if not admtimewin.dtype=='bool':
+        if (admtimewin>1).any() or (admtimewin<0).any():
+            print('WARNING: Some values of the admitted time windows are higher than 1 or lower than 0')
+        admtimewin = (admtimewin>0)
+    
+    # Define the shifted consumption vector for the appliance:
+    app_n = np.full(len(app),offset)
+    
+    # Shift the app consumption vector by one time step:
+    app_s  = np.roll(app,1)
+    
+    # Imposing the extreme values
+    app_s[0] = 0; app[-1] = 0
+    
+    # locate all the points whit a start or a shutdown
+    starting_times = (app>0) * (app_s==0)
+    stopping_times = (app_s>0) * (app==0)
+    
+    # List the indexes of all start-ups and shutdowns
+    starts   = np.where(starting_times)[0]
+    ends   = np.where(stopping_times)[0]
+    means = (( starts + ends)/2 ).astype('int')
+    lengths = ends - starts
+    
+    # Define the indexes of each admitted time window
+    admtimewin_s = np.roll(admtimewin,1)
+    admtimewin_s[0] = False; admtimewin[-1] = False
+    adm_starts   = np.where(admtimewin * np.logical_not(admtimewin_s))[0]
+    adm_ends   = np.where(admtimewin_s * np.logical_not(admtimewin))[0]
+    adm_lengths = adm_ends - adm_starts
+    adm_means = (( adm_starts + adm_ends)/2 ).astype('int')
+    admtimewin_j = np.zeros(len(app),dtype='int')
+    
+    # remove all windows that are shorter than the average cycle length:
+    tooshort = adm_lengths < lengths.mean() * threshold_window
+    adm_means[tooshort] = -max_shift -999999            # setting the mean to a low value makes this window unavailable
+    
+    for j in range(len(adm_starts)):            # create a time vector with the index number of the current time window
+        admtimewin_j[adm_starts[j]:adm_ends[j]] = j
+
+    
+    # For all activations events:
+    for i in range(len(starts)):
+        length = lengths[i]
+        
+        if admtimewin[starts[i]] and admtimewin[ends[i]]:           # if the whole activation length is within the admitted time windows
+            app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
+            j = admtimewin_j[starts[i]]
+            admtimewin[adm_starts[j]:adm_ends[j]] = False       # make the whole time window unavailable for further shifting
+            adm_means[j] = -max_shift -999999
+            
+        else:     # if the activation length is outside admitted windows
+            if random.random() > probshift:
+                app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
+            else:
+                j_min = np.argmin(np.abs(adm_means-means[i]))          # find the closest admissible time window
+                if np.abs(adm_means[j_min]-means[i]) > max_shift:     # The closest time window is too far away, no shifting possible
+                    app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
+                else:
+                    ncycshift += 1                                      # increment the counter of shifted cycles
+                    delta = adm_lengths[j_min] - length
+                    if delta < 0:                                        # if the admissible window is smaller than the activation length
+                        t_start = int(adm_starts[j_min] - length/2)
+                        t_start = np.minimum(t_start,len(app)-length)    # ensure that there is sufficient space for the whole activation at the end of the vector
+                        app_n[t_start:t_start+length] += app[starts[i]:ends[i]] 
+                        admtimewin[adm_starts[j_min]:adm_ends[j_min]] = False       # make the whole time window unavailable for further shifting
+                        adm_means[j_min] = -max_shift -999999  
+                    elif delta < length:                                    # This an arbitrary value
+                        delay = random.randrange(1+delta)             # randomize the activation time within the allowed window
+                        app_n[adm_starts[j_min]+delay:adm_starts[j_min]+delay+length] += app[starts[i]:ends[i]]
+                        admtimewin[adm_starts[j_min]:adm_ends[j_min]] = False       # make the whole time window unavailable for further shifting
+                        adm_means[j_min] = -max_shift -999999  
+                    else:                                                    # the time window is longer than two times the activation. We split it and keep the first part
+                        delay = random.randrange(1+length)                # randomize the activation time within the allowed window
+                        app_n[adm_starts[j_min]+delay:adm_starts[j_min]+delay+length] += app[starts[i]:ends[i]]
+                        admtimewin[adm_starts[j_min]:adm_starts[j_min]+2*length] = False       # make the first part of the time window unavailable for further shifting
+                        adm_starts[j_min] = adm_starts[j_min]+2*length+1                   # Update the size of this time window
+                        adm_means[j_min] = (( adm_starts[j_min] + adm_ends[j_min])/2 ).astype('int')
+                        adm_lengths[j_min] = adm_ends[j_min] - adm_starts[j_min]
+    app = app + offset
+    enshift = np.abs(app_n - app).sum()/2
+    
+    if verbose: 
+        if np.abs(app_n.sum() - app.sum())/app.sum() > 0.01:    # check that the total consumption is unchanged
+            print('WARNING: the total shifted consumption is ' + str(app_n.sum()) + ' while the original consumption is ' + str(app.sum()))
+        print(str(len(starts)) + ' duty cycles detected. ' + str(ncycshift) + ' cycles shifted in time')
+        print(str(tooshort.sum()) + ' admissible time windows were discarded because they were too short')
+        print('Total shifted energy : {:.2f}% of the total load'.format(enshift/app.sum()*100))
+
+    return app_n,len(starts),ncycshift,enshift
+
+
+
+def HPSizing(inputs,fracmaxP):
+
+    if inputs['HP']['HeatPumpThermalPower'] == None:
+        # Heat pump sizing
+        # External T = -10°C, internal T = 21°C
+        House = Zone(window_area=inputs['HP']['Aglazed'],
+                     walls_area=inputs['HP']['Aopaque'],
+                     floor_area=inputs['HP']['Afloor'],
+                     room_vol=inputs['HP']['volume'],
+                     total_internal_area=inputs['HP']['Atotal'],
+                     u_walls=inputs['HP']['Uwalls'],
+                     u_windows=inputs['HP']['Uwindows'],
+                     ach_vent=inputs['HP']['ACH_vent']/60,
+                     ach_infl=inputs['HP']['ACH_infl']/60,
+                     ventilation_efficiency=inputs['HP']['VentEff'],
+                     thermal_capacitance=inputs['HP']['Ctot'],
+                     t_set_heating=21.,
+                     max_heating_power=float('inf'))
+        Tair = 21.
+        House.solve_energy(0.,0.,-10.,Tair)
+        QheatHP = House.heating_demand*fracmaxP
+
+        
+    else:
+        # Heat pump size given as an input
+        QheatHP = inputs['HP']['HeatPumpThermalPower']
+    
+    return QheatHP
+
+def COP_Tamb(Temp):
+    COP = 0.001*Temp**2 + 0.0471*Temp + 2.1259
+    return COP
 
 
 def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
