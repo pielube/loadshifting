@@ -6,7 +6,7 @@ import pandas as pd
 import strobe
 import ramp
 import json
-from preprocess import ProcebarExtractor,HouseholdMembers
+from functions import ProcebarExtractor,HouseholdMembers
 import os
 import pickle
 from joblib import Memory
