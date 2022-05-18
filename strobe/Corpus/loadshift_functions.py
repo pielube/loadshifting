@@ -9,7 +9,6 @@ import os
 import numpy as np
 import random
 from .residential import Household
-from ..RC_BuildingSimulator import Zone
 
 import pathlib
 strobepath = pathlib.Path(__file__).parent.parent.resolve()
@@ -164,61 +163,11 @@ def simulate_scenarios(n_scen,inputs):
             print(' - Domestic hot water electricity consumption: ',E_eb,' kWh')
             textoutput.append(' - Domestic hot water electricity consumption: ' + str(E_eb) +' kWh')
         
-        """
-        House thermal demand and heat pump electricity consumption
-        Models used:
-        - CREST or 5R1C
-        - Simple HP model
-        """
-        if inputs['HP']['loadshift']:
-            if inputs['HP']['model'] == 'CREST':
-                
-                Qspace[i,:] = 0
-                thermal_load = 0
-                print('WARNING: CREST thermal model deprecated - Thermal demand forced to be null')
-                print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-                textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh') 
-                
-            elif inputs['HP']['model'] == '5R1C':
-            
-                # R51C model
-                Qspace[i,:],QheatHP = HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,family.QRad+family.QCon,occupancy[0])
-                thermal_load = int(sum(Qspace[i,:])/1000./60.)
-                QheatHP = int(QheatHP)
-                print(' - Heat pump size is ',QheatHP,' kW (heat)')
-                textoutput.append(' - Heat pump size is ' + str(QheatHP)+ ' kW (heat)')
-                print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-                textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
-            
-            else:
-                Qspace[i,:] = 0
-                thermal_load = 0
-                print('WARNING: wrong house thermal model option - Thermal demand forced to be null')
-                print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-                textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')            
-        else:
-            Qspace[i,:] = 0
-            thermal_load = 0
-            print(' - Thermal demand for space heating is ',thermal_load,' kWh')
-            textoutput.append(' - Thermal demand for space heating is '+ str(thermal_load) + ' kWh')
-        
-        # Heat pump electric load
-        if inputs['HP']['loadshift']:
-            Wdot_hp[i,:] = ElLoadHP(Tamb,Qspace[i,:])
-            E_hp = int(sum(Wdot_hp[i,:])/1000./60.)
-            print(' - Heat pump consumption: ',E_hp,' kWh')
-            textoutput.append(' - Heat pump consumption: ' + str(E_hp) + ' kWh')
-        else:
-            Wdot_hp[i,:] = 0
-            E_hp = 0
-            print(' - Heat pump consumption: ',E_hp,' kWh')
-            textoutput.append(' - Heat pump consumption: ' + str(E_hp) + ' kWh')
-        
 
         """
         Total electricity demand
         """
-        E_total = E_app + E_wm + E_td + E_dw + E_hp + E_eb
+        E_total = E_app + E_wm + E_td + E_dw + E_eb
         print(' - Total annual load: ',E_total,' kWh')
         textoutput.append(' - Total annual load: ' + str(E_total) + ' kWh')   
         
@@ -230,8 +179,6 @@ def simulate_scenarios(n_scen,inputs):
         'DishWasher':pdw, 
         'WashingMachine':pwm, 
         'DomesticHotWater':Qeb,
-        'SpaceHeating':Qspace,
-        'HeatPumpPower':Wdot_hp,
         'InternalGains':Qrad+Qcon,
         'mDHW':mDHW, 
         'occupancy':occupancy,
@@ -323,134 +270,4 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
             Tcyl += deltaTcyl
       
     return phi_a
-
-
-def HouseThermalModel5R1C(inputs,nminutes,Tamb,irr,Qintgains,occupancys):
-
-    # Rough estimation of solar gains based on data from Crest
-    # Could be improved
-    
-    typeofdwelling = inputs['HP']['dwelling_type'] 
-    if typeofdwelling == 'Freestanding':
-        A_s = 4.327106037
-    elif typeofdwelling == 'Semi-detached':
-        A_s = 4.862912117
-    elif typeofdwelling == 'Terraced':
-        A_s = 2.790283243
-    elif typeofdwelling == 'Apartment':
-        A_s = 1.5   
-    Qsolgains = irr * A_s
-
-    if inputs['HP']['HeatPumpThermalPower'] == None:
-        # Heat pump sizing
-        # External T = -10°C, internal T = 21°C
-        House = Zone(window_area=inputs['HP']['Aglazed'],
-                     walls_area=inputs['HP']['Aopaque'],
-                     floor_area=inputs['HP']['Afloor'],
-                     room_vol=inputs['HP']['volume'],
-                     total_internal_area=inputs['HP']['Atotal'],
-                     u_walls=inputs['HP']['Uwalls'],
-                     u_windows=inputs['HP']['Uwindows'],
-                     ach_vent=inputs['HP']['ACH_vent']/60,
-                     ach_infl=inputs['HP']['ACH_infl']/60,
-                     ventilation_efficiency=inputs['HP']['VentEff'],
-                     thermal_capacitance=inputs['HP']['Ctot'],
-                     t_set_heating=21.,
-                     max_heating_power=float('inf'))
-        Tair = 21.
-        House.solve_energy(0.,0.,-10.,Tair)
-        QheatHP = House.heating_demand*0.8
-        # Ttemp = House.t_m_next this should be the T that would be reached with no heating
-        # Tair = House.t_air # T actually reached in the house (in this case should be = to initial Tair)
-        
-        # Defining the house to be modelled with obtained HP size
-        House = Zone(window_area=inputs['HP']['Aglazed'],
-                    walls_area=inputs['HP']['Aopaque'],
-                    floor_area=inputs['HP']['Afloor'],
-                    room_vol=inputs['HP']['volume'],
-                    total_internal_area=inputs['HP']['Atotal'],
-                    u_walls=inputs['HP']['Uwalls'],
-                    u_windows=inputs['HP']['Uwindows'],
-                    ach_vent=inputs['HP']['ACH_vent']/60,
-                    ach_infl=inputs['HP']['ACH_infl']/60,
-                    ventilation_efficiency=inputs['HP']['VentEff'],
-                    thermal_capacitance=inputs['HP']['Ctot'],
-                    t_set_heating=inputs['HP']['Tthermostatsetpoint'],
-                    max_heating_power=QheatHP)
-        
-    else:
-        # Heat pump size given as an input
-        # directly defining the house to be modelled
-        QheatHP = inputs['HP']['HeatPumpThermalPower']
-        House = Zone(window_area=inputs['HP']['Aglazed'],
-                    walls_area=inputs['HP']['Aopaque'],
-                    floor_area=inputs['HP']['Afloor'],
-                    room_vol=inputs['HP']['volume'],
-                    total_internal_area=inputs['HP']['Atotal'],
-                    u_walls=inputs['HP']['Uwalls'],
-                    u_windows=inputs['HP']['Uwindows'],
-                    ach_vent=inputs['HP']['ACH_vent']/60,
-                    ach_infl=inputs['HP']['ACH_infl']/60,
-                    ventilation_efficiency=inputs['HP']['VentEff'],
-                    thermal_capacitance=inputs['HP']['Ctot'],
-                    t_set_heating=inputs['HP']['Tthermostatsetpoint'],
-                    max_heating_power=QheatHP)  
-            
-    n10min = int(nminutes/10.)
-    n1min  = nminutes
-    
-    occ = np.zeros(n10min)
-    for i in range(len(occupancys)):
-        singlehouseholdocc = [1 if a==1 else 0 for a in occupancys[i][:-1]]
-        occ += singlehouseholdocc
-    occ = [1 if a >=1 else 0 for a in occ]    
-    occupancy = np.zeros(n1min)
-    for i in range(n10min):
-        for j in range(10):
-            occupancy[i*10+j] = occ[i]
-
-    Tset = [20. if a == 1 else 15. for a in occupancy] # °C
-    Tset = np.array(Tset)
-    Tair = max(16.,Tamb[0])  + random.random()*2. #°C
-    Qheat = np.zeros(nminutes)
-    
-    Tinside = np.zeros(nminutes)
-
-    for i in range(nminutes):
-        
-        House = Zone(window_area=inputs['HP']['Aglazed'],
-            walls_area=inputs['HP']['Aopaque'],
-            floor_area=inputs['HP']['Afloor'],
-            room_vol=inputs['HP']['volume'],
-            total_internal_area=inputs['HP']['Atotal'],
-            u_walls=inputs['HP']['Uwalls'],
-            u_windows=inputs['HP']['Uwindows'],
-            ach_vent=inputs['HP']['ACH_vent']/60,
-            ach_infl=inputs['HP']['ACH_infl']/60,
-            ventilation_efficiency=inputs['HP']['VentEff'],
-            thermal_capacitance=inputs['HP']['Ctot'],
-            t_set_heating=Tset[i],
-            max_heating_power=QheatHP)
-        
-        House.solve_energy(Qintgains[i], Qsolgains[i], Tamb[i], Tair)
-        Tair      = House.t_air
-        Qheat[i] = House.heating_demand
-        
-        Tinside[i] = Tair
-        
-        # Heating season
-        if 60*24*151 < i < 60*24*244:
-            Qheat[i] = 0
-    
-    Twhenon    = Tinside*occupancy # °C
-    Twhenon_hs = Twhenon[np.r_[0:60*24*151,60*24*244:-1]] # °C
-    whenon     = np.nonzero(Twhenon_hs)
-    Twhenon_hs_mean = np.mean(Twhenon_hs[whenon]) # °C
-    Twhenon_hs_min  = np.min(Twhenon_hs[whenon])  # °C
-    Twhenon_hs_max  = np.max(Twhenon_hs[whenon])  # °C
-    
-    print('Average T: {:.2f}°C'.format(Twhenon_hs_mean))
-    
-    return Qheat, QheatHP
-        
 
