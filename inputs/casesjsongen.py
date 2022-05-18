@@ -61,7 +61,7 @@ econparam = {
            "net_metering": False,
            "start_year": 2022,
            "time_horizon": 30,
-           "C_grid_fixed": 0.0,
+           "C_grid_fixed": 100.0,
            "C_grid_kW": 0.0,
            "C_pros_tax": 88.81,
            "P_FtG": 40.0,
