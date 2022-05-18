@@ -9,7 +9,7 @@ from itertools import chain
 
 from prosumpy import dispatch_max_sc
 from strobe.Data.Households import households
-from strobe.RC_BuildingSimulator import Zone
+from RC_BuildingSimulator import Zone
 
 from economics import EconomicAnalysis,EconomicAnalysisRefPV
 
@@ -541,7 +541,14 @@ def shift_appliance(app,admtimewin,probshift,max_shift=None,threshold_window=0,v
                     if delta < 0:                                        # if the admissible window is smaller than the activation length
                         t_start = int(adm_starts[j_min] - length/2)
                         t_start = np.minimum(t_start,len(app)-length)    # ensure that there is sufficient space for the whole activation at the end of the vector
-                        app_n[t_start:t_start+length] += app[starts[i]:ends[i]] 
+                        
+                        patch = 0                                      # patch added to deal with negative t_start
+                        if t_start < 0:
+                            patch = - t_start
+                            length += t_start
+                            t_start = 0 
+                        
+                        app_n[t_start:t_start+length] += app[starts[i]+patch:ends[i]] 
                         admtimewin[adm_starts[j_min]:adm_ends[j_min]] = False       # make the whole time window unavailable for further shifting
                         adm_means[j_min] = -max_shift -999999  
                     elif delta < length:                                    # This an arbitrary value
