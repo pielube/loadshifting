@@ -13,6 +13,13 @@
         "tilt": 35, 
         "azimuth": 0, 
         "year": 2015,
-        "TMY": true
+        "TMY": true,
+        "Plim": 12
+        },
+"inv": {
+        "Ppeak": 1,
+        "AutomaticSizing": true,
+        "Plim_kVA": 10,
+        "powerfactor": 0.9
         }        
 }

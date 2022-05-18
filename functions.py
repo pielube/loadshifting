@@ -305,19 +305,8 @@ def MostRepCurve(demands,columns,yenprices,ygridfees,timestep,econ_param):
     # Technology parameters required by economic analysis
     # PV and battery forced to be 0
     inputs = {'PVCapacity': 0.,
-              'BatteryCapacity': 0.}
-    
-    # Technology costs required economic analysis
-    # Not relevant
-    Inv = {'FixedPVCost':0.,
-           'PVCost_kW':0.,
-           'FixedBatteryCost':0.,
-           'BatteryCost_kWh':0.,
-           'PVLifetime':20.,
-           'BatteryLifetime':0.,
-           'OM': 0.,
-           'FixedControlCost': 0.,
-           'AnnualControlCost': 0.} 
+              'BatteryCapacity': 0.,
+              'InvCapacity': 0} 
     
     results = []
     
@@ -898,7 +887,7 @@ def EVshift_tariffs(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewin
 
 
 
-def ResultsAnalysis(pv_capacity,batt_capacity,pflows,yenprices,ygridfees,enprices,gridfees,scenario,econ_param):
+def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,yenprices,ygridfees,enprices,gridfees,scenario,econ_param):
     
     # Yearly total electricity prices
     ElPrices = yenprices + ygridfees
@@ -925,6 +914,7 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pflows,yenprices,ygridfees,enprice
     Epspy = {}
     Epspy['PVCapacity']      = pv_capacity
     Epspy['BatteryCapacity'] = batt_capacity
+    Epspy['InvCapacity']     = inv_capacity
     Epspy['ACGeneration'] = pv.to_numpy()
     Epspy['Load']         = demand.to_numpy()
     Epspy['ToGrid']       = res_pspy['inv2grid']
@@ -981,9 +971,11 @@ def ResultsAnalysis(pv_capacity,batt_capacity,pflows,yenprices,ygridfees,enprice
 
     out['PVCapacity']      = res_EA['PVCapacity'] 
     out['BatteryCapacity'] = res_EA['BatteryCapacity'] 
+    out['InvCapacity']     = res_EA['InvCapacity']
     
-    out['CostPV']      = res_EA['CostPV']
-    out['CostBattery'] = res_EA['CostBattery']
+    out['CostPV']       = res_EA['CostPV']
+    out['CostBattery']  = res_EA['CostBattery']
+    out['CostInverter'] = res_EA['CostInverter']
 
     out['peakdem'] = np.max(demand)
     
@@ -1055,9 +1047,11 @@ def WriteResToExcel(file,sheet,results,econ_param,enprices,gridfees,row):
     df.at[row,'Capacitaire [€/kW]'] = econ_param['C_grid_kW']
     
     df.at[row,'PV [kWp]'] = results['PVCapacity']
+    df.at[row,'Inverter [kW]'] = results['InvCapacity']
     df.at[row,'Battery [kWh]'] = results['BatteryCapacity']
     
-    df.at[row,'Investissement PV [€]'] = results['CostPV'] 
+    df.at[row,'Investissement PV [€]'] = results['CostPV']
+    df.at[row,'Investissement Inverter [€]'] = results['CostInverter']
     df.at[row,'Investissement Battery [€]'] = results['CostBattery']
     
     df.at[row,"Capacité d'accès kW"]  = results['peakdem']

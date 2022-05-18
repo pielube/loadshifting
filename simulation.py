@@ -118,8 +118,8 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     
     demands = compute_demand(inputs,N,inputs['members'],inputs['thermal_parameters'])
     
-    config_pv = pvbatt_param['pv']
-    
+    config_pv  = pvbatt_param['pv']
+    config_inv = pvbatt_param['inv']
     config_bat = pvbatt_param['battery']
     
     pvadim = pvgis_hist(config_pv)  
@@ -203,12 +203,18 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     
         if config_pv['AutomaticSizing']:
             yield_pv = pvadim.sum()/4
-            # Sizing
-            pvpeak = ydemand/yield_pv  # kWp
+            pvpeak = min(ydemand/yield_pv,config_pv['Plim']) # kWp
         else:
             pvpeak = config_pv['Ppeak']
-        # 15 min timestep series
-        pflows['pv'] = pvadim * pvpeak # kW
+            
+        if config_inv['AutomaticSizing']:
+            inv_lim = config_inv['Plim_kVA'] * config_inv['powerfactor'] # kW max inv power
+            invpeak = min(pvpeak/1.2,inv_lim)
+        else:
+            invpeak = config_inv['Ppeak']
+            
+        # 15 min timestep series, with upper limit given by inverter   
+        pflows['pv'] = np.clip(pvadim*pvpeak,None,invpeak) # kW
         # 1 min timestep array
         pv_1min = scale_timeseries(pflows.pv,index1min)   # kW
                 
@@ -222,9 +228,15 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     else:
         pflows['pv'] = pd.Series(0,index=index15min) # kW
         pvpeak = 0. # kWp
+        invpeak = 0. # kWi
     
     # Update PV capacity
     pvbatt_param['pv']['Ppeak'] = pvpeak # kWp
+    config_pv['Ppeak'] = pvpeak
+    
+    # Update inverter capacity
+    pvbatt_param['inv']['Ppeak'] = invpeak # kWi
+    config_inv['Ppeak'] = invpeak
     
     """
     7) Battery size
@@ -232,6 +244,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     
     if not BattBool:
         pvbatt_param['battery']['BatteryCapacity'] = 0. # kWh
+        config_bat['BatteryCapacity'] = 0.
     	   
     
     """
@@ -674,7 +687,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     #   - energy prices
     #   - fixed and capacity-related tariffs
     
-    outs = ResultsAnalysis(config_pv['Ppeak'],config_bat['BatteryCapacity'],pflows,yenprices_15min,ygridfees_15min,enprices,gridfees,scenario,econ_param)
+    outs = ResultsAnalysis(config_pv['Ppeak'],config_bat['BatteryCapacity'],config_inv['Ppeak'],pflows,yenprices_15min,ygridfees_15min,enprices,gridfees,scenario,econ_param)
 
     return outs,demand_15min,demand_shifted,pflows
 

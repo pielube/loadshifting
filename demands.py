@@ -101,7 +101,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
             Eheat[0,i] = Qheat[i]/COP # W
         
         # result['HeatPumpPower2'][n_scen] = Eheat
-        result['HeatPumpPower2'] = Eheat
+        result['HeatPumpPower'] = Eheat
         
         
         ### RAMP-mobility ###

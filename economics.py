@@ -32,6 +32,7 @@ def EconomicAnalysis(E,econ_param,yenprices,ygridfees,timestep,demand_ref):
     # Adding PV and battery capacities to outputs
     out['PVCapacity'] = E['PVCapacity']
     out['BatteryCapacity'] = E['BatteryCapacity']
+    out['InvCapacity'] = E['InvCapacity']
     
     # Updating fixed costs if PV or battery capacities = 0
     
@@ -89,7 +90,7 @@ def EconomicAnalysis(E,econ_param,yenprices,ygridfees,timestep,demand_ref):
     out['CostBattery'] = BatteryInvestment
     
     # Inverter investment cost
-    InverterInvestment = FixedInverterCost + econ_param['InverterCost_kW'] * E['PVCapacity']
+    InverterInvestment = FixedInverterCost + econ_param['InverterCost_kW'] * E['InvCapacity']
     out['CostInverter'] = InverterInvestment
     
     # Control strategy initial investment
@@ -295,10 +296,6 @@ def EconomicAnalysisRefPV(E,econ_param,yenprices,ygridfees,timestep,E_ref):
         
     # Defining output dictionnary
     out = {}
-    
-    # Adding PV and battery capacities to outputs
-    out['PVCapacity'] = E['PVCapacity']
-    out['BatteryCapacity'] = E['BatteryCapacity']
     
     # If PV capacity is zero, no need to calcuate anything
     if E['PVCapacity'] == 0:
