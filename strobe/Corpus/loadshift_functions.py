@@ -67,9 +67,6 @@ def simulate_scenarios(n_scen,inputs):
     Qcon = np.zeros((n_scen, nminutes))
     # Occupancy
     occupancy = []   # occupance has a time resolution of 10 min!
-    # Space heating - Heat demand and electricity consumption
-    Qspace = np.zeros((n_scen, nminutes))
-    Wdot_hp = np.zeros((n_scen, nminutes))
     # Domestic hot water - Electricity consumption
     Qeb= np.zeros((n_scen, nminutes))
 
