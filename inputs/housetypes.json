@@ -6,7 +6,7 @@
     "year": 2015,
     "ndays": 365,
     
-    "members": null,
+    "members": 1,
     
     "thermal_parameters": null,
     
@@ -68,7 +68,7 @@
     "year": 2015,
     "ndays": 365,
     
-    "members": null,
+    "members": 2,
     
     "thermal_parameters": null,
     
@@ -131,7 +131,7 @@
     "year": 2015,
     "ndays": 365,
     
-    "members": null,
+    "members": 4,
     
     "thermal_parameters": null,
     

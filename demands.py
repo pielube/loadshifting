@@ -45,12 +45,8 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
 
     for jj in range(N):          # run the simulation N times and append the results to the list
     
-        # People living in the dwelling
-        # taken from strobe list
-        if members is not None:
-            inputs['members'] = members
-        else:
-            inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
+        # People living in the dwelling, taken as input or from Strobe's list
+        inputs['members'] = HouseholdMembers(inputs['members'])
                
         # Thermal parameters of the dwelling
         # Taken from Procebar .xls files

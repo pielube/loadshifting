@@ -184,49 +184,91 @@ def ProcebarExtractor(buildtype,wellinsulated):
     return outputs
 
 
-def HouseholdMembers(buildtype):
+# def HouseholdMembers(buildtype):
+    
+#     """
+#     Given the building type, household members are obtained.
+#     The number of household per type of  building is defined according to Profils_Definition.xlsx
+#     Semi-detached houses not considered since not considered in Profils_Definition.xlsx
+#     Household members are randomly picked from StRoBe list of dwellings with 
+#     the specified number of inhabitants
+    
+#     input:
+#     buildtype   str defining building type (according to Procebar types('Freestanding','Terraced','Apartment'))
+#                 + for 'Semi-detached' 3 household members considered
+    
+#     output:
+#     output      list of dwelling members
+
+#     """
+    
+#     adults = ['FTE','PTE','Retired','Unemployed']
+
+#     nhouseholds = 0    
+
+#     if buildtype == 'Apartment':
+#         nhouseholds = 1
+#     elif buildtype == 'Terraced':
+#         nhouseholds = 2
+#     elif buildtype == 'Semi-detached':
+#         nhouseholds = 3
+#     elif buildtype == 'Freestanding':
+#         nhouseholds = 4
+  
+#     output = []
+    
+#     # picking one random composition from strobe's list
+#     # and checking that there is at least one adult
+    
+#     finished = False
+#     while not finished: 
+#         subset = {key: value for key, value in households.items() if np.size(value) == nhouseholds}
+#         output = random.choice(list(subset.values()))
+#         finished = not set(output).isdisjoint(adults)
+    
+#     return output
+
+def HouseholdMembers(members=None):
     
     """
-    Given the building type, household members are obtained.
-    The number of household per type of  building is defined according to Profils_Definition.xlsx
-    Semi-detached houses not considered since not considered in Profils_Definition.xlsx
-    Household members are randomly picked from StRoBe list of dwellings with 
-    the specified number of inhabitants
+    Function to pick household members composition from Strobe's list
+    If input is None, composition randomly picked
+    If input is int, composition randomly picked from list with given size
+    If input is list, same list is given as output
     
     input:
-    buildtype   str defining building type (according to Procebar types('Freestanding','Terraced','Apartment'))
-                + for 'Semi-detached' 3 household members considered
+    members  can be None, int or list
     
     output:
-    output      list of dwelling members
+    out      list of dwelling members
 
     """
     
-    adults = ['FTE','PTE','Retired','Unemployed']
+    adults = ['FTE','PTE','Retired','Unemployed'] # TODO decide if School is considered adult or not, change also in drivers in RAMP-mobility
 
-    nhouseholds = 0    
-
-    if buildtype == 'Apartment':
-        nhouseholds = 1
-    elif buildtype == 'Terraced':
-        nhouseholds = 2
-    elif buildtype == 'Semi-detached':
-        nhouseholds = 3
-    elif buildtype == 'Freestanding':
-        nhouseholds = 4
-  
-    output = []
+    out = []
     
-    # picking one random composition from strobe's list
-    # and checking that there is at least one adult
+    if members is None: # picking randomly from strobe list
+        finished = False
+        while not finished: 
+            subset = {key: value for key, value in households.items()}
+            out = random.choice(list(subset.values()))
+            finished = not set(out).isdisjoint(adults)
+        
+    elif type(members) is int: # picking randomly from strobe list with given number of members
+        finished = False
+        while not finished: 
+            subset = {key: value for key, value in households.items() if np.size(value) == members}
+            out = random.choice(list(subset.values()))
+            finished = not set(out).isdisjoint(adults)
+        
+    elif type(members) is list: # list of members given
+        out = members
+        
+    else:
+        print('Error: type of inputs must be None, int or list')
     
-    finished = False
-    while not finished: 
-        subset = {key: value for key, value in households.items() if np.size(value) == nhouseholds}
-        output = random.choice(list(subset.values()))
-        finished = not set(output).isdisjoint(adults)
-    
-    return output
+    return out
   
 
 def yearlyprices(scenario,timeslots,prices,stepperhour):
@@ -1100,7 +1142,15 @@ def WriteResToExcel(file,sheet,results,econ_param,enprices,gridfees,row):
     df.to_excel(file,sheet_name=sheet)
 
 
+if __name__ == "__main__":
+    
+    """
+    Testing functions
+    """
 
+    test = HouseholdMembers2(['FTE','FTE'])
+    print(test)
+        
 
 
 
