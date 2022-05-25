@@ -624,7 +624,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
             demand_EV_shift = out_EV['grid2store']
 
         demand_EV_shift = pd.Series(data=demand_EV_shift,index=index1min)
-        demand_shifted['EVCharging'] = demand_EV_shift.resample('15Min').mean().to_numpy()/1000. # kW
+        demand_shifted['EVCharging'] = demand_EV_shift.resample('15Min').mean().to_numpy() # kW
         
         if PVBool:        
             # Updating residual PV
