@@ -33,6 +33,10 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         Dictionary with the simulation inputs.
     N : int
         Number of stochastic simulations to be run.
+    members: None, int, list
+        Optional. If None inputs['members'] is used, if int or list follows HousholdMemebers func logic
+    thermal_parameters: None, dict
+        Optional. If None thermal parameters taken from Procebar
 
     Returns
     -------
@@ -46,7 +50,10 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
     for jj in range(N):          # run the simulation N times and append the results to the list
     
         # People living in the dwelling, taken as input or from Strobe's list
-        inputs['members'] = HouseholdMembers(inputs['members'])
+        if members is not None:
+            inputs['members'] = HouseholdMembers(members)
+        else:
+            inputs['members'] = HouseholdMembers(inputs['members'])
                
         # Thermal parameters of the dwelling
         # Taken from Procebar .xls files
