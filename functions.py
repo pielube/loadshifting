@@ -184,50 +184,6 @@ def ProcebarExtractor(buildtype,wellinsulated):
     return outputs
 
 
-# def HouseholdMembers(buildtype):
-    
-#     """
-#     Given the building type, household members are obtained.
-#     The number of household per type of  building is defined according to Profils_Definition.xlsx
-#     Semi-detached houses not considered since not considered in Profils_Definition.xlsx
-#     Household members are randomly picked from StRoBe list of dwellings with 
-#     the specified number of inhabitants
-    
-#     input:
-#     buildtype   str defining building type (according to Procebar types('Freestanding','Terraced','Apartment'))
-#                 + for 'Semi-detached' 3 household members considered
-    
-#     output:
-#     output      list of dwelling members
-
-#     """
-    
-#     adults = ['FTE','PTE','Retired','Unemployed']
-
-#     nhouseholds = 0    
-
-#     if buildtype == 'Apartment':
-#         nhouseholds = 1
-#     elif buildtype == 'Terraced':
-#         nhouseholds = 2
-#     elif buildtype == 'Semi-detached':
-#         nhouseholds = 3
-#     elif buildtype == 'Freestanding':
-#         nhouseholds = 4
-  
-#     output = []
-    
-#     # picking one random composition from strobe's list
-#     # and checking that there is at least one adult
-    
-#     finished = False
-#     while not finished: 
-#         subset = {key: value for key, value in households.items() if np.size(value) == nhouseholds}
-#         output = random.choice(list(subset.values()))
-#         finished = not set(output).isdisjoint(adults)
-    
-#     return output
-
 def HouseholdMembers(members=None):
     
     """
@@ -1148,7 +1104,7 @@ if __name__ == "__main__":
     Testing functions
     """
 
-    test = HouseholdMembers2(['FTE','FTE'])
+    test = HouseholdMembers(['FTE','FTE'])
     print(test)
         
 
