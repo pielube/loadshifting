@@ -3,6 +3,7 @@
 
 import numpy as np
 import pandas as pd
+import copy
 import strobe
 import ramp
 import json
@@ -15,9 +16,20 @@ __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 memory = Memory(__location__ + '/cache/', verbose=1)
+<<<<<<< Updated upstream
 
 #@memory.cache
 def compute_demand(inputss,N,members= None,thermal_parameters=None):
+=======
+@memory.cache
+
+
+
+
+
+
+def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_sim=None, correction = False):
+>>>>>>> Stashed changes
     '''
     Function that generates the stochastic time series for
     - The occupancy profiles
@@ -41,9 +53,20 @@ def compute_demand(inputss,N,members= None,thermal_parameters=None):
     '''
     
     out = {'results':[],'occupancy':[],'input_data':[]}
+<<<<<<< Updated upstream
 
     for jj in range(N):          # run the simulation N times and append the results to the list
         inputs=inputss.copy()
+=======
+    if factor_gain_sim is not None :
+        TAAA=copy.deepcopy(factor_gain_sim)
+        factor_gain_simu={}
+    
+    for jj in range(N):    # run the simulation N times and append the results to the list
+        if factor_gain_sim is not None :
+            factor_gain=copy.deepcopy(TAAA)
+
+>>>>>>> Stashed changes
         # People living in the dwelling
         # taken from strobe list
         print ('Il y a {} membres dans la maison'.format(inputs["members"]))
@@ -101,8 +124,20 @@ def compute_demand(inputss,N,members= None,thermal_parameters=None):
                 df[key] = result[key][n_scen,:]
             elif key in res_ramp_charge_home:
                 df[key] = res_ramp_charge_home[key]* 1000
-            else:
+            else : 
                 df[key] = 0
+        if factor_gain_sim is not None :
+            for key in ['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower']:
+                factor_gain[key]['factor'].append((df[key].sum()/60000)/factor_gain[key]['value'])
+        
+            factor_gain_simu['simulation {}'.format(jj)] = factor_gain
+            
+        #Correction factor 
+        
+        if correction == True :
+            for key in df.columns :
+                df[key]=df[key]*factor_gain[key]['factor'][jj]
+        
         # Dataframe with the occupancy data
         occupancy = pd.DataFrame(index=index_10min)
         for i,m in enumerate(result['members'][n_scen]):
@@ -112,7 +147,8 @@ def compute_demand(inputss,N,members= None,thermal_parameters=None):
         out['results'].append(df)
         out['occupancy'].append(occupancy)
         out['input_data'].append(inputs)    
-
+    if factor_gain_sim is not None :
+        out['factor gain'] = factor_gain_simu    
     return out
 
 

@@ -1,0 +1,28 @@
+{
+	
+"DishWasher": {
+	"factor"  : [], 
+	"value"  : 190 
+	},	
+"WashingMachine" : {
+	"factor"  : [],
+	"value"  : 190 
+	},
+"DomesticHotWater": {
+	"factor"  : [], 
+	"value"  : 2100 
+	},
+"HeatPumpPower":{
+	"factor"  : [],
+	"value" : 5000 },
+"StaticLoad":{
+	"factor"  : [],
+	"value" : 2500 },
+"TumbleDryer":{
+	"factor"  : [],
+	"value" : 240 }
+
+}
+
+
+

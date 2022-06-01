@@ -1,29 +1,4 @@
 {
-    "default": {
-        "house": "4f",
-        "sheet": "4F",
-        "row": 0,
-        "columns": [
-            "StaticLoad",
-            "TumbleDryer",
-            "DishWasher",
-            "WashingMachine",
-            "DomesticHotWater",
-            "HeatPumpPower",
-            "EVCharging"
-        ],
-        "TechsShift": [
-            "TumbleDryer",
-            "DishWasher",
-            "WashingMachine",
-            "DomesticHotWater",
-            "HeatPumpPower",
-            "EVCharging"
-        ],
-        "WetAppManualShifting": true,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
-    },
     "case1": {
         "house": "4f",
         "sheet": "4F",
@@ -35,9 +10,14 @@
             "WashingMachine"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case2": {
         "house": "4f",
@@ -54,9 +34,14 @@
             "DishWasher",
             "WashingMachine"
         ],
-        "WetAppManualShifting": true,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": true,
+        "WetAppManBool": true,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case3": {
         "house": "4f",
@@ -73,9 +58,14 @@
             "DishWasher",
             "WashingMachine"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case4": {
         "house": "4f",
@@ -88,9 +78,14 @@
             "WashingMachine"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case5": {
         "house": "4f",
@@ -107,9 +102,14 @@
             "DishWasher",
             "WashingMachine"
         ],
-        "WetAppManualShifting": true,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": true,
+        "WetAppManBool": true,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case6": {
         "house": "4f",
@@ -126,9 +126,14 @@
             "DishWasher",
             "WashingMachine"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case7": {
         "house": "4f",
@@ -141,9 +146,14 @@
             "WashingMachine"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case8": {
         "house": "4f",
@@ -160,9 +170,14 @@
             "DishWasher",
             "WashingMachine"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case9": {
         "house": "4f",
@@ -176,9 +191,14 @@
             "DomesticHotWater"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case10": {
         "house": "4f",
@@ -194,9 +214,14 @@
         "TechsShift": [
             "DomesticHotWater"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case11": {
         "house": "4f",
@@ -210,9 +235,14 @@
             "DomesticHotWater"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case12": {
         "house": "4f",
@@ -228,9 +258,14 @@
         "TechsShift": [
             "DomesticHotWater"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case13": {
         "house": "4f",
@@ -244,9 +279,14 @@
             "DomesticHotWater"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case14": {
         "house": "4f",
@@ -262,9 +302,14 @@
         "TechsShift": [
             "DomesticHotWater"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case15": {
         "house": "4f",
@@ -279,9 +324,14 @@
             "HeatPumpPower"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case16": {
         "house": "4f",
@@ -299,9 +349,14 @@
             "DomesticHotWater",
             "HeatPumpPower"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
     },
     "case17": {
         "house": "4f",
@@ -316,9 +371,14 @@
             "HeatPumpPower"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case18": {
         "house": "4f",
@@ -336,9 +396,14 @@
             "DomesticHotWater",
             "HeatPumpPower"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
     },
     "case19": {
         "house": "4f",
@@ -353,9 +418,14 @@
             "HeatPumpPower"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case20": {
         "house": "4f",
@@ -373,9 +443,14 @@
             "DomesticHotWater",
             "HeatPumpPower"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
     },
     "case21": {
         "house": "4f",
@@ -391,9 +466,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case22": {
         "house": "4f",
@@ -413,9 +493,14 @@
             "HeatPumpPower",
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": true
     },
     "case23": {
         "house": "4f",
@@ -431,9 +516,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case24": {
         "house": "4f",
@@ -453,9 +543,14 @@
             "HeatPumpPower",
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": true
     },
     "case25": {
         "house": "4f",
@@ -471,9 +566,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case26": {
         "house": "4f",
@@ -492,9 +592,14 @@
             "HeatPumpPower",
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": true,
+        "EVBool": true
     },
     "case27": {
         "house": "4f",
@@ -508,9 +613,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case28": {
         "house": "4f",
@@ -526,9 +636,14 @@
         "TechsShift": [
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": true
     },
     "case29": {
         "house": "4f",
@@ -542,9 +657,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case30": {
         "house": "4f",
@@ -560,9 +680,14 @@
         "TechsShift": [
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": true
     },
     "case31": {
         "house": "4f",
@@ -576,9 +701,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case32": {
         "house": "4f",
@@ -594,9 +724,14 @@
         "TechsShift": [
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": true
     },
     "case33": {
         "house": "4f",
@@ -611,9 +746,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case34": {
         "house": "4f",
@@ -631,9 +771,14 @@
             "DomesticHotWater",
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": true
     },
     "case35": {
         "house": "4f",
@@ -648,9 +793,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case36": {
         "house": "4f",
@@ -668,9 +818,14 @@
             "DomesticHotWater",
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": true
     },
     "case37": {
         "house": "4f",
@@ -685,9 +840,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case38": {
         "house": "4f",
@@ -705,9 +865,14 @@
             "DomesticHotWater",
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": true
     },
     "case39": {
         "house": "2f",
@@ -720,9 +885,14 @@
             "WashingMachine"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case40": {
         "house": "2f",
@@ -739,9 +909,14 @@
             "DishWasher",
             "WashingMachine"
         ],
-        "WetAppManualShifting": true,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": true,
+        "WetAppManBool": true,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case41": {
         "house": "2f",
@@ -758,9 +933,14 @@
             "DishWasher",
             "WashingMachine"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case42": {
         "house": "2f",
@@ -773,9 +953,14 @@
             "WashingMachine"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case43": {
         "house": "2f",
@@ -792,9 +977,14 @@
             "DishWasher",
             "WashingMachine"
         ],
-        "WetAppManualShifting": true,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": true,
+        "WetAppManBool": true,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case44": {
         "house": "2f",
@@ -811,9 +1001,14 @@
             "DishWasher",
             "WashingMachine"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case45": {
         "house": "2f",
@@ -826,9 +1021,14 @@
             "WashingMachine"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case46": {
         "house": "2f",
@@ -845,9 +1045,14 @@
             "DishWasher",
             "WashingMachine"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case47": {
         "house": "2f",
@@ -861,9 +1066,14 @@
             "DomesticHotWater"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case48": {
         "house": "2f",
@@ -879,9 +1089,14 @@
         "TechsShift": [
             "DomesticHotWater"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case49": {
         "house": "2f",
@@ -895,9 +1110,14 @@
             "DomesticHotWater"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case50": {
         "house": "2f",
@@ -913,9 +1133,14 @@
         "TechsShift": [
             "DomesticHotWater"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case51": {
         "house": "2f",
@@ -929,9 +1154,14 @@
             "DomesticHotWater"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case52": {
         "house": "2f",
@@ -947,9 +1177,14 @@
         "TechsShift": [
             "DomesticHotWater"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case53": {
         "house": "2f",
@@ -964,9 +1199,14 @@
             "HeatPumpPower"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case54": {
         "house": "2f",
@@ -984,9 +1224,14 @@
             "DomesticHotWater",
             "HeatPumpPower"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
     },
     "case55": {
         "house": "2f",
@@ -1001,9 +1246,14 @@
             "HeatPumpPower"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case56": {
         "house": "2f",
@@ -1021,9 +1271,14 @@
             "DomesticHotWater",
             "HeatPumpPower"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
     },
     "case57": {
         "house": "2f",
@@ -1038,9 +1293,14 @@
             "HeatPumpPower"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case58": {
         "house": "2f",
@@ -1058,9 +1318,14 @@
             "DomesticHotWater",
             "HeatPumpPower"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
     },
     "case59": {
         "house": "2f",
@@ -1076,9 +1341,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case60": {
         "house": "2f",
@@ -1098,9 +1368,14 @@
             "HeatPumpPower",
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": true
     },
     "case61": {
         "house": "2f",
@@ -1116,9 +1391,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case62": {
         "house": "2f",
@@ -1138,9 +1418,14 @@
             "HeatPumpPower",
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": true
     },
     "case63": {
         "house": "2f",
@@ -1156,9 +1441,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case64": {
         "house": "2f",
@@ -1177,9 +1467,14 @@
             "HeatPumpPower",
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": true,
+        "EVBool": true
     },
     "case65": {
         "house": "2f",
@@ -1193,9 +1488,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case66": {
         "house": "2f",
@@ -1211,9 +1511,14 @@
         "TechsShift": [
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": true
     },
     "case67": {
         "house": "2f",
@@ -1227,9 +1532,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case68": {
         "house": "2f",
@@ -1245,9 +1555,14 @@
         "TechsShift": [
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": true
     },
     "case69": {
         "house": "2f",
@@ -1261,9 +1576,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case70": {
         "house": "2f",
@@ -1279,9 +1599,14 @@
         "TechsShift": [
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": true
     },
     "case71": {
         "house": "2f",
@@ -1296,9 +1621,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case72": {
         "house": "2f",
@@ -1316,9 +1646,14 @@
             "DomesticHotWater",
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": true
     },
     "case73": {
         "house": "2f",
@@ -1333,9 +1668,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case74": {
         "house": "2f",
@@ -1353,9 +1693,14 @@
             "DomesticHotWater",
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": true
     },
     "case75": {
         "house": "2f",
@@ -1370,9 +1715,14 @@
             "EVCharging"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case76": {
         "house": "2f",
@@ -1390,9 +1740,14 @@
             "DomesticHotWater",
             "EVCharging"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": true,
-        "PresenceOfBattery": true
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": true,
+        "BattBool": true,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": true
     },
     "case77": {
         "house": "1f",
@@ -1405,9 +1760,14 @@
             "WashingMachine"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case78": {
         "house": "1f",
@@ -1424,9 +1784,14 @@
             "DishWasher",
             "WashingMachine"
         ],
-        "WetAppManualShifting": true,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": true,
+        "WetAppManBool": true,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case79": {
         "house": "1f",
@@ -1443,9 +1808,14 @@
             "DishWasher",
             "WashingMachine"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": true,
+        "WetAppManBool": false,
+        "WetAppAutoBool": true,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case80": {
         "house": "1f",
@@ -1459,9 +1829,14 @@
             "DomesticHotWater"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case81": {
         "house": "1f",
@@ -1477,9 +1852,14 @@
         "TechsShift": [
             "DomesticHotWater"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case82": {
         "house": "1f",
@@ -1494,9 +1874,14 @@
             "HeatPumpPower"
         ],
         "TechsShift": [],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": false,
+        "HeatingBool": false,
+        "EVBool": false
     },
     "case83": {
         "house": "1f",
@@ -1514,8 +1899,13 @@
             "DomesticHotWater",
             "HeatPumpPower"
         ],
-        "WetAppManualShifting": false,
-        "PresenceOfPV": false,
-        "PresenceOfBattery": false
+        "WetAppBool": false,
+        "WetAppManBool": false,
+        "WetAppAutoBool": false,
+        "PVBool": false,
+        "BattBool": false,
+        "DHWBool": true,
+        "HeatingBool": true,
+        "EVBool": false
     }
 }
