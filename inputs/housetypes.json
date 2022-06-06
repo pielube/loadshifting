@@ -6,7 +6,7 @@
     "year": 2015,
     "ndays": 365,
     
-    "members": null,
+    "members": 1,
     
     "thermal_parameters": null,
     
@@ -37,6 +37,7 @@
         "type": "ElectricBoiler",
         "PowerElMax": 2000.0,
         "Ttarget": 60.0, 
+		"Tfaucet": 35.0,
         "Tcw": 10.0,     
         "Vcyl": 40.0,    
         "Hloss": 0.5
@@ -63,11 +64,11 @@
 "2f":
     {
     	
-    "name": "Terraced",
+    "name": "Semi-detached",
     "year": 2015,
     "ndays": 365,
     
-    "members": null,
+    "members": 2,
     
     "thermal_parameters": null,
     
@@ -98,7 +99,8 @@
         "loadshift": true,
         "type": "ElectricBoiler",
         "PowerElMax": 2000.0,
-        "Ttarget": 60.0, 
+        "Ttarget": 60.0,
+		"Tfaucet": 35.0,
         "Tcw": 10.0,     
         "Vcyl": 80.0,    
         "Hloss": 1.0
@@ -129,7 +131,7 @@
     "year": 2015,
     "ndays": 365,
     
-    "members": null,
+    "members": 4,
     
     "thermal_parameters": null,
     
@@ -160,6 +162,7 @@
         "type": "ElectricBoiler",
         "PowerElMax": 2000.0,
         "Ttarget": 60.0, 
+		"Tfaucet": 35.0,
         "Tcw": 10.0,     
         "Vcyl": 160.0,    
         "Hloss": 2.0

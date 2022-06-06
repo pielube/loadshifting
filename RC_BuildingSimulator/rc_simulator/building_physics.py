@@ -138,7 +138,7 @@ class Zone(object):
         # [ISO: E -27]
         b_ek = (1 - (ach_vent / (ach_tot)) * ventilation_efficiency)
         self.h_ve_adj = 1200 * b_ek * self.room_vol * \
-            (ach_tot / 60)  # Conductance through ventilation [W/M]
+            (ach_tot / 60) /60  # Conductance through ventilation [W/M]
         # transmittance from the internal air to the thermal mass of the
         # zone
         self.h_tr_ms = 9.1 * self.mass_area

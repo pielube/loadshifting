@@ -13,38 +13,68 @@ sheet = ['Matrix']
 data = pd.read_excel (filename,sheet_name=sheet,header=0)
 data = data['Matrix']
 
+
+
 case=    {
 	       "house": "f",
            "sheet": "F",
 		   "row": 0,
            "columns": [],
 		   "TechsShift": [],
-		   "WetAppBool": False, 
-           "WetAppManBool": False,
-           "WetAppAutoBool": False,
-           "PVBool": False,
-           "BattBool": False,
-           "DHWBool": False,
-           "HeatingBool": False,
-           "EVBool": False
+           "WetAppManualShifting": False,
+           "PresenceOfPV": False,
+           "PresenceOfBattery": False,
            }
 
+case_default = {
+        "house": "4f",
+        "sheet": "4F",
+        "row": 0,
+        "columns": [
+            "StaticLoad",
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
+            "DomesticHotWater",
+            "HeatPumpPower",
+            "EVCharging"
+        ],
+        "WetAppManualShifting": True,
+        "PresenceOfPV": True,
+        "PresenceOfBattery": True
+    }
+
 cases ={}
+cases['default'] = case_default
 
 econparam = {
-		   "WACC": 0.05,
+		   "WACC": 0.04,
+           "elpriceincr": 0.02,
            "net_metering": False,
-           "time_horizon": 20,
-           "C_grid_fixed": 0.0,
+           "start_year": 2022,
+           "time_horizon": 30,
+           "C_grid_fixed": 100.0,
            "C_grid_kW": 0.0,
+           "C_pros_tax": 88.81,
            "P_FtG": 40.0,
 		   "FixedPVCost": 0.0,
-           "PVCost_kW": 1500.0,
+           "PVCost_kW": 1300.0,
            "FixedBatteryCost":0.0,
-           "BatteryCost_kWh":600,
-           "PVLifetime": 20,
+           "BatteryCost_kWh":600.0,
+           "FixedInverterCost": 0.0,
+           "InverterCost_kW": 100.0,
+           "PVLifetime": 30,
            "BatteryLifetime": 10,
-           "OM": 0.015,
+           "InverterLifetime": 15,
+           "OM": 0.0,
            "FixedControlCost": 0.0,
            "AnnualControlCost": 0.0,
 		   "scenario": "test",
@@ -52,6 +82,7 @@ econparam = {
            }
 
 econparams = {}
+econparams['default'] = econparam
 
 for i in range(83):
     
@@ -81,26 +112,20 @@ for i in range(83):
         columns_shift.append('TumbleDryer')
         columns_shift.append('DishWasher')
         columns_shift.append('WashingMachine')
-        newcase['WetAppBool'] = True
     if data['wetapp_shift_manual'][i] == 1:
-        newcase['WetAppManBool'] = True
-    if data['wetapp_shift_auto'][i] == 1:
-        newcase['WetAppAutoBool'] = True
+        newcase['WetAppManualShifting'] = True
     if data['dhw_shift'][i] == 1:
         columns_shift.append('DomesticHotWater')
-        newcase['DHWBool'] = True
     if data['househeat_shift'][i] == 1:
         columns_shift.append('HeatPumpPower')
-        newcase['HeatingBool'] = True
     if data['ev_shift'][i] == 1:
         columns_shift.append('EVCharging')
-        newcase['EVBool'] = True
     newcase['TechsShift'] = columns_shift
 
     if data['pv'][i] == 1:
-        newcase['PVBool'] =True
+        newcase['PresenceOfPV'] =True
     if data['battery'][i] ==1:
-        newcase['BattBool'] = True
+        newcase['PresenceOfBattery'] = True
 
     cases['case'+str(i+1)] = newcase
     

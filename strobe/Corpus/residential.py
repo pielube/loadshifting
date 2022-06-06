@@ -62,7 +62,14 @@ def CustomAppOwnership(inputs,dict_appliances):
     dict_appliances['FridgeFreezer']['owner']  = inputs["appliances"]["prob_own"]["FridgeFreezer"] 
     dict_appliances['ChestFreezer']['owner']   = inputs["appliances"]["prob_own"]["ChestFreezer"]  
     dict_appliances['UprightFreezer']['owner'] = inputs["appliances"]["prob_own"]["UprightFreezer"]
-
+    
+    # dict_appliances["Kettle"]["owner"]    = inputs["appliances"]["prob_own"]["Kettle"] 
+    # dict_appliances['HiFi']['owner']   = inputs["appliances"]["prob_own"]["HiFi"]  
+    # dict_appliances['Vacuum']['owner']  = inputs["appliances"]["prob_own"]["Vacuum"] 
+    # dict_appliances['TV2']['owner']   = inputs["appliances"]["prob_own"]["TV2"]  
+    # dict_appliances['TV3']['owner'] = inputs["appliances"]["prob_own"]["TV3"]    
+    # dict_appliances['Iron']['owner'] = inputs["appliances"]["prob_own"]["Iron"]  
+    # dict_appliances['Oven']['owner'] = inputs["appliances"]["prob_own"]["Oven"]  
 
     # Forcing appliances to be there is necessary for load shifting
    

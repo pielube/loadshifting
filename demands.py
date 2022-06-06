@@ -6,10 +6,11 @@ import pandas as pd
 import strobe
 import ramp
 import json
-from preprocess import ProcebarExtractor,HouseholdMembers
+from functions import ProcebarExtractor,HouseholdMembers,load_climate_data,COP_Tamb,HPSizing,HouseHeating
 import os
 import pickle
 from joblib import Memory
+import defaults
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -32,6 +33,10 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         Dictionary with the simulation inputs.
     N : int
         Number of stochastic simulations to be run.
+    members: None, int, list
+        Optional. If None inputs['members'] is used, if int or list follows HousholdMemebers func logic
+    thermal_parameters: None, dict
+        Optional. If None thermal parameters taken from Procebar
 
     Returns
     -------
@@ -44,12 +49,11 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
 
     for jj in range(N):          # run the simulation N times and append the results to the list
     
-        # People living in the dwelling
-        # taken from strobe list
+        # People living in the dwelling, taken as input or from Strobe's list
         if members is not None:
-            inputs['members'] = members
+            inputs['members'] = HouseholdMembers(members)
         else:
-            inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
+            inputs['members'] = HouseholdMembers(inputs['members'])
                
         # Thermal parameters of the dwelling
         # Taken from Procebar .xls files
@@ -63,13 +67,49 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         Running the models
         """
         
-        # Strobe
-        # House thermal model + HP
+        temp, irr = load_climate_data()
+        index1min  = pd.date_range(start='2015-01-01',end='2016-01-01 00:00:00',freq='T')
+        index10min = pd.date_range(start='2015-01-01',end='2016-01-01 00:00:00',freq='10T')
+        
+        ### Strobe ###
+        
+        # Occupancy, appliances, water withdrawals, heat gains
         # DHW
         result,textoutput = strobe.simulate_scenarios(1,inputs)
         n_scen = 0 # Working only with the first scenario
         
-        # RAMP-mobility
+        occ = np.array(result['occupancy'][n_scen])
+        occupancy_10min = (occ==1).sum(axis=0) # when occupancy==1, the person is in the house and not sleeping
+        occupancy_10min = (occupancy_10min>0)  # if there is at least one person awake in the house
+        occupancy_10min = pd.Series(data=occupancy_10min, index = index10min)
+        occupancy_1min = occupancy_10min.reindex(index1min,method='nearest')
+        Qintgains = result['InternalGains'][n_scen]
+        n1min = len(result['InternalGains'][n_scen])
+        
+        ### House heating ###
+        
+        Tset = np.full(n1min,defaults.T_sp_low) + np.full(n1min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_1min
+        ts = 1/60
+        
+        # Heat pump sizing
+        if inputs['HP']['HeatPumpThermalPower'] is not None:
+            QheatHP = inputs['HP']['HeatPumpThermalPower']
+        else:
+            QheatHP = HPSizing(inputs,defaults.fracmaxP) # W
+            
+        Qheat,Tin_heat = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,defaults.heatseas_st,defaults.heatseas_end,ts)
+        
+        Eheat = np.zeros((1,n1min)) 
+        for i in range(n1min):
+            COP = COP_Tamb(temp[i])
+            Eheat[0,i] = Qheat[i]/COP # W
+        
+        # result['HeatPumpPower2'][n_scen] = Eheat
+        result['HeatPumpPower'] = Eheat
+        
+        
+        ### RAMP-mobility ###
+        
         if inputs['EV']['loadshift']:
             result_ramp = ramp.EVCharging(inputs, result['occupancy'][n_scen])
             res_ramp_charge_home = result_ramp['charge_profile_home']
@@ -87,7 +127,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         index_10min = pd.date_range(start='2015-01-01 00:00', periods=len(result['occupancy'][n_scen][0]), freq='10min')
         
         # Dataframe of demands
-        df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging','InternalGains'],dtype=object)
+        df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','HeatPumpPower2','EVCharging','InternalGains'],dtype=object)
         
         res_ramp_charge_home.loc[df.index[-1],'EVCharging']=0
         

@@ -34,6 +34,9 @@ fracmaxP = 0.8
 
 #PV 
 pv_power = 4000
+pv_lim = 12  # kWp max for home installations
+inv_lim = 10 # kVA max for home installations
+powerfactor = 0.9 # kW/kVA to tranform inverter limit to kW
 
 #battery
 bat_cap = 14
