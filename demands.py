@@ -89,6 +89,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         ### House heating ###
         
         Tset = np.full(n1min,defaults.T_sp_low) + np.full(n1min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_1min
+        ts = 1/60
         
         # Heat pump sizing
         if inputs['HP']['HeatPumpThermalPower'] is not None:
@@ -96,7 +97,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         else:
             QheatHP = HPSizing(inputs,defaults.fracmaxP) # W
             
-        Qheat,Tin_heat = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,defaults.heatseas_st,defaults.heatseas_end)
+        Qheat,Tin_heat = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,defaults.heatseas_st,defaults.heatseas_end,ts)
         
         Eheat = np.zeros((1,n1min)) 
         for i in range(n1min):
