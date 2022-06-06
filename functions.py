@@ -576,17 +576,17 @@ def HPSizing(inputs,fracmaxP):
                      total_internal_area=inputs['HP']['Atotal'],
                      u_walls=inputs['HP']['Uwalls'],
                      u_windows=inputs['HP']['Uwindows'],
-                     ach_vent=inputs['HP']['ACH_vent']/60,
-                     ach_infl=inputs['HP']['ACH_infl']/60,
+                     ach_vent=inputs['HP']['ACH_vent'],
+                     ach_infl=inputs['HP']['ACH_infl'],
                      ventilation_efficiency=inputs['HP']['VentEff'],
                      thermal_capacitance=inputs['HP']['Ctot'],
                      t_set_heating=21.,
                      max_heating_power=float('inf'))
-        Tair = 21.
-        House.solve_energy(0.,0.,-10.,Tair)
-        QheatHP = House.heating_demand*fracmaxP
-
         
+        Tm = (21.-(-10.))/2
+        House.solve_energy(0.,0.,-10.,Tm)
+        QheatHP = House.heating_demand*fracmaxP
+   
     else:
         # Heat pump size given as an input
         QheatHP = inputs['HP']['HeatPumpThermalPower']
@@ -661,7 +661,7 @@ def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
     return out
 
 @memory.cache
-def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,heatseas_end):
+def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,heatseas_end,ts):
 
     # Rough estimation of solar gains based on data from Crest
     # Could be improved
@@ -685,37 +685,39 @@ def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,hea
                 total_internal_area=inputs['HP']['Atotal'],
                 u_walls=inputs['HP']['Uwalls'],
                 u_windows=inputs['HP']['Uwindows'],
-                ach_vent=inputs['HP']['ACH_vent']/60,
-                ach_infl=inputs['HP']['ACH_infl']/60,
+                ach_vent=inputs['HP']['ACH_vent'],
+                ach_infl=inputs['HP']['ACH_infl'],
                 ventilation_efficiency=inputs['HP']['VentEff'],
                 thermal_capacitance=inputs['HP']['Ctot'],
-                t_set_heating=Tset[0], #inputs['HP']['Tthermostatsetpoint'],
+                t_set_heating=Tset[0],
                 max_heating_power=QheatHP)
             
     Qheat = np.zeros(nminutes)
     Tinside = np.zeros(nminutes)
+    Tm = np.zeros(nminutes)
 
-    d1 = 60*24*heatseas_end-1
-    d2 = 60*24*heatseas_st-1
+    d1 = int(1/ts)*24*heatseas_end-1
+    d2 = int(1/ts)*24*heatseas_st-1
     concatenated = chain(range(1,d1), range(d2,nminutes))
 
-    Tair = max(16.,Tamb[0])
+    Tm[0] = 15.
     House.t_set_heating = Tset[0]    
-    House.solve_energy(Qintgains[0], Qsolgains[0], Tamb[0], Tair)
+    House.solve_energy(Qintgains[0], Qsolgains[0], Tamb[0], Tm[0])
     Qheat[0]   = House.heating_demand
-    Tinside[0] = House.t_air    
+    Tinside[0] = House.t_air
 
     for i in concatenated:
         
         if i == d2:
-            Tinside[i-1] = max(16.,Tamb[i-1])
+            Tm[i-1] = 15.
 
         if Tset[i] != Tset[i-1]:
             House.t_set_heating = Tset[i]    
             
-        House.solve_energy(Qintgains[i], Qsolgains[i], Tamb[i], Tinside[i-1])
+        House.solve_energy(Qintgains[i], Qsolgains[i], Tamb[i], Tm[i-1])
         Qheat[i]   = House.heating_demand
         Tinside[i] = House.t_air
+        Tm[i] = House.t_m
                        
     return Qheat, Tinside
 
