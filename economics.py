@@ -156,7 +156,8 @@ def EconomicAnalysis(E,econ_param,yenprices,ygridfees,timestep,demand_ref):
             
             # Selling to the grid
             Income_FtG_pre2030 = sum(E['ToGrid']*yenprices*timestep)
-            Cost_FtG_pre2030 = np.maximum(sum(E['ToGrid']*ygridfees*timestep),C_pros_tax*E['PVCapacity'])
+            # Cost_FtG_pre2030 = np.minimum(sum(E['ToGrid']*timestep) * (C_grid_FtG + C_TL_FtG)/1000,C_pros_tax*E['PVCapacity']) 
+            Cost_FtG_pre2030 = np.minimum(sum(E['ToGrid']*ygridfees*timestep),C_pros_tax*E['PVCapacity'])
             Total_FtG_pre2030 = Income_FtG_pre2030 - Cost_FtG_pre2030
 
 
@@ -177,11 +178,11 @@ def EconomicAnalysis(E,econ_param,yenprices,ygridfees,timestep,demand_ref):
     
     # Reference case energy expenditure
     # Buying all energy from the grid
-    RefEnExpend = sum(demand_ref*P_retail*timestep)
+    RefEnExpend = sum(demand_ref*P_retail*timestep)        
     
     # Adding energy expenditure from reference case as savings
     for i in range(1,years+1):
-        CashFlows[i] = CashFlows[i] + RefEnExpend*(1+elpriceincr)**(i-1)
+        CashFlows[i] = CashFlows[i] + AnnualCostGrid + RefEnExpend*(1+elpriceincr)**(i-1)
      
     # Actualized cashflows
     CashFlowsAct = np.zeros(len(CashFlows))
