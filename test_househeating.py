@@ -57,24 +57,11 @@ occupancy_15min = occupancy_10min.reindex(index15min,method='nearest')
 Recompute thermal demand
 """
 
-procebinp={ 'ACH_infl': 1.,        #forcing thermal parameters
-  'ACH_vent': 0.0,
-  'Afloor': 112.0,
-  'Aglazed': 16.4,
-  'Aopaque': 68.6,
-  'Atotal': 164.1,
-  'Ctot': 160000.,
-  'Uwalls': 5.0,
-  'Uwindows': 5.0,
-  'VentEff': 0.0,
-  'volume': 225.0}
-
 housetype['HP'] = {**housetype['HP'],**procebinp}
 
 
 Tset_ref = np.full(n1min,defaults.T_sp_low) + np.full(n1min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_1min
 
-from functions import HPSizing
 housetype['HP']['HeatPumpThermalPower'] = None
 fracmaxP = 1.0 #defaults.fracmaxP 
 QheatHP = HPSizing(housetype,fracmaxP)

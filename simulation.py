@@ -397,6 +397,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
         temp,irr = load_climate_data()
         temp = np.delete(temp,-1) # °C
         irr = np.delete(irr,-1) # W/m2
+        ts = 1/60               # Temporary, to be changed
         
         # internal gains
         Qintgains = demands['results'][idx]['InternalGains'][:-1].to_numpy() # W
@@ -457,7 +458,6 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
             Tset[idx_tincrease] += defaults.Tincrease
             
         
-        ts = 1/60
         Qshift,Tin_shift = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,defaults.heatseas_st,defaults.heatseas_end,ts)
         
         # T analysis
@@ -559,7 +559,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
         # Finding in which at-home time windows each charging window is
         idx_athomewindows = np.zeros(len(starts_chhome),dtype=int)
         for i in range(len(starts_chhome)):
-            idx_i = np.searchsorted(leave,[ends_chhome[i]-1],side='right')[0]
+            idx_i = np.searchsorted(leave,[ends_chhome[i]-1],side='left')[0]
             idx_athomewindows[i] = idx_i
         
         # Minimum level of charge
