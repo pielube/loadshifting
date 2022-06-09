@@ -22,6 +22,9 @@ import defaults
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
+from joblib import Memory
+memory = Memory(__location__ + '/cache/', verbose=1)
+
 def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',cf_econ='econ_param.json',cf_tariff = 'tariffs.json', cf_house='housetypes.json'):
     '''
     Load the config files for a specific simulation
@@ -73,7 +76,7 @@ def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',c
     return out
 
 
-
+@memory.cache
 def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     '''
     
