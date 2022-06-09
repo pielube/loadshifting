@@ -39,7 +39,11 @@ def somme_liste_3 (L1,L2,L3)    :
         L.append( L1[i]+L2[i]+L3[i] )
     return (L)
 
+<<<<<<< Updated upstream
 file_name = 'inputs/app_cons_members.json'
+=======
+file_name = 'inputs/app_cons_members_correction.json'
+>>>>>>> Stashed changes
 with open(file_name) as json_file : 
     appli_consumption = json.load(json_file)
 
@@ -49,13 +53,18 @@ for case in appli_consumption:
     home = appli_consumption[case]
     factor_t ={}
     for simulation in home :
+<<<<<<< Updated upstream
         if simulation != 'factor gain' :
+=======
+        if simulation != 'factor gain' and  simulation!= 'members':
+>>>>>>> Stashed changes
             for appli in home[simulation] :
                 
                 if appli in average.keys() :
                     average[appli].append(home[simulation][appli])
                 else :
                     average[appli] = [home[simulation][appli]]
+<<<<<<< Updated upstream
         else :
             factor = home[simulation]
             
@@ -67,6 +76,19 @@ for case in appli_consumption:
                         factor_t[appli].append(factor[simulation1][appli]['factor'][0])
                     else :
                         factor_t[appli]=factor[simulation1][appli]['factor']
+=======
+        elif simulation == 'factor gain' :
+            factor = home[simulation]
+            
+            
+            for si in factor :
+                for appli in factor[si] : 
+                    if appli in factor_t.keys() :
+                        
+                        factor_t[appli].append(factor[si][appli]['factor'])
+                    else :
+                        factor_t[appli]=[factor[si][appli]['factor']]
+>>>>>>> Stashed changes
                         
     average['factor'] = factor_t
     results[case] = average 
@@ -91,8 +113,13 @@ for case in results :
     TumbleDryer.append(results[case]['Annual consumption by TumbleDryer'])
     WashingMachine.append(results[case]['Annual consumption by WashingMachine'])
     StaticLoad.append(results[case]['Annual consumption by StaticLoad'])
+<<<<<<< Updated upstream
     DHW.append(results[case]['DHW'])
     HP.append(results[case]['HP'])
+=======
+    DHW.append(results[case]['Annual consumption by DomesticHotWater'])
+    HP.append(results[case]['Annual consumption by HeatPumpPower'])
+>>>>>>> Stashed changes
     for key in results[case].keys() :
         if key == 'factor' :
             DHW_fact.append(results[case]['factor']['DomesticHotWater'])
@@ -104,6 +131,18 @@ StaticLoad_fact = somme_liste_3( H4f*np.array(StaticLoad_fact[0]),  H2f*np.array
 TotalConsumption = somme_liste_4(DishWasher,TumbleDryer,WashingMachine,StaticLoad)    
     
 
+<<<<<<< Updated upstream
+=======
+#Members for each case
+# members=[]
+# for case in appli_consumption :
+#     t=appli_consumption[case]['members']
+#     x=[]
+#     for sim in t :
+#         x.append(t[sim])
+#     members.append(x)
+
+>>>>>>> Stashed changes
 #Simulation's display for each case
 plt.figure(1)
 
@@ -167,6 +206,10 @@ ax9 = plt.subplot(133, sharey = ax7)
 ax9.title.set_text('Factor gain for StaticLoad ')
 ax9.xaxis.set_ticklabels(['Moyenne nationale'])
 bp = plt.boxplot(HP_fact, meanline = True,showmeans =True)
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 #Moyenne global de consommation : 
 DishWasher_moy = somme_liste_3( H4f*np.array(DishWasher[0]),  H2f*np.array(DishWasher[1]),  H1f*np.array(DishWasher[2]))
 DishWasher_moy = np.mean(DishWasher_moy)

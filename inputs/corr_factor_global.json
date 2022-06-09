@@ -1,0 +1,26 @@
+{
+    "case1": {
+        "DishWasher": 1.8261215724131774,
+        "WashingMachine": 1.292919706483601,
+        "DomesticHotWater": 1.4548767709069412,
+        "HeatPumpPower": 0.9119326875656277,
+        "StaticLoad": 1.4569976581357673,
+        "TumbleDryer": 1.6058321548611119
+    },
+    "case59": {
+        "DishWasher": 1.5654040936269258,
+        "WashingMachine": 1.0619626409801688,
+        "DomesticHotWater": 1.1147125529431168,
+        "HeatPumpPower": 1.0070485383478172,
+        "StaticLoad": 1.1977626559315295,
+        "TumbleDryer": 1.4224454694444448
+    },
+    "case77": {
+        "DishWasher": 0.8829875005012541,
+        "WashingMachine": 0.6109268260488183,
+        "DomesticHotWater": 0.6989596665441411,
+        "HeatPumpPower": 0.9575478404010116,
+        "StaticLoad": 0.8658404813205048,
+        "TumbleDryer": 0.7855579652777779
+    }
+}

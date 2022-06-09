@@ -1,0 +1,368 @@
+{
+    "case1": {
+        "simulation 0": {
+            "Annual consumption by StaticLoad": 3816.7812231556786,
+            "Annual consumption by TumbleDryer": 605.7294666666667,
+            "Annual consumption by DishWasher": 554.456865306123,
+            "Annual consumption by WashingMachine": 385.9159014492759,
+            "Annual consumption by DomesticHotWater": 3550.8479967683097,
+            "Annual consumption by HeatPumpPower": 3025.9342780927077
+        },
+        "simulation 1": {
+            "Annual consumption by StaticLoad": 2978.8233869679357,
+            "Annual consumption by TumbleDryer": 301.01806666666664,
+            "Annual consumption by DishWasher": 322.6039520408164,
+            "Annual consumption by WashingMachine": 229.12159166666697,
+            "Annual consumption by DomesticHotWater": 2833.706157005236,
+            "Annual consumption by HeatPumpPower": 2915.0904067730444
+        },
+        "simulation 2": {
+            "Annual consumption by StaticLoad": 4551.415605241884,
+            "Annual consumption by TumbleDryer": 536.4238666666666,
+            "Annual consumption by DishWasher": 452.32109149659885,
+            "Annual consumption by WashingMachine": 306.8681057971017,
+            "Annual consumption by DomesticHotWater": 3349.0852965150234,
+            "Annual consumption by HeatPumpPower": 2806.8031016324517
+        },
+        "members": [
+            [
+                "Unemployed",
+                "School",
+                "School",
+                "School"
+            ],
+            [
+                "FTE",
+                "PTE",
+                "School",
+                "School"
+            ],
+            [
+                "FTE",
+                "FTE",
+                "School",
+                "School"
+            ]
+        ],
+        "factor gain": {
+            "simulation 0": {
+                "DishWasher": {
+                    "factor": 2.9181940279269627,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 2.0311363234172415,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 1.6908799984610998,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 0.6051868556185416,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 1.5267124892622714,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 2.5238727777777776,
+                    "value": 240
+                }
+            },
+            "simulation 1": {
+                "DishWasher": {
+                    "factor": 1.6979155370569285,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 1.2059031140350893,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 1.3493838842882075,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 0.5830180813546089,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 1.1915293547871744,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 1.2542419444444444,
+                    "value": 240
+                }
+            },
+            "simulation 2": {
+                "DishWasher": {
+                    "factor": 2.38063732366631,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 1.6150952936689562,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 1.594802522150011,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 0.5613606203264904,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 1.8205662420967537,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 2.2350994444444443,
+                    "value": 240
+                }
+            }
+        }
+    },
+    "case59": {
+        "simulation 0": {
+            "Annual consumption by StaticLoad": 2663.787460209642,
+            "Annual consumption by TumbleDryer": 235.21106666666665,
+            "Annual consumption by DishWasher": 185.90204353741507,
+            "Annual consumption by WashingMachine": 140.6951297101451,
+            "Annual consumption by DomesticHotWater": 2280.886999731887,
+            "Annual consumption by HeatPumpPower": 1738.5768041130743,
+            "Annual consumption by EVCharging": 923.4677162214554
+        },
+        "simulation 1": {
+            "Annual consumption by StaticLoad": 3499.281975446546,
+            "Annual consumption by TumbleDryer": 593.4427166666667,
+            "Annual consumption by DishWasher": 412.20102993197327,
+            "Annual consumption by WashingMachine": 272.0975938405801,
+            "Annual consumption by DomesticHotWater": 2788.9011742910593,
+            "Annual consumption by HeatPumpPower": 1665.4788167482884,
+            "Annual consumption by EVCharging": 1325.6446762785038
+        },
+        "simulation 2": {
+            "Annual consumption by StaticLoad": 2388.6783158517565,
+            "Annual consumption by TumbleDryer": 95.72521666666667,
+            "Annual consumption by DishWasher": 106.32086088435385,
+            "Annual consumption by WashingMachine": 92.12968514492766,
+            "Annual consumption by DomesticHotWater": 1955.0109967808005,
+            "Annual consumption by HeatPumpPower": 1686.187011655117,
+            "Annual consumption by EVCharging": 929.7276703489349
+        },
+        "members": [
+            [
+                "FTE",
+                "FTE"
+            ],
+            [
+                "Unemployed",
+                "Retired"
+            ],
+            [
+                "FTE",
+                "School"
+            ]
+        ],
+        "factor gain": {
+            "simulation 0": {
+                "DishWasher": {
+                    "factor": 0.9784318080916583,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 0.7405006826849742,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 1.0861366665389938,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 0.3477153608226149,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 1.065514984083857,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 0.9800461111111111,
+                    "value": 240
+                }
+            },
+            "simulation 1": {
+                "DishWasher": {
+                    "factor": 2.1694791049051223,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 1.4320925991609479,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 1.3280481782338378,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 0.3330957633496577,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 1.3997127901786184,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 2.472677986111111,
+                    "value": 240
+                }
+            },
+            "simulation 2": {
+                "DishWasher": {
+                    "factor": 0.5595834783387045,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 0.4848930797101456,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 0.9309576175146669,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 0.3372374023310234,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 0.9554713263407025,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 0.39885506944444443,
+                    "value": 240
+                }
+            }
+        }
+    },
+    "case77": {
+        "simulation 0": {
+            "Annual consumption by StaticLoad": 3482.4116754392153,
+            "Annual consumption by TumbleDryer": 429.05016666666666,
+            "Annual consumption by DishWasher": 360.2953472789119,
+            "Annual consumption by WashingMachine": 188.86951557971037,
+            "Annual consumption by DomesticHotWater": 2128.9796852625873,
+            "Annual consumption by HeatPumpPower": 5575.615782120395
+        },
+        "simulation 1": {
+            "Annual consumption by StaticLoad": 1784.4649121769005,
+            "Annual consumption by TumbleDryer": 226.88106666666667,
+            "Annual consumption by DishWasher": 192.51027517006818,
+            "Annual consumption by WashingMachine": 162.85062753623205,
+            "Annual consumption by DomesticHotWater": 1668.6086067951649,
+            "Annual consumption by HeatPumpPower": 5439.4561794269375
+        },
+        "simulation 2": {
+            "Annual consumption by StaticLoad": 1227.0139727256899,
+            "Annual consumption by TumbleDryer": 33.33351666666667,
+            "Annual consumption by DishWasher": 70.2485765306123,
+            "Annual consumption by WashingMachine": 38.332144927536255,
+            "Annual consumption by DomesticHotWater": 1150.4709646441127,
+            "Annual consumption by HeatPumpPower": 4412.607341499772
+        },
+        "members": [
+            [
+                "Retired"
+            ],
+            [
+                "Unemployed"
+            ],
+            [
+                "FTE"
+            ]
+        ],
+        "factor gain": {
+            "simulation 0": {
+                "DishWasher": {
+                    "factor": 1.8962913014679572,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 0.9940500819984757,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 1.0137998501250416,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 1.115123156424079,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 1.3929646701756861,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 1.7877090277777776,
+                    "value": 240
+                }
+            },
+            "simulation 1": {
+                "DishWasher": {
+                    "factor": 1.0132119745793062,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 0.8571085659801687,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 0.7945755270453166,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 1.0878912358853876,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 0.7137859648707602,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 0.9453377777777778,
+                    "value": 240
+                }
+            },
+            "simulation 2": {
+                "DishWasher": {
+                    "factor": 0.36972935016111735,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 0.20174813119755924,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 0.5478433164971965,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 0.8825214682999544,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 0.49080558909027594,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 0.1388896527777778,
+                    "value": 240
+                }
+            }
+        }
+    }
+}

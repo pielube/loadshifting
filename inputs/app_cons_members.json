@@ -1,5 +1,6 @@
 {
     "case1": {
+<<<<<<< Updated upstream
         "simulation 0": {
             "Annual consumption by StaticLoad": 4326.000301411387,
             "Annual consumption by TumbleDryer": 331.9640166666667,
@@ -399,10 +400,56 @@
             "Annual consumption by WashingMachine": 203.749973188406,
             "DHW": 5224.937809487812,
             "HP": 5662.506999056092
+=======
+        "simulation 4": {
+            "Annual consumption by StaticLoad": 2662.928037413358,
+            "Annual consumption by TumbleDryer": 295.1037666666667,
+            "Annual consumption by DishWasher": 309.7263724489798,
+            "Annual consumption by WashingMachine": 188.73466775362346,
+            "Annual consumption by DomesticHotWater": 2968.132212031981,
+            "Annual consumption by HeatPumpPower": 3044.5517335113746,
+            "members": [
+                [
+                    "PTE",
+                    "PTE",
+                    "U12",
+                    "U12"
+                ]
+            ],
+            "factor gain": {
+                "simulation 0": {
+                    "DishWasher": {
+                        "factor": 1.6301388023630516,
+                        "value": 190
+                    },
+                    "WashingMachine": {
+                        "factor": 0.9933403565980182,
+                        "value": 190
+                    },
+                    "DomesticHotWater": {
+                        "factor": 1.4133962914438005,
+                        "value": 2100
+                    },
+                    "HeatPumpPower": {
+                        "factor": 0.608910346702275,
+                        "value": 5000
+                    },
+                    "StaticLoad": {
+                        "factor": 1.0651712149653432,
+                        "value": 2500
+                    },
+                    "TumbleDryer": {
+                        "factor": 1.2295990277777777,
+                        "value": 240
+                    }
+                }
+            }
+>>>>>>> Stashed changes
         },
         "factor gain": {
             "simulation 0": {
                 "DishWasher": {
+<<<<<<< Updated upstream
                     "factor": [
                         1.791653535624778
                     ],
@@ -7056,6 +7103,29 @@
                     "factor": [
                         0.44397590277777776
                     ],
+=======
+                    "factor": 1.6301388023630516,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 0.9933403565980182,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 1.4133962914438005,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 0.608910346702275,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 1.0651712149653432,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 1.2295990277777777,
+>>>>>>> Stashed changes
                     "value": 240
                 }
             }

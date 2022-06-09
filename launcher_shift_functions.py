@@ -14,8 +14,7 @@ import os
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-from joblib import Memory
-memory = Memory(__location__ + '/cache/', verbose=1)
+
 
 # List of functions this .py file should contain
 
@@ -36,7 +35,28 @@ memory = Memory(__location__ + '/cache/', verbose=1)
 # - comment all functions
 # - change name of this file
 
+<<<<<<< Updated upstream:launcher_shift_functions.py
 @memory.cache
+=======
+
+def scale_timeseries(data,index):
+    ''' 
+    Function that takes a pandas Dataframe as input and interpolates it to the proper datetime index
+    '''
+    if isinstance(data,pd.Series):
+        data_df = pd.DataFrame(data)
+    elif isinstance(data,pd.DataFrame):
+        data_df = data
+    else:
+        raise Exception("The input must be a pandas series or dataframe")
+    dd = data_df.reindex(data_df.index.union(index)).interpolate(method='time').reindex(index)
+    if isinstance(data,pd.Series):
+        return dd.iloc[:,0]
+    else:
+        return dd
+
+
+>>>>>>> Stashed changes:functions.py
 def load_climate_data(datapath = __location__ + '/strobe/Data'):
     '''
     Function that loads the climate data from strobe
@@ -202,6 +222,178 @@ def AdmTimeWinShift(app,admtimewin,probshift):
                 
     return app_n,enshift
 
+<<<<<<< Updated upstream:launcher_shift_functions.py
+=======
+
+def shift_appliance(app,admtimewin,probshift,max_shift=None,threshold_window=0,verbose=False):
+    '''
+    This function shifts the duty duty cycles of a particular appliances according
+    to a vector of admitted time windows.
+
+    Parameters
+    ----------
+    app : numpy.array
+        Original appliance consumption vector to be shifted
+    admtimewin : numpy.array
+        Vector of admitted time windows, where load should be shifted.
+    probshift : float
+        Probability (between 0 and 1) of a given cycle to be shifted
+    max_shift : int
+        Maximum number of time steps over which a duty cycle can be shifted
+    threshold_window: float [0,1]
+        Share of the average cycle length below which an admissible time window is considered as unsuitable and discarded
+    verbose : bool
+        Print messages or not. The default is False.
+
+    Returns
+    -------
+    tuple with the shifted appliance load, the total number of duty cycles and 
+    the number of shifted cycles
+
+    '''
+    ncycshift = 0                   # initialize the counter of shifted duty cycles
+    if max_shift is None:
+        max_shift = 24*60                    # maximmum time over which load can be shifted
+    
+    #remove offset from consumption vector:
+    offset = app.min()
+    app = app - offset
+    
+    # check if admtimewin is boolean:
+    if not admtimewin.dtype=='bool':
+        if (admtimewin>1).any() or (admtimewin<0).any():
+            print('WARNING: Some values of the admitted time windows are higher than 1 or lower than 0')
+        admtimewin = (admtimewin>0)
+    
+    # Define the shifted consumption vector for the appliance:
+    app_n = np.full(len(app),offset)
+    
+    # Shift the app consumption vector by one time step:
+    app_s  = np.roll(app,1)
+    
+    # Imposing the extreme values
+    app_s[0] = 0; app[-1] = 0
+    
+    # locate all the points whit a start or a shutdown
+    starting_times = (app>0) * (app_s==0)
+    stopping_times = (app_s>0) * (app==0)
+    
+    # List the indexes of all start-ups and shutdowns
+    starts   = np.where(starting_times)[0]
+    ends   = np.where(stopping_times)[0]
+    means = (( starts + ends)/2 ).astype('int')
+    lengths = ends - starts
+    
+    # Define the indexes of each admitted time window
+    admtimewin_s = np.roll(admtimewin,1)
+    admtimewin_s[0] = False; admtimewin[-1] = False
+    adm_starts   = np.where(admtimewin * np.logical_not(admtimewin_s))[0]
+    adm_ends   = np.where(admtimewin_s * np.logical_not(admtimewin))[0]
+    adm_lengths = adm_ends - adm_starts
+    adm_means = (( adm_starts + adm_ends)/2 ).astype('int')
+    admtimewin_j = np.zeros(len(app),dtype='int')
+    
+    # remove all windows that are shorter than the average cycle length:
+    tooshort = adm_lengths < lengths.mean() * threshold_window
+    adm_means[tooshort] = -max_shift -999999            # setting the mean to a low value makes this window unavailable
+    
+    for j in range(len(adm_starts)):            # create a time vector with the index number of the current time window
+        admtimewin_j[adm_starts[j]:adm_ends[j]] = j
+
+    
+    # For all activations events:
+    for i in range(len(starts)):
+        length = lengths[i]
+        
+        if admtimewin[starts[i]] and admtimewin[ends[i]]:           # if the whole activation length is within the admitted time windows
+            app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
+            j = admtimewin_j[starts[i]]
+            admtimewin[adm_starts[j]:adm_ends[j]] = False       # make the whole time window unavailable for further shifting
+            adm_means[j] = -max_shift -999999
+            
+        else:     # if the activation length is outside admitted windows
+            if random.random() > probshift:
+                app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
+            else:
+                j_min = np.argmin(np.abs(adm_means-means[i]))          # find the closest admissible time window
+                if np.abs(adm_means[j_min]-means[i]) > max_shift:     # The closest time window is too far away, no shifting possible
+                    app_n[starts[i]:ends[i]] += app[starts[i]:ends[i]]
+                else:
+                    ncycshift += 1                                      # increment the counter of shifted cycles
+                    delta = adm_lengths[j_min] - length
+                    if delta < 0:                                        # if the admissible window is smaller than the activation length
+                        t_start = int(adm_starts[j_min] - length/2)
+                        t_start = np.minimum(t_start,len(app)-length)    # ensure that there is sufficient space for the whole activation at the end of the vector
+                        
+                        patch = 0                                      # patch added to deal with negative t_start
+                        if t_start < 0:
+                            patch = - t_start
+                            length += t_start
+                            t_start = 0 
+                        
+                        app_n[t_start:t_start+length] += app[starts[i]+patch:ends[i]] 
+                        admtimewin[adm_starts[j_min]:adm_ends[j_min]] = False       # make the whole time window unavailable for further shifting
+                        adm_means[j_min] = -max_shift -999999  
+                    elif delta < length:                                    # This an arbitrary value
+                        delay = random.randrange(1+delta)             # randomize the activation time within the allowed window
+                        app_n[adm_starts[j_min]+delay:adm_starts[j_min]+delay+length] += app[starts[i]:ends[i]]
+                        admtimewin[adm_starts[j_min]:adm_ends[j_min]] = False       # make the whole time window unavailable for further shifting
+                        adm_means[j_min] = -max_shift -999999  
+                    else:                                                    # the time window is longer than two times the activation. We split it and keep the first part
+                        delay = random.randrange(1+length)                # randomize the activation time within the allowed window
+                        app_n[adm_starts[j_min]+delay:adm_starts[j_min]+delay+length] += app[starts[i]:ends[i]]
+                        admtimewin[adm_starts[j_min]:adm_starts[j_min]+2*length] = False       # make the first part of the time window unavailable for further shifting
+                        adm_starts[j_min] = adm_starts[j_min]+2*length+1                   # Update the size of this time window
+                        adm_means[j_min] = (( adm_starts[j_min] + adm_ends[j_min])/2 ).astype('int')
+                        adm_lengths[j_min] = adm_ends[j_min] - adm_starts[j_min]
+    app = app + offset
+    enshift = np.abs(app_n - app).sum()/2
+    
+    if verbose: 
+        if np.abs(app_n.sum() - app.sum())/app.sum() > 0.01:    # check that the total consumption is unchanged
+            print('WARNING: the total shifted consumption is ' + str(app_n.sum()) + ' while the original consumption is ' + str(app.sum()))
+        print(str(len(starts)) + ' duty cycles detected. ' + str(ncycshift) + ' cycles shifted in time')
+        print(str(tooshort.sum()) + ' admissible time windows were discarded because they were too short')
+        print('Total shifted energy : {:.2f}% of the total load'.format(enshift/app.sum()*100))
+
+    return app_n,len(starts),ncycshift,enshift
+
+
+
+def HPSizing(inputs,fracmaxP):
+
+    if inputs['HP']['HeatPumpThermalPower'] == None:
+        # Heat pump sizing
+        # External T = -10°C, internal T = 21°C
+        House = Zone(window_area=inputs['HP']['Aglazed'],
+                     walls_area=inputs['HP']['Aopaque'],
+                     floor_area=inputs['HP']['Afloor'],
+                     room_vol=inputs['HP']['volume'],
+                     total_internal_area=inputs['HP']['Atotal'],
+                     u_walls=inputs['HP']['Uwalls'],
+                     u_windows=inputs['HP']['Uwindows'],
+                     ach_vent=inputs['HP']['ACH_vent'],
+                     ach_infl=inputs['HP']['ACH_infl'],
+                     ventilation_efficiency=inputs['HP']['VentEff'],
+                     thermal_capacitance=inputs['HP']['Ctot'],
+                     t_set_heating=21.,
+                     max_heating_power=float('inf'))
+        
+        Tm = (21.-(-10.))/2
+        House.solve_energy(0.,0.,-10.,Tm)
+        QheatHP = House.heating_demand*fracmaxP
+   
+    else:
+        # Heat pump size given as an input
+        QheatHP = inputs['HP']['HeatPumpThermalPower']
+    
+    return QheatHP
+
+def COP_Tamb(Temp):
+    COP = 0.001*Temp**2 + 0.0471*Temp + 2.1259
+    return COP
+
+>>>>>>> Stashed changes:functions.py
 
 def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
     
@@ -265,8 +457,13 @@ def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
         
     return out
 
+<<<<<<< Updated upstream:launcher_shift_functions.py
 @memory.cache
 def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,heatseas_end):
+=======
+
+def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,heatseas_end,ts):
+>>>>>>> Stashed changes:functions.py
 
     # Rough estimation of solar gains based on data from Crest
     # Could be improved

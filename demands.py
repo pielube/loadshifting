@@ -10,11 +10,15 @@ import json
 from preprocess import ProcebarExtractor,HouseholdMembers, HouseholdMembers_real
 import os
 import pickle
+<<<<<<< Updated upstream
 from joblib import Memory
+=======
+>>>>>>> Stashed changes
 
-__location__ = os.path.realpath(
-    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+import defaults
+import copy 
 
+<<<<<<< Updated upstream
 memory = Memory(__location__ + '/cache/', verbose=1)
 <<<<<<< Updated upstream
 
@@ -29,6 +33,10 @@ def compute_demand(inputss,N,members= None,thermal_parameters=None):
 
 
 def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_sim=None, correction = False):
+>>>>>>> Stashed changes
+=======
+
+def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_sim=None):
 >>>>>>> Stashed changes
     '''
     Function that generates the stochastic time series for
@@ -53,6 +61,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
     '''
     
     out = {'results':[],'occupancy':[],'input_data':[]}
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 
     for jj in range(N):          # run the simulation N times and append the results to the list
@@ -79,6 +88,25 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
             
             inputs['members'] = HouseholdMembers(inputs['HP']['dwelling_type'])
               
+=======
+    
+    if factor_gain_sim is not None :
+        TAAA=copy.deepcopy(factor_gain_sim)
+        factor_gain_simu={}
+    members_test =[]
+    for jj in range(N):          # run the simulation N times and append the results to the list
+        
+        if factor_gain_sim is not None :
+            factor_gain=copy.deepcopy(TAAA)
+            
+        # People living in the dwelling, taken as input or from Strobe's list
+        if members is not None:
+            inputs['members'] = HouseholdMembers(members)
+        else:
+            x = inputs['members']
+            inputs['members'] = HouseholdMembers(inputs['members'])
+        members_test.append(inputs['members'])
+>>>>>>> Stashed changes
         # Thermal parameters of the dwelling
         # Taken from Procebar .xls files
         if thermal_parameters is not None:
@@ -95,9 +123,44 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
         # House thermal model + HP
         # DHW
         result,textoutput = strobe.simulate_scenarios(1,inputs)
+        
         n_scen = 0 # Working only with the first scenario
         
+<<<<<<< Updated upstream
         # RAMP-mobility
+=======
+        occ = np.array(result['occupancy'][n_scen])
+        occupancy_10min = (occ==1).sum(axis=0) # when occupancy==1, the person is in the house and not sleeping
+        occupancy_10min = (occupancy_10min>0)  # if there is at least one person awake in the house
+        occupancy_10min = pd.Series(data=occupancy_10min, index = index10min)
+        occupancy_1min = occupancy_10min.reindex(index1min,method='nearest')
+        Qintgains = result['InternalGains'][n_scen]
+        n1min = len(result['InternalGains'][n_scen])
+        
+        ### House heating ###
+        
+        Tset = np.full(n1min,defaults.T_sp_low) + np.full(n1min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_1min
+        ts=1/60
+        # Heat pump sizing
+        if inputs['HP']['HeatPumpThermalPower'] is not None:
+            QheatHP = inputs['HP']['HeatPumpThermalPower']
+        else:
+            QheatHP = HPSizing(inputs,defaults.fracmaxP) # W
+            
+        Qheat,Tin_heat = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,defaults.heatseas_st,defaults.heatseas_end,ts)
+        
+        Eheat = np.zeros((1,n1min)) 
+        for i in range(n1min):
+            COP = COP_Tamb(temp[i])
+            Eheat[0,i] = Qheat[i]/COP # W
+        
+        # result['HeatPumpPower2'][n_scen] = Eheat
+        result['HeatPumpPower'] = Eheat
+        
+        
+        ### RAMP-mobility ###
+        
+>>>>>>> Stashed changes
         if inputs['EV']['loadshift']:
             result_ramp = ramp.EVCharging(inputs, result['occupancy'][n_scen])
             res_ramp_charge_home = result_ramp['charge_profile_home']
@@ -114,7 +177,11 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
         
         index_10min = pd.date_range(start='2019-08-01 00:00', periods=len(result['occupancy'][n_scen][0]), freq='10min')
         
+<<<<<<< Updated upstream
         # Dataframe of demands
+=======
+        #  Dataframe of demands
+>>>>>>> Stashed changes
         df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','EVCharging','InternalGains'],dtype=object)
         
         res_ramp_charge_home.loc[df.index[-1],'EVCharging']=0
@@ -128,6 +195,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
                 df[key] = 0
         if factor_gain_sim is not None :
             for key in ['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower']:
+<<<<<<< Updated upstream
                 factor_gain[key]['factor'].append((df[key].sum()/60000)/factor_gain[key]['value'])
         
             factor_gain_simu['simulation {}'.format(jj)] = factor_gain
@@ -138,18 +206,32 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
             for key in df.columns :
                 df[key]=df[key]*factor_gain[key]['factor'][jj]
         
+=======
+                factor_gain[key]['factor']=(df[key].sum()/60000)/factor_gain[key]['value']
+        
+            factor_gain_simu['simulation {}'.format(jj)] = factor_gain
+        
+       
+                
+>>>>>>> Stashed changes
         # Dataframe with the occupancy data
         occupancy = pd.DataFrame(index=index_10min)
         for i,m in enumerate(result['members'][n_scen]):
             membername = str(i) + '-' + m 
             occupancy[membername] = result['occupancy'][n_scen][i]
+        inputs['members'] = x
         
         out['results'].append(df)
         out['occupancy'].append(occupancy)
         out['input_data'].append(inputs)    
     if factor_gain_sim is not None :
+<<<<<<< Updated upstream
         out['factor gain'] = factor_gain_simu    
     return out
+=======
+        out['factor gain'] = factor_gain_simu  
+    return (out, members_test)
+>>>>>>> Stashed changes
 
 
 if __name__ == "__main__":
@@ -170,8 +252,8 @@ if __name__ == "__main__":
           inputs = json.load(f)
         N = 1
       
-        out = compute_demand(inputs,N)
-            
+        out, members = compute_demand(inputs,N)
+        print(members) 
         """
         Saving results, occupancy, and inputs
         """
