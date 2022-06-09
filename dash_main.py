@@ -18,7 +18,17 @@ __location__ = os.path.realpath(
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MINTY], title="Load Shifting")
 server = app.server
 
-app.layout = dbc.Container(
+import dash_ace
+from flask_cors import CORS
+CORS(server)
+
+conf = load_config('default')
+
+app.layout = html.Div([
+    dcc.Location(id='url', refresh=False),
+    html.Div(id='page-content')])
+
+main_page=dbc.Container(
     [
         dbc.Row([
             dbc.Col([
@@ -67,7 +77,7 @@ app.layout = dbc.Container(
                     id="heating_collapse",
                     is_open=False
                 ),
-                html.Hr(),                
+                html.Hr(),   
                 
                 dbc.Button(
                     "Véhicule électrique",
@@ -142,6 +152,9 @@ app.layout = dbc.Container(
                     type="default",
                     children=html.Div(id="simulation_output")
                 ),
+                html.Hr(),
+                dcc.Link('Paramètres avancés', href='/editor'),
+                html.Hr(),
 
             ], width=3),
             dbc.Col([
@@ -156,7 +169,54 @@ app.layout = dbc.Container(
     ],
     fluid=True
 )
+                     
+editor_page = html.Div([
+                    dcc.Markdown("""
+                                 ### Editeur de configuration
+                                 
+                                 Cet editeur permet de modifier la configuration par défaut. 
+                                 
+                                 Attention, ces paramètres sont écrasés par les options de l'écran principal.                                 
+                                 Par example, si la batterie est désactivée dans l'écran principal, le paramètre 
+                                 BatteryCapacity sera mis à zero, quelle que soit sa valeur dans l'éditeur.
+                                 
+                                 """),
+    
+                    dash_ace.DashAceEditor(
+                        id='input',
+                        value=json.dumps(conf, indent=4),
+                        theme='github',
+                        mode='python',
+                        tabSize=1,
+                    ),
+                    
+                    html.Br(),
+                    dbc.Button(
+                    "Sauver la configuration par défaut",
+                    id="save_config"
+                    ),
+                    html.Br(),
+                    
+                    html.Hr(),
+                    
+                    dcc.Link('Retour à la page principale', href='/'),
+                    
+                    html.Br(),
+                    html.Hr()
 
+                ]),                
+                     
+
+@app.callback(Output('page-content', 'children'),
+              [Input('url', 'pathname')])
+def display_page(pathname):
+    if pathname=='/editor/' or pathname=='/editor':
+        return editor_page
+    else:
+        print('to main page')
+        return main_page                 
+                     
+                     
 #%%  Callbacks for menu expansion
                      
 ### Callback to make household menu expand
@@ -404,7 +464,7 @@ def display_graph(n_clicks,week,
 
     results,demand_15min,demand_shifted,pflows = shift_load(conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N'])
     
-    print(json.dumps(results, indent=4))
+    print('Main results: \n' + json.dumps(results, indent=4))
     
     if 'pv' in pflows and not (pflows['pv']==0).all():
         pv = pflows['pv']
