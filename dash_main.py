@@ -14,14 +14,9 @@ __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 
-from flask_cors import CORS
-
-
 #%% Build the app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MINTY], title="Load Shifting")
 server = app.server
-
-CORS(server)
 
 app.layout = dbc.Container(
     [
