@@ -125,8 +125,8 @@ main_page=dbc.Container(
                 html.Hr(),
                 
                 dbc.Button(
-                    "Résultats bruts",
-                    id="coordinates_button"
+                    "Stratégie de pilotage",
+                    id="control_strategy"
                 ),
                 dbc.Collapse(
                     dbc.Card(
@@ -390,6 +390,7 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
     #house type:
     if dropdown_house != conf['config']['house']:
         conf['config']['house'] = dropdown_house
+    print(dropdown_house)
     
     #wet appliances:
     apps = {'td':'TumbleDryer','wm':'WashingMachine','dw':'DishWasher'}
@@ -585,7 +586,7 @@ def display_graph(n_clicks,week,
         
     maintext = "Facture d'électricité: {:.2f} EUR/an".format(-results['el_netexpend'])
     totext = "\n \n".join(totext)
-    print(totext)
+
     return fig,fig2,False,maintext,totext,''     # Number of returns must be equal to the number of outputs
     
 
