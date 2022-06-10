@@ -75,6 +75,34 @@ def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',c
         
     return out
 
+def load_cases(cf_cases='cases.json'):
+    '''
+    Load the list of cases from the corresponding json file
+        
+    Returns
+    -------
+    list with the cases  
+
+    '''
+    inputpath = __location__ + '/inputs/'
+    
+    # Case description
+    with open(inputpath + cf_cases,'r') as f:
+        cases = json.load(f)
+    
+    out = list(cases.keys())
+    
+    # Add user-defined cases:
+    inputpath = __location__ + '/scenarios/'
+    listfiles = [x.strip('.json') for x in os.listdir(inputpath) if x[-5:]=='.json']
+    
+    out = out + listfiles
+    
+    if 'default' in out:
+        out.remove('default')
+        
+    return out
+
 
 @memory.cache
 def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):

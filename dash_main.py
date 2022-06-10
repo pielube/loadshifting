@@ -1,21 +1,18 @@
-import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import Dash, dcc, html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
-from dash.dependencies import Input, Output, State
 import os,json
 
 from dash_components import household_components,heating_components,ev_components,pv_components
 import defaults
 from plots import make_demand_plot
-from simulation import shift_load,load_config
+from simulation import shift_load,load_config,load_cases
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 
 #%% Build the app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MINTY], title="Load Shifting")
+app = Dash(__name__, external_stylesheets=[dbc.themes.MINTY], title="Load Shifting")
 server = app.server
 
 import dash_ace
@@ -24,7 +21,7 @@ CORS(server)
 
 conf = load_config('default')
 
-app.layout = html.Div([
+url_bar_and_content_div = html.Div([
     dcc.Location(id='url', refresh=False),
     html.Div(id='page-content')])
 
@@ -45,6 +42,24 @@ main_page=dbc.Container(
                 html.Img(src="assets/uliege_logo_cmjn_mono.svg", alt="Uliege Logo", height="50px"),
             ], width=1)
         ], align="end"),
+        html.Hr(),
+        dbc.Row([
+            dbc.Col([dcc.Markdown('Scénario a simuler:') ]),
+            dbc.Col([
+                dcc.Dropdown( id = 'dropdown_cases',
+                             options = [ {'label': 'Non prédéfini', 'value': 'default'} ] + [ {'label':x, 'value': x} for x in load_cases()],
+                             value = 'default') 
+            ], width=True),
+            dbc.Col([
+                dbc.Button(
+                    "Rafraîchir",
+                    id="refresh_cases"
+                )
+            ], width=True),
+            dbc.Col([dcc.Link('Editeur de scénarios', href='/editor')], width=True),
+        ], align="end"),
+        
+        
         html.Hr(),
         dbc.Row([
             dbc.Col([
@@ -153,14 +168,13 @@ main_page=dbc.Container(
                     children=html.Div(id="simulation_output")
                 ),
                 html.Hr(),
-                dcc.Link('Paramètres avancés', href='/editor'),
-                html.Hr(),
 
             ], width=3),
             dbc.Col([
                 dcc.Graph(id='display1', style={'height': '50vh'}),
                 dcc.Graph(id='display2', style={'height': '50vh'}),
-            ], width=9, align="start")
+                dcc.Markdown(id='results',children="##### Résultats de simulation")
+            ], width=9, align="start"),
         ]),
         html.Hr(),
         dcc.Markdown("""
@@ -183,7 +197,7 @@ editor_page = html.Div([
                                  """),
     
                     dash_ace.DashAceEditor(
-                        id='input',
+                        id='config_text',
                         value=json.dumps(conf, indent=4),
                         theme='github',
                         mode='python',
@@ -192,11 +206,13 @@ editor_page = html.Div([
                     
                     html.Br(),
                     dbc.Button(
-                    "Sauver la configuration par défaut",
+                    "Enregistrer sous",
                     id="save_config"
                     ),
                     html.Br(),
-                    
+                    dcc.Input(id='scenario_name', type='text',value='Mon Scenario'),
+                    html.Br(),
+                    html.Div(id="save_ok", children=''),
                     html.Hr(),
                     
                     dcc.Link('Retour à la page principale', href='/'),
@@ -205,9 +221,20 @@ editor_page = html.Div([
                     html.Hr()
 
                 ]),                
-                     
+            
+#%% Callbacks for the multi-page design
+#Definition of the main layout:
+app.layout = url_bar_and_content_div
 
-@app.callback(Output('page-content', 'children'),
+# "complete" layout
+app.validation_layout = html.Div([
+    url_bar_and_content_div,
+    main_page,
+    editor_page
+])                                 
+                                 
+# callback to open the right page depending on the url:
+@callback(Output('page-content', 'children'),
               [Input('url', 'pathname')])
 def display_page(pathname):
     if pathname=='/editor/' or pathname=='/editor':
@@ -215,12 +242,60 @@ def display_page(pathname):
     else:
         print('to main page')
         return main_page                 
+
+
+#%% callbacks for the editor page           
+
+# callback to save a new scenario and add it to the drowpdown list:
+@callback(Output('save_ok', 'children'),
+#          Output('dropdown_cases','options'),
+              [Input('save_config', 'n_clicks')],
+              [State("config_text", "value"),
+               State('scenario_name', 'value')], prevent_initial_call=True)
+def save_case(n_clicks,config,scenario_name):
+    conf = json.loads(config)
+    try: 
+        conf = json.loads(config)
+        scenario_name = 'Custom - ' + scenario_name
+        with open('scenarios/'+scenario_name + '.json', 'w') as outfile:
+            json.dump(conf, outfile)
+        out= 'Scenario successfully saved in ' + 'scenarios/'+scenario_name + '.json'
+    except:
+        out= 'Invalid configuration format'
+        print(out)    
+        
+    return out   #,[ {'label': 'Non prédéfini', 'value': 'default'} ] + [ {'label':x, 'value': x} for x in load_cases()]
+
+# @callback(
+#     Output("text_inputs_changed", "children"),
+#     [Input("save_config", "n_clicks")],
+#     [State("scenario_name", "value")]
+# )
+# def toggle_household_collqapse(n_clicks, is_open):
+#     print('trefezfezfez')
+#     if n_clicks:
+#         return 'bb'
+#     return 'aa'                     
+                 
+
+
                      
                      
-#%%  Callbacks for menu expansion
-                     
+#%%  Callbacks for menu expansion on the main page
+  
+### Callback to refresh the list of scenarios
+@callback(
+    Output("dropdown_cases", "options"),
+    [Input("refresh_cases", "n_clicks")]
+)
+def refresh_dropdown_cases(n_clicks):
+    
+    return [ {'label': 'Non prédéfini', 'value': 'default'} ] + [ {'label':x, 'value': x} for x in load_cases()]
+
+
+                   
 ### Callback to make household menu expand
-@app.callback(
+@callback(
     Output("household_collapse", "is_open"),
     [Input("household_button", "n_clicks")],
     [State("household_collapse", "is_open")]
@@ -232,7 +307,7 @@ def toggle_household_collapse(n_clicks, is_open):
                      
  
 ### Callback to make household menu expand
-@app.callback(
+@callback(
     Output("heating_collapse", "is_open"),
     [Input("heating_button", "n_clicks")],
     [State("heating_collapse", "is_open")]
@@ -245,7 +320,7 @@ def toggle_heating_collapse(n_clicks, is_open):
 
 
 ### Callback to make EV parameters menu expand
-@app.callback(
+@callback(
     Output("ev_collapse", "is_open"),
     [Input("ev_button", "n_clicks")],
     [State("ev_collapse", "is_open")]
@@ -257,7 +332,7 @@ def toggle_ev_collapse(n_clicks, is_open):
 
 
 ### Callback to make EV parameters menu expand
-@app.callback(
+@callback(
     Output("pv_collapse", "is_open"),
     [Input("pv_button", "n_clicks")],
     [State("pv_collapse", "is_open")]
@@ -270,7 +345,7 @@ def toggle_pv_collapse(n_clicks, is_open):
 
 
 ### Callback to make coordinates menu expand
-@app.callback(
+@callback(
     Output("coordinates_collapse", "is_open"),
     [Input("coordinates_button", "n_clicks")],
     [State("coordinates_collapse", "is_open")]
@@ -284,7 +359,7 @@ def toggle_coordinates_collapse(n_clicks, is_open):
 #%%  Callbacks for activation/deactivation of specific inputs
 
 ### Callback to activate the HP inputs
-@app.callback(
+@callback(
     Output("input_hp_power", "disabled"),
     Output('input_hp_power','value'),
     [Input("yesno_hp", "value")]
@@ -295,7 +370,7 @@ def disable_hp_inputs(yesno_hp):
     return False,defaults.hp_thermal_power
 
 ### Callback to activate the HP inputs
-@app.callback(
+@callback(
     Output("input_pv_power", "disabled"),
     Output('input_pv_power','value'),
     [Input("yesno_pv", "value")]
@@ -431,12 +506,12 @@ statelist = ['dropdown_house','checklist_apps','dropdown_flex_appliances','check
              'input_pv_power','checklist_bat','input_bat_capacity','input_bat_power']
 
 
-@app.callback(
+@callback(
     Output("display1", "figure"),
     Output("display2", "figure"),
     Output("week", "disabled"),
     Output("simulation_output", "children"),
-    Output("text_raw_outputs", "children"),
+    Output("results", "children"),
     Output("text_inputs_changed", "children"),
 #    Output("coordinates_output", "children"),
     [
@@ -486,11 +561,31 @@ def display_graph(n_clicks,week,
     Text output
     """   
     totext = []
-    for key in results:
-        totext.append(key + ": " + str(results[key]))
-        totext.append(html.Br())   
-    maintext = "Facture d'électricité: {:.2f} EUR/an".format(-results['el_netexpend'])
+    totext.append('### Résultats de simulation')
+    totext.append('#### Installation')
+    totext.append("Système PV: {:.2f} kWc".format(results['PVCapacity']))
+    totext.append("Batterie: {:.2f} kWh".format(results['BatteryCapacity']))
+    totext.append("Demande maximale: {:.2f} kW".format(results['peakdem']))
+    totext.append("Consommation totale: {:.0f} kWh".format(results['cons_total']))
+    totext.append("Electricité produite: {:.0f} kWh".format(results['el_prod']))
+    totext.append("Electricité autoconsommée: {:.0f} kWh".format(results['el_selfcons']))
+    totext.append("Electricité achetée au réseau: {:.0f} kWh".format(results['el_boughtfromgrid']))
+    totext.append("SSR: {:.1f} %".format(results['selfsuffrate']*100))
+    totext.append("SCR: {:.1f} %".format(results['selfconsrate']*100))
+    totext.append("Quantité de charge déplacée: {:.0f} kWh".format(results['el_shifted']))
+    totext.append('#### Paramètres économiques')
+    totext.append("Bénéfices de la revente au réseau: {:.0f} €".format(results['TotalSell']))
+    totext.append("Coût total d'achat au réseau: {:.0f} €".format(results['TotalBuy']))
+    totext.append("LCOE: {:.0f} €/MWh".format(results['el_costperkwh']*1000))
+    totext.append("Temps de retour sur investissement: {:.1f} ans".format(results['PBP']))
+    totext.append("**Facture d'électricité: {:.2f} EUR/an**".format(-results['el_netexpend']))
     
+    # for key in results:
+    #     totext.append(key + ": " + str(results[key])) 
+        
+    maintext = "Facture d'électricité: {:.2f} EUR/an".format(-results['el_netexpend'])
+    totext = "\n \n".join(totext)
+    print(totext)
     return fig,fig2,False,maintext,totext,''     # Number of returns must be equal to the number of outputs
     
 
