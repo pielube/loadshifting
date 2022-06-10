@@ -11,6 +11,18 @@ So far two models are being used:
 - [RAMP-mobility](https://github.com/RAMP-project/RAMP-mobility)  
     For the modelling of the EV charging.  
 
+The library has been tested with the following dependencies:
+- Standard libraries from Anaconda 3.8: 
+	- numpy
+	- pandas
+	- matplotlib, ...
+- dash 2.5.0
+- dash-ace 0.2.1
+- flask-cors 3.0.10
+- joblib 1.1.0
+- plotly 5.1.0
+
+
 Alongside the models, some elements are directly included within the framework. It is the case of the thermal building model, the HP-based heating system and the electric boiler.
 
 ## License
