@@ -407,7 +407,7 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
     if 'auto_hp' in yesno_hp and conf['housetype']['HP']['HeatPumpThermalPower'] is not None:
         conf['housetype']['HP']['HeatPumpThermalPower'] = None
     elif 'auto_hp' not in yesno_hp:
-        conf['housetype']['HP']['HeatPumpThermalPower']= input_hp_power
+        conf['housetype']['HP']['HeatPumpThermalPower']= float(input_hp_power)
         
     # DHW:
     if 'dhw_in' in checklist_dhw and "DomesticHotWater" not in conf['config']['columns']:
@@ -421,9 +421,9 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
     if "DomesticHotWater" not in conf['config']['columns'] and "DomesticHotWater" in conf['config']['TechsShift']:
         conf['config']['TechsShift'].remove("DomesticHotWater")
     if input_boiler_volume != conf['housetype']['DHW']['Vcyl']:
-        conf['housetype']['DHW']['Vcyl'] = input_boiler_volume
+        conf['housetype']['DHW']['Vcyl'] = float(input_boiler_volume)
     if input_boiler_temperature != conf['housetype']['DHW']['Ttarget']:
-        conf['housetype']['DHW']['Ttarget'] = input_boiler_temperature
+        conf['housetype']['DHW']['Ttarget'] = float(input_boiler_temperature)
         
     # EV:
     if 'ev_in' in checklist_ev and "EVCharging" not in conf['config']['columns']:
@@ -449,7 +449,7 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
         conf['pvbatt_param']['pv']['AutomaticSizing'] = False
     if not conf['pvbatt_param']['pv']['AutomaticSizing']:
         if input_pv_power != conf['pvbatt_param']['pv']['Ppeak']:
-            conf['pvbatt_param']['pv']['Ppeak'] = input_pv_power
+            conf['pvbatt_param']['pv']['Ppeak'] = float(input_pv_power)
         
     #Battery
     if 'bat_in' in checklist_bat and not conf['config']['PresenceOfBattery']:
@@ -458,9 +458,9 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
         conf['config']['PresenceOfBattery'] = False
         
     if input_bat_power != conf['pvbatt_param']['battery']['MaxPower']:
-        conf['pvbatt_param']['battery']['MaxPower'] = input_bat_power
+        conf['pvbatt_param']['battery']['MaxPower'] = float(input_bat_power)
     if input_bat_capacity != conf['pvbatt_param']['battery']['BatteryCapacity']:
-        conf['pvbatt_param']['battery']['BatteryCapacity'] = input_bat_capacity
+        conf['pvbatt_param']['battery']['BatteryCapacity'] = float(input_bat_capacity)
     
 
 
@@ -547,6 +547,13 @@ def display_graph(n_clicks,week,
     """
     Text output
     """   
+    # first check that all results are numerical
+    for key in results:
+        try:
+            aa = ("test{:.2f}".format(results[key]))
+        except:
+            results[key] = -99999
+    
     totext = []
     totext.append('### Résultats de simulation')
     totext.append('#### Installation')
