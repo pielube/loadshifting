@@ -37,7 +37,12 @@
         "type": "ElectricBoiler",
         "PowerElMax": 2000.0,
         "Ttarget": 60.0, 
+<<<<<<< Updated upstream
         "Tcw": 10.0,     
+=======
+        "Tcw": 10.0,   
+		"Tfaucet": 35.0,		
+>>>>>>> Stashed changes
         "Vcyl": 40.0,    
         "Hloss": 0.5
         },
@@ -99,7 +104,12 @@
         "type": "ElectricBoiler",
         "PowerElMax": 2000.0,
         "Ttarget": 60.0, 
+<<<<<<< Updated upstream
         "Tcw": 10.0,     
+=======
+        "Tcw": 10.0,   
+		"Tfaucet": 35.0,
+>>>>>>> Stashed changes
         "Vcyl": 80.0,    
         "Hloss": 1.0
         },
@@ -160,7 +170,12 @@
         "type": "ElectricBoiler",
         "PowerElMax": 2000.0,
         "Ttarget": 60.0, 
+<<<<<<< Updated upstream
         "Tcw": 10.0,     
+=======
+        "Tcw": 10.0,  
+		"Tfaucet": 35.0,
+>>>>>>> Stashed changes
         "Vcyl": 160.0,    
         "Hloss": 2.0
         },

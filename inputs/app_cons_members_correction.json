@@ -1,5 +1,6 @@
 {
     "case1": {
+<<<<<<< Updated upstream
         "simulation 0": {
 <<<<<<< Updated upstream
             "Annual consumption by StaticLoad": 2500.0,
@@ -445,6 +446,8 @@
             "Annual consumption by DomesticHotWater": 3268.235864798884,
             "Annual consumption by HeatPumpPower": 2811.7279748808655
         },
+=======
+>>>>>>> Stashed changes
         "simulation 1": {
             "Annual consumption by StaticLoad": 3597.2783037437644,
             "Annual consumption by TumbleDryer": 325.63321666666667,
@@ -1863,6 +1866,9 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.3744534027777777,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -1870,6 +1876,9 @@
             "simulation 1": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
                     "factor": [
                         2.3556669477264607
                     ],
@@ -1903,7 +1912,10 @@
                     "factor": [
                         2.368726527777778
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
                     "factor": 1.6791877551020415,
                     "value": 190
                 },
@@ -1925,6 +1937,9 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.3568050694444445,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -1932,6 +1947,9 @@
             "simulation 2": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
                     "factor": [
                         1.3826149964196215
                     ],
@@ -1965,7 +1983,10 @@
                     "factor": [
                         1.2328963194444447
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
                     "factor": 2.421065551378449,
                     "value": 190
                 },
@@ -1987,6 +2008,9 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.9117913194444445,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -1994,6 +2018,9 @@
             "simulation 3": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
                     "factor": [
                         2.041852738990335
                     ],
@@ -2027,7 +2054,10 @@
                     "factor": [
                         1.504315486111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
                     "factor": 1.4789293036161844,
                     "value": 190
                 },
@@ -2049,6 +2079,9 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.149422777777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -2056,6 +2089,9 @@
             "simulation 4": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
                     "factor": [
                         2.982304477264592
                     ],
@@ -2089,7 +2125,10 @@
                     "factor": [
                         3.1477550694444445
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
                     "factor": 2.8764776459004673,
                     "value": 190
                 },
@@ -2111,6 +2150,9 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.5160634027777777,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -2118,6 +2160,9 @@
             "simulation 5": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
                     "factor": [
                         1.376075136054423
                     ],
@@ -2151,7 +2196,10 @@
                     "factor": [
                         1.2295990277777777
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
                     "factor": 1.2179294217687082,
                     "value": 190
                 },
@@ -2173,6 +2221,7 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.0739321527777779,
+<<<<<<< Updated upstream
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -5466,35 +5515,61 @@
                 "DishWasher": {
                     "factor": [
                         0.9878452434658078
+=======
+                    "value": 240
+                }
+            },
+            "simulation 6": {
+                "DishWasher": {
+                    "factor": [
+                        2.5061828249194433
+>>>>>>> Stashed changes
                     ],
                     "value": 190
                 },
                 "WashingMachine": {
                     "factor": [
+<<<<<<< Updated upstream
                         0.7640635659801684
+=======
+                        1.8153443154080868
+>>>>>>> Stashed changes
                     ],
                     "value": 190
                 },
                 "DomesticHotWater": {
                     "factor": [
+<<<<<<< Updated upstream
                         1.5655222532711521
+=======
+                        2.795433493888871
+>>>>>>> Stashed changes
                     ],
                     "value": 2100
                 },
                 "HeatPumpPower": {
                     "factor": [
+<<<<<<< Updated upstream
                         0.48653472649656576
+=======
+                        0.5875103638863468
+>>>>>>> Stashed changes
                     ],
                     "value": 5000
                 },
                 "StaticLoad": {
                     "factor": [
+<<<<<<< Updated upstream
                         1.0436384819014988
+=======
+                        2.1017241334055585
+>>>>>>> Stashed changes
                     ],
                     "value": 2500
                 },
                 "TumbleDryer": {
                     "factor": [
+<<<<<<< Updated upstream
                         0.6255004861111111
                     ],
                     "value": 240
@@ -5542,35 +5617,84 @@
                 "DishWasher": {
                     "factor": [
                         0.9185821768707488
+=======
+                        2.3216967361111114
+                    ],
+                    "factor": 2.3697375563909784,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 1.677764046529369,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 1.6066633834015491,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 0.5426304284347436,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 2.0555695222831387,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 2.0641609027777776,
+                    "value": 240
+                }
+            },
+            "simulation 7": {
+                "DishWasher": {
+                    "factor": [
+                        1.8065168546365924
+>>>>>>> Stashed changes
                     ],
                     "value": 190
                 },
                 "WashingMachine": {
                     "factor": [
+<<<<<<< Updated upstream
                         0.7466043211289098
+=======
+                        1.2214815865751352
+>>>>>>> Stashed changes
                     ],
                     "value": 190
                 },
                 "DomesticHotWater": {
                     "factor": [
+<<<<<<< Updated upstream
                         1.5158422028196796
+=======
+                        2.37363243677824
+>>>>>>> Stashed changes
                     ],
                     "value": 2100
                 },
                 "HeatPumpPower": {
                     "factor": [
+<<<<<<< Updated upstream
                         0.2562159425711455
+=======
+                        0.4587474850643111
+>>>>>>> Stashed changes
                     ],
                     "value": 5000
                 },
                 "StaticLoad": {
                     "factor": [
+<<<<<<< Updated upstream
                         1.0991529200135688
+=======
+                        1.2036732599642614
+>>>>>>> Stashed changes
                     ],
                     "value": 2500
                 },
                 "TumbleDryer": {
                     "factor": [
+<<<<<<< Updated upstream
                         0.8677646527777778
                     ],
                     "value": 240
@@ -5618,35 +5742,84 @@
                 "DishWasher": {
                     "factor": [
                         1.7485499104905136
+=======
+                        1.8722238194444443
+                    ],
+                    "factor": 1.6448039437880424,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 1.2188910888634643,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 1.4092038371882984,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 0.9051797891724648,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 1.2771886756022182,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 1.3734650694444446,
+                    "value": 240
+                }
+            },
+            "simulation 8": {
+                "DishWasher": {
+                    "factor": [
+                        1.5689019280343723
+>>>>>>> Stashed changes
                     ],
                     "value": 190
                 },
                 "WashingMachine": {
                     "factor": [
+<<<<<<< Updated upstream
                         1.2544483314263934
+=======
+                        1.1667972444698713
+>>>>>>> Stashed changes
                     ],
                     "value": 190
                 },
                 "DomesticHotWater": {
                     "factor": [
+<<<<<<< Updated upstream
                         2.2297168791225297
+=======
+                        2.624235396130046
+>>>>>>> Stashed changes
                     ],
                     "value": 2100
                 },
                 "HeatPumpPower": {
                     "factor": [
+<<<<<<< Updated upstream
                         1.6434310921354491
+=======
+                        0.5034443264768302
+>>>>>>> Stashed changes
                     ],
                     "value": 5000
                 },
                 "StaticLoad": {
                     "factor": [
+<<<<<<< Updated upstream
                         1.2895170666666669
+=======
+                        1.6768945449323267
+>>>>>>> Stashed changes
                     ],
                     "value": 2500
                 },
                 "TumbleDryer": {
                     "factor": [
+<<<<<<< Updated upstream
                         1.599069236111111
                     ],
                     "value": 240
@@ -5694,35 +5867,86 @@
                 "DishWasher": {
                     "factor": [
                         3.1924718080916596
+=======
+                        1.6867077777777777
+                    ],
+                    "factor": 2.5560244880057312,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 1.6888002765064856,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 1.580907091297418,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 0.829094133603388,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 2.095795874182534,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 2.1288919444444447,
+
+                    "value": 240
+                }
+            },
+            "simulation 9": {
+                "DishWasher": {
+
+                    "factor": [
+                        1.9865611922663822
+>>>>>>> Stashed changes
                     ],
                     "value": 190
                 },
                 "WashingMachine": {
                     "factor": [
+<<<<<<< Updated upstream
                         1.9769133028222747
+=======
+                        1.4735050762776516
+>>>>>>> Stashed changes
                     ],
                     "value": 190
                 },
                 "DomesticHotWater": {
                     "factor": [
+<<<<<<< Updated upstream
                         2.776261646420442
+=======
+                        2.7147241085245044
+>>>>>>> Stashed changes
                     ],
                     "value": 2100
                 },
                 "HeatPumpPower": {
                     "factor": [
+<<<<<<< Updated upstream
                         0.5197563101104599
+=======
+                        0.43520646310275063
+>>>>>>> Stashed changes
                     ],
                     "value": 5000
                 },
                 "StaticLoad": {
                     "factor": [
+<<<<<<< Updated upstream
                         1.850710346505159
+=======
+                        1.6960814569503433
+>>>>>>> Stashed changes
                     ],
                     "value": 2500
                 },
                 "TumbleDryer": {
                     "factor": [
+<<<<<<< Updated upstream
                         3.118773611111111
                     ],
                     "value": 240
@@ -5763,6 +5987,33 @@
                     "factor": [
                         2.640666319444444
                     ],
+=======
+                        1.496506111111111
+                    ],
+
+                    "factor": 2.042744538131044,
+                    "value": 190
+                },
+                "WashingMachine": {
+                    "factor": 1.3404670499618634,
+                    "value": 190
+                },
+                "DomesticHotWater": {
+                    "factor": 1.4053095331442715,
+                    "value": 2100
+                },
+                "HeatPumpPower": {
+                    "factor": 0.6447441320853577,
+                    "value": 5000
+                },
+                "StaticLoad": {
+                    "factor": 1.5530823227791495,
+                    "value": 2500
+                },
+                "TumbleDryer": {
+                    "factor": 1.613126111111111,
+
+>>>>>>> Stashed changes
                     "value": 240
                 }
             },
@@ -7283,7 +7534,11 @@
                     "factor": [
                         1.9622919444444444
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 3.51916755997136,
                     "value": 190
                 },
@@ -8605,6 +8860,7 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.2348052777777778,
+<<<<<<< Updated upstream
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -9051,6 +9307,16 @@
                     ],
 =======
     "case59": {
+=======
+
+                    "value": 240
+                }
+            }
+    
+		}
+	},
+	"case59": {
+>>>>>>> Stashed changes
         "simulation 0": {
             "Annual consumption by StaticLoad": 2551.9913044100554,
             "Annual consumption by TumbleDryer": 190.56226666666666,
@@ -10377,6 +10643,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.7940094444444444,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -10384,6 +10654,10 @@
             "simulation 1": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.589211027568923
                     ],
@@ -10417,7 +10691,11 @@
                     "factor": [
                         0.3795919444444445
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.3967887969924835,
                     "value": 190
                 },
@@ -10439,6 +10717,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.6092552777777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -10446,6 +10728,10 @@
             "simulation 2": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.4194760275689235
                     ],
@@ -10479,7 +10765,11 @@
                     "factor": [
                         1.2297725694444446
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.4297853651987125,
                     "value": 190
                 },
@@ -10501,6 +10791,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.2991363194444445,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -10508,6 +10802,10 @@
             "simulation 3": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.28590433404941
                     ],
@@ -10541,7 +10839,11 @@
                     "factor": [
                         1.609655277777778
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.2440929663444344,
                     "value": 190
                 },
@@ -10563,6 +10865,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.301392361111111,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -10570,6 +10876,10 @@
             "simulation 4": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.141531962047978
                     ],
@@ -10603,7 +10913,11 @@
                     "factor": [
                         0.8904986111111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 0.9365172484783396,
                     "value": 190
                 },
@@ -10625,6 +10939,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.7070650694444445,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -10632,6 +10950,10 @@
             "simulation 5": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.5883192284282139
                     ],
@@ -10665,7 +10987,11 @@
                     "factor": [
                         0.4505704861111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.805228700322236,
                     "value": 190
                 },
@@ -10687,6 +11013,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.9813815277777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -10694,6 +11024,10 @@
             "simulation 6": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.1842392320085937
                     ],
@@ -10727,7 +11061,11 @@
                     "factor": [
                         0.9649479861111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.056811043680631,
                     "value": 190
                 },
@@ -10749,6 +11087,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.7783906944444445,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -10756,6 +11098,10 @@
             "simulation 7": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.137568410311494
                     ],
@@ -10789,7 +11135,11 @@
                     "factor": [
                         0.8582198611111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.771439421768709,
                     "value": 190
                 },
@@ -10811,6 +11161,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.7068386111111111,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -10818,6 +11172,10 @@
             "simulation 8": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.9987450107411393
                     ],
@@ -10851,7 +11209,11 @@
                     "factor": [
                         0.7488886111111112
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.0838622842821348,
                     "value": 190
                 },
@@ -10873,6 +11235,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.9075056944444444,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -10880,6 +11246,10 @@
             "simulation 9": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.6502497243107777
                     ],
@@ -10913,7 +11283,11 @@
                     "factor": [
                         0.5335234027777778
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.4464322824919464,
                     "value": 190
                 },
@@ -10935,6 +11309,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.2257281944444443,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -10942,6 +11320,10 @@
             "simulation 10": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.9244284156820632
                     ],
@@ -10975,7 +11357,11 @@
                     "factor": [
                         0.8273294444444445
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 0.6241893716433947,
                     "value": 190
                 },
@@ -10997,6 +11383,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.7294519444444444,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11004,6 +11394,10 @@
             "simulation 11": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.7747093519513082
                     ],
@@ -11037,7 +11431,11 @@
                     "factor": [
                         1.6080934027777778
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.4903245148585762,
                     "value": 190
                 },
@@ -11059,6 +11457,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.4048761111111112,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11066,6 +11468,10 @@
             "simulation 12": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.39083526315789496
                     ],
@@ -11099,7 +11505,11 @@
                     "factor": [
                         0.3485279861111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.128551330110993,
                     "value": 190
                 },
@@ -11121,6 +11531,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.9737986111111111,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11128,6 +11542,10 @@
             "simulation 13": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.6965241908342289
                     ],
@@ -11161,7 +11579,11 @@
                     "factor": [
                         0.4651479861111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.2608348693161482,
                     "value": 190
                 },
@@ -11183,6 +11605,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.0841711111111112,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11190,6 +11616,10 @@
             "simulation 14": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.3166218600071617
                     ],
@@ -11223,7 +11653,11 @@
                     "factor": [
                         0.9495027777777777
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.921063499820982,
                     "value": 190
                 },
@@ -11245,6 +11679,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.0344852777777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11252,6 +11690,10 @@
             "simulation 15": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.5441256265664163
                     ],
@@ -11285,7 +11727,11 @@
                     "factor": [
                         0.47955194444444443
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.890052810597926,
                     "value": 190
                 },
@@ -11307,6 +11753,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 3.4486763194444445,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11314,6 +11764,10 @@
             "simulation 16": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.4662459380594355
                     ],
@@ -11347,7 +11801,11 @@
                     "factor": [
                         1.173892152777778
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.3181081919083437,
                     "value": 190
                 },
@@ -11369,6 +11827,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.9731044444444444,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11376,6 +11838,10 @@
             "simulation 17": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.7644000143215185
                     ],
@@ -11409,7 +11875,11 @@
                     "factor": [
                         0.693702361111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 0.5130117454350165,
                     "value": 190
                 },
@@ -11431,6 +11901,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.2678311111111111,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11438,6 +11912,10 @@
             "simulation 18": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.4026309326888657
                     ],
@@ -11471,7 +11949,11 @@
                     "factor": [
                         1.4180652777777778
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.6034839169351962,
                     "value": 190
                 },
@@ -11493,6 +11975,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.1530671527777776,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11500,6 +11986,10 @@
             "simulation 19": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.2631139115646273
                     ],
@@ -11533,7 +12023,11 @@
                     "factor": [
                         1.0371413194444445
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.6548119119226652,
                     "value": 190
                 },
@@ -11555,6 +12049,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.256150902777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11562,6 +12060,10 @@
             "simulation 20": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.2229829502327256
                     ],
@@ -11595,7 +12097,11 @@
                     "factor": [
                         1.109161111111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 0.7658863462227004,
                     "value": 190
                 },
@@ -11617,6 +12123,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.49239402777777774,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11624,6 +12134,10 @@
             "simulation 21": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.37755736484067326
                     ],
@@ -11657,7 +12171,11 @@
                     "factor": [
                         0.36362611111111115
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.426317257429288,
                     "value": 190
                 },
@@ -11679,6 +12197,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.1524936111111113,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11686,6 +12208,10 @@
             "simulation 22": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.6116050948800578
                     ],
@@ -11719,7 +12245,11 @@
                     "factor": [
                         0.4276629861111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.1364825366988924,
                     "value": 190
                 },
@@ -11741,6 +12271,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.202647152777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11748,6 +12282,10 @@
             "simulation 23": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.816223453276048
                     ],
@@ -11781,7 +12319,11 @@
                     "factor": [
                         0.8519723611111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.234679530970285,
                     "value": 190
                 },
@@ -11803,6 +12345,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.2028206944444446,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11810,6 +12356,10 @@
             "simulation 24": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.4016359416398142
                     ],
@@ -11843,7 +12393,11 @@
                     "factor": [
                         0.48874965277777777
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 3.111714441460796,
                     "value": 190
                 },
@@ -11865,6 +12419,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 3.245979652777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11872,6 +12430,10 @@
             "simulation 25": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.4701104010025077
                     ],
@@ -11905,7 +12467,11 @@
                     "factor": [
                         0.9859465277777777
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.249641938775511,
                     "value": 190
                 },
@@ -11927,6 +12493,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.276922986111111,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11934,6 +12504,10 @@
             "simulation 26": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         2.0372946544933783
                     ],
@@ -11967,7 +12541,11 @@
                     "factor": [
                         1.9968267361111112
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.0160855495882573,
                     "value": 190
                 },
@@ -11989,6 +12567,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.9538413194444445,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -11996,6 +12578,10 @@
             "simulation 27": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.6966273827425724
                     ],
@@ -12029,7 +12615,11 @@
                     "factor": [
                         1.8057573611111113
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.9220543877551046,
                     "value": 190
                 },
@@ -12051,6 +12641,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.4309073611111112,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12058,6 +12652,10 @@
             "simulation 28": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.5249024006444688
                     ],
@@ -12091,7 +12689,11 @@
                     "factor": [
                         0.31486090277777773
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 0.7375469513068392,
                     "value": 190
                 },
@@ -12113,6 +12715,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.7896709027777777,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12120,6 +12726,10 @@
             "simulation 29": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.42095825635517403
                     ],
@@ -12153,7 +12763,11 @@
                     "factor": [
                         0.21698340277777778
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.6689816093805958,
                     "value": 190
                 },
@@ -12175,6 +12789,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.330426736111111,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12182,6 +12800,10 @@
             "simulation 30": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.0173737039026147
                     ],
@@ -12215,7 +12837,11 @@
                     "factor": [
                         0.8802596527777777
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 0.6657075760830654,
                     "value": 190
                 },
@@ -12237,6 +12863,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.6497963194444445,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12244,6 +12874,10 @@
             "simulation 31": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.246665171858218
                     ],
@@ -12277,7 +12911,11 @@
                     "factor": [
                         1.134151111111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 0.928193789831723,
                     "value": 190
                 },
@@ -12299,6 +12937,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.8544019444444444,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12306,6 +12948,10 @@
             "simulation 32": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.1680877586824214
                     ],
@@ -12339,7 +12985,11 @@
                     "factor": [
                         0.9468996527777779
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.8496245828857876,
                     "value": 190
                 },
@@ -12361,6 +13011,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 3.0864948611111114,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12368,6 +13022,10 @@
             "simulation 33": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.4874509398496254
                     ],
@@ -12401,7 +13059,11 @@
                     "factor": [
                         1.4897379861111113
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 0.3801336734693881,
                     "value": 190
                 },
@@ -12423,6 +13085,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.2018852777777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12430,6 +13096,10 @@
             "simulation 34": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.7127788560687445
                     ],
@@ -12463,7 +13133,11 @@
                     "factor": [
                         1.5338175694444445
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.406895853920518,
                     "value": 190
                 },
@@ -12485,6 +13159,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.2668575694444444,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12492,6 +13170,10 @@
             "simulation 35": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.966144797708558
                     ],
@@ -12525,7 +13207,11 @@
                     "factor": [
                         0.8854659027777778
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.786798184747585,
                     "value": 190
                 },
@@ -12547,6 +13233,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.4701277777777777,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12554,6 +13244,10 @@
             "simulation 36": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.4854650608664522
                     ],
@@ -12587,7 +13281,11 @@
                     "factor": [
                         0.4720896527777778
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.3709225187969936,
                     "value": 190
                 },
@@ -12609,6 +13307,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.2146744444444444,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12616,6 +13318,10 @@
             "simulation 37": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.0074648245614046
                     ],
@@ -12649,7 +13355,11 @@
                     "factor": [
                         0.6341775694444445
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.2351749749373457,
                     "value": 190
                 },
@@ -12671,6 +13381,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.863546736111111,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12678,6 +13392,10 @@
             "simulation 38": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.6863180451127825
                     ],
@@ -12711,7 +13429,11 @@
                     "factor": [
                         0.5206813194444444
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.0533429359112079,
                     "value": 190
                 },
@@ -12733,6 +13455,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.0487686111111112,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12740,6 +13466,10 @@
             "simulation 39": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.5336222144647336
                     ],
@@ -12773,7 +13503,11 @@
                     "factor": [
                         0.5552161111111111
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 0.7850104833512359,
                     "value": 190
                 },
@@ -12795,6 +13529,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.6124848611111111,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12802,6 +13540,10 @@
             "simulation 40": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.5757390547798082
                     ],
@@ -12835,7 +13577,11 @@
                     "factor": [
                         1.7257546527777776
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.4798252058718244,
                     "value": 190
                 },
@@ -12857,6 +13603,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.345819027777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12864,6 +13614,10 @@
             "simulation 41": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.7087162155388491
                     ],
@@ -12897,7 +13651,11 @@
                     "factor": [
                         1.8658027777777777
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.7673808843537446,
                     "value": 190
                 },
@@ -12919,6 +13677,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.672250902777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12926,6 +13688,10 @@
             "simulation 42": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.8239564822771224
                     ],
@@ -12959,7 +13725,11 @@
                     "factor": [
                         1.9140473611111113
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 0.9209603079126396,
                     "value": 190
                 },
@@ -12981,6 +13751,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.885812986111111,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -12988,6 +13762,10 @@
             "simulation 43": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         2.094468888292161
                     ],
@@ -13021,7 +13799,11 @@
                     "factor": [
                         2.3116313194444444
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.9228512012173304,
                     "value": 190
                 },
@@ -13043,6 +13825,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 2.942281736111111,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -13050,6 +13836,10 @@
             "simulation 44": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.031741578947369
                     ],
@@ -13083,7 +13873,11 @@
                     "factor": [
                         0.9370077777777778
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.2554840744718951,
                     "value": 190
                 },
@@ -13105,6 +13899,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.0204813194444444,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -13112,6 +13910,10 @@
             "simulation 45": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         1.0222290547798072
                     ],
@@ -13145,7 +13947,11 @@
                     "factor": [
                         0.8903250694444445
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.8984712549230234,
                     "value": 190
                 },
@@ -13167,6 +13973,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.6216296527777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -13174,6 +13984,10 @@
             "simulation 46": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.3007635499462946
                     ],
@@ -13207,7 +14021,11 @@
                     "factor": [
                         0.16249131944444445
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 1.1534226172574304,
                     "value": 190
                 },
@@ -13229,6 +14047,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.8795654861111112,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -13236,6 +14058,10 @@
             "simulation 47": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.21039457035445772
                     ],
@@ -13269,7 +14095,11 @@
                     "factor": [
                         0.15086402777777777
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 0.8809284353741503,
                     "value": 190
                 },
@@ -13291,6 +14121,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.6069315277777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -13298,6 +14132,10 @@
             "simulation 48": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.20553921947726475
                     ],
@@ -13331,7 +14169,11 @@
                     "factor": [
                         0.12517986111111112
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.0148014983888314,
                     "value": 190
                 },
@@ -13353,6 +14195,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 1.739811527777778,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }
@@ -13360,6 +14206,10 @@
             "simulation 49": {
                 "DishWasher": {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     "factor": [
                         0.5315413498030795
                     ],
@@ -13393,7 +14243,11 @@
                     "factor": [
                         0.4601152777777778
                     ],
+<<<<<<< Updated upstream
 =======
+=======
+
+>>>>>>> Stashed changes
                     "factor": 2.365179471894022,
                     "value": 190
                 },
@@ -18421,6 +19275,10 @@
                 },
                 "TumbleDryer": {
                     "factor": 0.7900179861111112,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
                     "value": 240
                 }

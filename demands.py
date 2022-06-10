@@ -12,6 +12,7 @@ import os
 import pickle
 <<<<<<< Updated upstream
 from joblib import Memory
+<<<<<<< Updated upstream
 =======
 >>>>>>> Stashed changes
 
@@ -38,6 +39,13 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
 
 def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_sim=None):
 >>>>>>> Stashed changes
+=======
+import defaults
+import copy 
+
+
+def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_sim = None):
+>>>>>>> Stashed changes
     '''
     Function that generates the stochastic time series for
     - The occupancy profiles
@@ -63,14 +71,18 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
     out = {'results':[],'occupancy':[],'input_data':[]}
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
     for jj in range(N):          # run the simulation N times and append the results to the list
         inputs=inputss.copy()
 =======
+=======
+>>>>>>> Stashed changes
     if factor_gain_sim is not None :
         TAAA=copy.deepcopy(factor_gain_sim)
         factor_gain_simu={}
     
+<<<<<<< Updated upstream
     for jj in range(N):    # run the simulation N times and append the results to the list
         if factor_gain_sim is not None :
             factor_gain=copy.deepcopy(TAAA)
@@ -99,6 +111,12 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
         if factor_gain_sim is not None :
             factor_gain=copy.deepcopy(TAAA)
             
+=======
+    members_test =[]
+    for jj in range(N):          # run the simulation N times and append the results to the list
+        if factor_gain_sim is not None :
+            factor_gain=copy.deepcopy(TAAA)
+>>>>>>> Stashed changes
         # People living in the dwelling, taken as input or from Strobe's list
         if members is not None:
             inputs['members'] = HouseholdMembers(members)
@@ -168,6 +186,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
         else:
             res_ramp_charge_home = pd.DataFrame()
     
+        inputs['members'] = x
         """
         Creating dataframe with the results
         """
@@ -193,6 +212,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
                 df[key] = res_ramp_charge_home[key]* 1000
             else : 
                 df[key] = 0
+<<<<<<< Updated upstream
         if factor_gain_sim is not None :
             for key in ['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower']:
 <<<<<<< Updated upstream
@@ -214,6 +234,16 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
        
                 
 >>>>>>> Stashed changes
+=======
+                
+        #  Correction factor
+        if factor_gain_sim is not None :
+            for key in ['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower']:
+
+                factor_gain[key]['factor'].append((df[key].sum()/60000)/factor_gain[key]['value'])
+        
+            factor_gain_simu['simulation {}'.format(jj)] = factor_gain
+>>>>>>> Stashed changes
         # Dataframe with the occupancy data
         occupancy = pd.DataFrame(index=index_10min)
         for i,m in enumerate(result['members'][n_scen]):
@@ -223,6 +253,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
         
         out['results'].append(df)
         out['occupancy'].append(occupancy)
+<<<<<<< Updated upstream
         out['input_data'].append(inputs)    
     if factor_gain_sim is not None :
 <<<<<<< Updated upstream
@@ -231,6 +262,12 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None, factor_gain_s
 =======
         out['factor gain'] = factor_gain_simu  
     return (out, members_test)
+>>>>>>> Stashed changes
+=======
+        out['input_data'].append(inputs) 
+        out['factor gain'] = factor_gain_simu 
+
+    return (out)
 >>>>>>> Stashed changes
 
 

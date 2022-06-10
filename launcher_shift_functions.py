@@ -56,6 +56,10 @@ def scale_timeseries(data,index):
         return dd
 
 
+<<<<<<< Updated upstream:launcher_shift_functions.py
+>>>>>>> Stashed changes:functions.py
+=======
+
 >>>>>>> Stashed changes:functions.py
 def load_climate_data(datapath = __location__ + '/strobe/Data'):
     '''
@@ -223,7 +227,10 @@ def AdmTimeWinShift(app,admtimewin,probshift):
     return app_n,enshift
 
 <<<<<<< Updated upstream:launcher_shift_functions.py
+<<<<<<< Updated upstream:launcher_shift_functions.py
 =======
+=======
+>>>>>>> Stashed changes:functions.py
 
 def shift_appliance(app,admtimewin,probshift,max_shift=None,threshold_window=0,verbose=False):
     '''
@@ -458,9 +465,12 @@ def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
     return out
 
 <<<<<<< Updated upstream:launcher_shift_functions.py
+<<<<<<< Updated upstream:launcher_shift_functions.py
 @memory.cache
 def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,heatseas_end):
 =======
+=======
+>>>>>>> Stashed changes:functions.py
 
 def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,heatseas_end,ts):
 >>>>>>> Stashed changes:functions.py

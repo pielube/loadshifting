@@ -9,8 +9,13 @@ Created on %(date)s
 
 import json
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
 import os
+>>>>>>> Stashed changes
+=======
+import os
+
 >>>>>>> Stashed changes
 import pandas as pd
 import numpy as np
@@ -19,6 +24,7 @@ from datetime import datetime
 from datetime import timedelta 
 from demands import compute_demand
 from plots import make_demand_plot
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 
 
@@ -30,6 +36,11 @@ def appli_consumption (cases,housestypes,N,wanted_case,correction = False):
     
 =======
 import copy
+=======
+
+
+
+>>>>>>> Stashed changes
 
 
 #Consuption of appliance
@@ -37,6 +48,10 @@ def appli_consumption (cases,housestypes,N,wanted_case,factor_corr = None,corr =
     
     app_cons={}
     correction = {}
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
     for case in cases :
         
@@ -44,15 +59,21 @@ def appli_consumption (cases,housestypes,N,wanted_case,factor_corr = None,corr =
             print(case)
             #Simulation for each type of accomodation
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
             out = compute_demand(housestypes[cases[case]['house']],N,factor_gain_sim=factor_gain_sim)
             results = out['results']
             factor_gain = out['factor gain']
             
+<<<<<<< Updated upstream
 =======
             out,members = compute_demand(housestypes[cases[case]['house']],N,factor_gain_sim=factor_gain_sim)
             results = out['results']
             factor_gain = out['factor gain']
             
+=======
+>>>>>>> Stashed changes
             #Correction
             if corr == True :
                 dict_corr = {}
@@ -67,7 +88,11 @@ def appli_consumption (cases,housestypes,N,wanted_case,factor_corr = None,corr =
                 for appli in appliances : 
                     dict_corr [appli] = sum(dict_corr[appli])/len(dict_corr[appli])
                 correction [case] = dict_corr
+<<<<<<< Updated upstream
                 
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
             #Consumption of each appliance by year
             app_cons_home={}
@@ -76,6 +101,9 @@ def appli_consumption (cases,housestypes,N,wanted_case,factor_corr = None,corr =
                 
                 sim_index = {}
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
                 if correction == True :
                     dict_corr = {}
                     for simulation in factor_gain :
@@ -85,6 +113,7 @@ def appli_consumption (cases,housestypes,N,wanted_case,factor_corr = None,corr =
                                 dict_corr[appli].append(sim_factor[appli]['factor'][0])
                             else :
                                 dict_corr[appli] = sim_factor[appli]['factor']
+<<<<<<< Updated upstream
                 for appli in columns :
                     if correction == False :
                         sim_index['Annual consumption by '+appli] = results[k][appli].sum()/60000
@@ -102,6 +131,9 @@ def appli_consumption (cases,housestypes,N,wanted_case,factor_corr = None,corr =
                 app_cons_home['simulation {}'.format(k)] = sim_index
               
 =======
+=======
+            
+>>>>>>> Stashed changes
                 
                 for appli in columns :
                     sim_index['Annual consumption by '+appli] = results[k][appli].sum()/60000
@@ -111,6 +143,10 @@ def appli_consumption (cases,housestypes,N,wanted_case,factor_corr = None,corr =
                 
                 app_cons_home['simulation {}'.format(k)] = sim_index
             app_cons_home['members'] = members 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
 >>>>>>> Stashed changes
             app_cons[case] = app_cons_home
             app_cons[case]['factor gain'] = factor_gain
@@ -119,12 +155,21 @@ def appli_consumption (cases,housestypes,N,wanted_case,factor_corr = None,corr =
                 
             print(case + ' is done')
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
     return(app_cons,out)
 
 
 #data processing verification
+<<<<<<< Updated upstream
 =======
             
+=======
+
+    factor_mean = {}     
+>>>>>>> Stashed changes
     if corr == True :
         factor_mean = {}
         H4f = 0.301
@@ -155,14 +200,20 @@ def appli_consumption (cases,housestypes,N,wanted_case,factor_corr = None,corr =
     return(app_cons,out,factor_mean,correction)
 
 #Récupération des fichiers nécessaires et définition des entrées
+<<<<<<< Updated upstream
 >>>>>>> Stashed changes
 N=50
+=======
+
+N=100
+>>>>>>> Stashed changes
 with open('inputs/cases.json') as json_file : 
     cases = json.load(json_file)
 with open('inputs/housetypes.json') as json_file : 
     housetypes = json.load(json_file)
 with open('inputs/factor_gain.json') as json_file : 
     factor_gain_sim = json.load(json_file)
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
     
 wanted_case = ['case59','case1','case77']
@@ -175,17 +226,38 @@ with open(filename, 'w',encoding='utf-8') as f:
 
 with open('inputs/factor_mean.json') as json_file :
     fm = json.load(json_file)
+=======
+
+wanted_case = ['case59','case1','case77']
+app_cons,out,fm,correction = appli_consumption (cases,housetypes,N,wanted_case)
+
+filename = 'inputs/app_cons_members.json'
+with open(filename, 'w',encoding='utf-8') as f:
+    json.dump(app_cons, f,ensure_ascii=False, indent=4)
+# filename ='\inputs/factor_mean.json'
+# with open(filename, 'w',encoding='utf-8') as f:
+#     json.dump(fm, f,ensure_ascii=False, indent=4)
+# filename = 'inputs/correction.json'
+# with open(filename, 'w',encoding='utf-8') as f:
+#     json.dump(correction, f,ensure_ascii=False, indent=4)
+
+>>>>>>> Stashed changes
     
 wanted_case = ['case1','case59','case77']
 
 #Simulation et sortie en dictionnaire
 app_cons,out, factor_mean,correction = appli_consumption (cases,housetypes,N,wanted_case)
 
+<<<<<<< Updated upstream
 filename = 'inputs/app_cons_members.json'
+=======
+filename = 'inputs/app_cons_members_correction.json'
+>>>>>>> Stashed changes
 with open(filename, 'w',encoding='utf-8') as f:
     json.dump(app_cons, f,ensure_ascii=False, indent=4)
 
 
+<<<<<<< Updated upstream
 # filename ='inputs/corr_factor.json'
 # with open(filename, 'w',encoding='utf-8') as f:
 #     json.dump(factor_mean, f,ensure_ascii=False, indent=4)
@@ -193,6 +265,15 @@ with open(filename, 'w',encoding='utf-8') as f:
 # filename ='inputs/corr_factor_global.json'
 # with open(filename, 'w',encoding='utf-8') as f:
 #     json.dump(correction, f,ensure_ascii=False, indent=4)
+=======
+filename ='inputs/corr_factor.json'
+with open(filename, 'w',encoding='utf-8') as f:
+    json.dump(factor_mean, f,ensure_ascii=False, indent=4)
+    
+filename ='inputs/corr_factor_global.json'
+with open(filename, 'w',encoding='utf-8') as f:
+    json.dump(correction, f,ensure_ascii=False, indent=4)
+>>>>>>> Stashed changes
 
     
 
@@ -279,4 +360,7 @@ with open(filename, 'w',encoding='utf-8') as f:
 #         return(app_cons,out,factor_mean1)
 #     else :
 #         return (app_cons, out, factor_mean)
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
