@@ -256,7 +256,7 @@ def save_case(n_clicks,config,scenario_name):
     try: 
         conf = json.loads(config)
         scenario_name = 'Custom - ' + scenario_name
-        with open('scenarios/'+scenario_name + '.json', 'w') as outfile:
+        with open(__location__ + '/scenarios/'+scenario_name + '.json', 'w') as outfile:
             json.dump(conf, outfile)
         out= 'Scenario successfully saved in ' + 'scenarios/'+scenario_name + '.json'
     except Exception as e:
