@@ -12,13 +12,15 @@ from strobe.Data.Households import households
 from RC_BuildingSimulator import Zone
 
 from economics import EconomicAnalysis,EconomicAnalysisRefPV
+import defaults
+
 
 import os
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 from joblib import Memory
-memory = Memory(__location__ + '/cache/', verbose=1)
+memory = Memory(__location__ + '/cache/', verbose=defaults.verbose)
 
 
 # List of functions this .py file should contain

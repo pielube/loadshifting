@@ -15,7 +15,7 @@ import defaults
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-memory = Memory(__location__ + '/cache/', verbose=1)
+memory = Memory(__location__ + '/cache/', verbose=defaults.verbose)
 
 @memory.cache
 def compute_demand(inputs,N,members= None,thermal_parameters=None):

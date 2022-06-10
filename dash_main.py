@@ -240,7 +240,6 @@ def display_page(pathname):
     if pathname=='/editor/' or pathname=='/editor':
         return editor_page
     else:
-        print('to main page')
         return main_page                 
 
 
@@ -260,24 +259,11 @@ def save_case(n_clicks,config,scenario_name):
         with open('scenarios/'+scenario_name + '.json', 'w') as outfile:
             json.dump(conf, outfile)
         out= 'Scenario successfully saved in ' + 'scenarios/'+scenario_name + '.json'
-    except:
-        out= 'Invalid configuration format'
+    except Exception as e:
+        out= 'Invalid configuration format. Error Message: ' + e
         print(out)    
         
     return out   #,[ {'label': 'Non prédéfini', 'value': 'default'} ] + [ {'label':x, 'value': x} for x in load_cases()]
-
-# @callback(
-#     Output("text_inputs_changed", "children"),
-#     [Input("save_config", "n_clicks")],
-#     [State("scenario_name", "value")]
-# )
-# def toggle_household_collqapse(n_clicks, is_open):
-#     print('trefezfezfez')
-#     if n_clicks:
-#         return 'bb'
-#     return 'aa'                     
-                 
-
 
                      
                      
@@ -390,7 +376,6 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
     #house type:
     if dropdown_house != conf['config']['house']:
         conf['config']['house'] = dropdown_house
-    print(dropdown_house)
     
     #wet appliances:
     apps = {'td':'TumbleDryer','wm':'WashingMachine','dw':'DishWasher'}
@@ -540,7 +525,8 @@ def display_graph(n_clicks,week,
 
     results,demand_15min,demand_shifted,pflows = shift_load(conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N'])
     
-    print('Main results: \n' + json.dumps(results, indent=4))
+    if defaults.verbose > 0:
+        print('Main results: \n' + json.dumps(results, indent=4))
     
     if 'pv' in pflows and not (pflows['pv']==0).all():
         pv = pflows['pv']

@@ -23,7 +23,7 @@ __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 from joblib import Memory
-memory = Memory(__location__ + '/cache/', verbose=1)
+memory = Memory(__location__ + '/cache/', verbose=defaults.verbose)
 
 def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',cf_econ='econ_param.json',cf_tariff = 'tariffs.json', cf_house='housetypes.json'):
     '''
@@ -64,10 +64,11 @@ def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',c
     # Parameters for the dwelling
     with open(inputhpath + cf_house,'r') as f:
         housetypes = json.load(f)    
-        
-    print('###########################')
-    print('  Loading config: '+ namecase )
-    print('###########################')
+    
+    if defaults.verbose > 0:
+        print('###########################')
+        print('  Loading config: '+ namecase )
+        print('###########################')
     
     out['config'] = cases[namecase]
     out['econ_param'] = econ_cases[namecase]
@@ -186,7 +187,8 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     
     # Inputs relative to the most representative curve:
     inputs = demands['input_data'][idx]
-    print('Most representative curve index: {:}'.format(idx))
+    if defaults.verbose > 0:
+        print('Most representative curve index: {:}'.format(idx))
     
     """
     4) Demand
@@ -289,7 +291,8 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     
     if WetAppBool:
         
-        print('--- Shifting wet appliances ---')
+        if defaults.verbose > 0:
+            print('--- Shifting wet appliances ---')
         
         # Wet app demands to be shifted, 1 min timestep
         demshift = demands['results'][idx][WetAppShift][:-1] # W
@@ -335,7 +338,8 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
                 threshold_window = 0.9
         
             # Calling function to shift the app
-            print("---"+str(app)+"---")
+            if defaults.verbose > 0:
+                print("---"+str(app)+"---")
             app_n,ncyc,ncycshift,enshift = shift_appliance(demands['results'][idx][app][:-1],admtimewin,defaults.probshift,max_shift=defaults.max_shift*60,threshold_window=threshold_window,verbose=True)
             
             # Resizing shifted array
@@ -355,8 +359,9 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     
     
     if DHWBool:
-    
-        print('--- Shifting domestic hot water ---')
+        
+        if defaults.verbose > 0:
+            print('--- Shifting domestic hot water ---')
     
         # demand of domestic hot water (to be used with battery equivalent approach)
         demand_dhw = demand_15min['DomesticHotWater'] # kW
@@ -404,8 +409,10 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
         # check on shifting
         conspre  = np.sum(demand_15min['DomesticHotWater'])/4. # kWh
         conspost = np.sum(demand_shifted['DomesticHotWater'])/4. # kWh
-        print("Original consumption: {:.2f} kWh".format(conspre))
-        print("Consumption after shifting (check): {:.2f} kWh".format(conspost))
+        
+        if defaults.verbose > 0:
+            print("Original consumption: {:.2f} kWh".format(conspre))
+            print("Consumption after shifting (check): {:.2f} kWh".format(conspost))
             
     """
     8C) Load shifting - House heating
@@ -423,7 +430,8 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     
     if HeatingBool:
         
-        print('--- Shifting house heating ---')
+        if defaults.verbose > 0:
+            print('--- Shifting house heating ---')
         
         temp,irr = load_climate_data()
         temp = np.delete(temp,-1) # °C
@@ -513,9 +521,10 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
         HPcons_pre  = np.sum(demand_15min['HeatPumpPower'])/4. # kWh
         HPcons_post = np.sum(demand_shifted['HeatPumpPower'])/4. # kWh
         HPconsincr = (HPcons_post-HPcons_pre)/HPcons_pre*100 # %
-        print("Original consumption: {:.2f} kWh".format(HPcons_pre))
-        print("Consumption after shifting: {:.2f} kWh".format(HPcons_post))
-        print("Consumption increase: {:.2f}%".format(HPconsincr))
+        if defaults.verbose > 0:
+            print("Original consumption: {:.2f} kWh".format(HPcons_pre))
+            print("Consumption after shifting: {:.2f} kWh".format(HPcons_post))
+            print("Consumption increase: {:.2f}%".format(HPconsincr))
         
         if PVBool:        
             # Updating residual PV
@@ -682,14 +691,17 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     
     if BattBool:
         
-        print('--- Shifting resulting demand with battery ---')
+        if defaults.verbose > 0:
+            print('--- Shifting resulting demand with battery ---')
          
         # Battery applied to demand profile shifted by all other shifting techs
         param_tech_batt_pspy = pvbatt_param['battery']
         param_tech_batt_pspy['timestep']=.25
         
         dispatch_bat = dispatch_max_sc(pflows.pv,pflows.demand_shifted_nobatt,param_tech_batt_pspy,return_series=False)
-        print_analysis(pflows.pv,pflows.demand_shifted_nobatt,param_tech_batt_pspy, dispatch_bat)
+        
+        if defaults.verbose > 0:
+            print_analysis(pflows.pv,pflows.demand_shifted_nobatt,param_tech_batt_pspy, dispatch_bat)
         
         # The charging of the battery is considered as an additional load. It is the difference between the original PV genration and the generation from prosumpy
         demand_shifted['BatteryConsumption'] = np.maximum(0,pflows.pv - dispatch_bat['inv2load'] - dispatch_bat['inv2grid'])

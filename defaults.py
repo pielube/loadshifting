@@ -51,3 +51,6 @@ probshift = 1
 threshold_window = 0.5
 # Maximum time over which the timing of an appliance cycle can be shifted (in hours)
 max_shift = 24
+
+# Verbosity:
+verbose = 0
