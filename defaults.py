@@ -33,7 +33,7 @@ heatseas_end = 151
 fracmaxP = 0.8
 
 #PV 
-pv_power = 4000
+pv_power = 4.5  #kWp
 pv_lim = 12  # kWp max for home installations
 inv_lim = 10 # kVA max for home installations
 powerfactor = 0.9 # kW/kVA to tranform inverter limit to kW
@@ -53,4 +53,4 @@ threshold_window = 0.5
 max_shift = 24
 
 # Verbosity:
-verbose = 0
+verbose = 1

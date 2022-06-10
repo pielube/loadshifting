@@ -105,7 +105,7 @@ pv_components = [
                     value=['pv_in'],
                     labelStyle={'display': 'block'}
                 ),      
-    html.Div(id='text_pv_power', children='Puissance crète (W):'),
+    html.Div(id='text_pv_power', children='Puissance crète (kWp):'),
     dcc.Checklist(
                     id = 'yesno_pv',
                     options=[
