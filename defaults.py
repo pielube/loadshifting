@@ -53,4 +53,4 @@ threshold_window = 0.5
 max_shift = 24
 
 # Verbosity:
-verbose = 1
+verbose = 0
