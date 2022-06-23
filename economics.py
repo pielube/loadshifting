@@ -194,23 +194,23 @@ def EconomicAnalysis(E,econ_param,yenprices,ygridfees,timestep,demand_ref):
     NPVcurve[0] = CashFlowsAct[0]
     for i in range(len(CashFlows)-1):
         NPVcurve[i+1] = NPVcurve[i]+CashFlowsAct[i+1]
+        
+    # import matplotlib.pyplot as plt
+    # plt.plot(NPVcurve)
 
     # Final NPV        
     NPV = npf.npv(interest,CashFlows)
+    NPV = 0 if abs(NPV)<0.01 else NPV
     out['NPV'] = NPV
 
-    # Pay Back Period    
-    zerocross = np.where(np.diff(np.sign(NPVcurve)))[0]
-    if len(zerocross) > 0: 
-        x1 = zerocross[0]
-        x2 = zerocross[0]+1
-        xs = [x1,x2]
-        y1 = NPVcurve[zerocross[0]]
-        y2 = NPVcurve[zerocross[0]+1]
-        ys = [y1,y2]
-        PBP = np.interp(0,ys,xs)
+    # Pay Back Period           
+    idx1 = np.where(NPVcurve[:-1] * NPVcurve[1:] < 0 )[0] +1
+    if len(idx1) > 0:
+        idx1 = idx1[0]
+        fractional = (0-NPVcurve[idx1-1])/CashFlowsAct[idx1]
+        PBP = idx1+fractional
     else:
-        PBP = None  
+        PBP = None
     out['PBP'] = PBP
     
     # Internal Rate of Return
@@ -470,20 +470,17 @@ def EconomicAnalysisRefPV(E,econ_param,yenprices,ygridfees,timestep,E_ref):
 
     # Final NPV        
     NPV = npf.npv(interest,CashFlows)
+    NPV = 0 if abs(NPV)<0.01 else NPV
     out['NPV'] = NPV
 
-    # Pay Back Period    
-    zerocross = np.where(np.diff(np.sign(NPVcurve)))[0]
-    if len(zerocross) > 0: 
-        x1 = zerocross[0]
-        x2 = zerocross[0]+1
-        xs = [x1,x2]
-        y1 = NPVcurve[zerocross[0]]
-        y2 = NPVcurve[zerocross[0]+1]
-        ys = [y1,y2]
-        PBP = np.interp(0,ys,xs)
+    # Pay Back Period           
+    idx1 = np.where(NPVcurve[:-1] * NPVcurve[1:] < 0 )[0] +1
+    if len(idx1) > 0:
+        idx1 = idx1[0]
+        fractional = (0-NPVcurve[idx1-1])/CashFlowsAct[idx1]
+        PBP = idx1+fractional
     else:
-        PBP = None  
+        PBP = None
     out['PBP'] = PBP
     
     # Internal Rate of Return
