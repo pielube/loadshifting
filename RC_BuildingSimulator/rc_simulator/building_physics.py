@@ -109,7 +109,8 @@ class Zone(object):
                  cooling_supply_system=supply_system.HeatPumpAir,
                  heating_emission_system=emission_system.NewRadiators,
                  cooling_emission_system=emission_system.AirConditioning,
-                 max_heating_power=2000.):
+                 max_heating_power=2000.,
+                 ts=1.):
 
         # Zone Dimensions
         self.window_area = window_area  # [m2] Window Area
@@ -137,8 +138,7 @@ class Zone(object):
         # temperature adjustment factor taking ventilation and infiltration
         # [ISO: E -27]
         b_ek = (1 - (ach_vent / (ach_tot)) * ventilation_efficiency)
-        self.h_ve_adj = 1200 * b_ek * self.room_vol * \
-            (ach_tot / 60) /60  # Conductance through ventilation [W/M]
+        self.h_ve_adj = 1200 * b_ek * self.room_vol * (ach_tot/3600) # Conductance through ventilation [W/M]
         # transmittance from the internal air to the thermal mass of the
         # zone
         self.h_tr_ms = 9.1 * self.mass_area
@@ -160,6 +160,9 @@ class Zone(object):
         self.cooling_supply_system = cooling_supply_system
         self.heating_emission_system = heating_emission_system
         self.cooling_emission_system = cooling_emission_system
+        
+        # Timestep
+        self.ts = ts # h
 
     @property
     def h_tr_1(self):
@@ -498,8 +501,8 @@ class Zone(object):
         # (C.4) in [C.3 ISO 13790]
         """
 
-        self.t_m_next = ((t_m_prev * ((self.c_m / 60.0) - 0.5 * (self.h_tr_3 + self.h_tr_em))) +
-                         self.phi_m_tot) / ((self.c_m / 60.0) + 0.5 * (self.h_tr_3 + self.h_tr_em))
+        self.t_m_next = ((t_m_prev * ((self.c_m / (3600.0*self.ts)) - 0.5 * (self.h_tr_3 + self.h_tr_em))) +
+                         self.phi_m_tot) / ((self.c_m / (3600.0*self.ts)) + 0.5 * (self.h_tr_3 + self.h_tr_em))
 
     def calc_phi_m_tot(self, t_out):
         """
