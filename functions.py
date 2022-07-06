@@ -93,7 +93,7 @@ def ProcebarExtractor(buildtype,wellinsulated):
     # Getting random (weighted) house thermal parameters
     # Getting corresponding reference geometry
                 
-    filename1 = __location__ + '/inputs/Building Stock arboresence_SG_130118_EME.xls'
+    filename1 = __location__ + '/inputs/Building_Stock_arboresence_SG_130118_EME.xls'
     sheets1 = ['Freestanding','Semi-detached','Terraced','Apartment']
     data1 = pd.read_excel (filename1,sheet_name=sheets1,header=0)
         
