@@ -70,6 +70,12 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         temp, irr = load_climate_data()
         index1min  = pd.date_range(start='2015-01-01',end='2016-01-01 00:00:00',freq='T')
         index10min = pd.date_range(start='2015-01-01',end='2016-01-01 00:00:00',freq='10T')
+        index15min = pd.date_range(start='2015-01-01',end='2016-01-01 00:00:00',freq='15T')
+        
+        temp1min = pd.Series(data=temp,index=index1min)
+        temp15min = temp1min.resample('15Min').mean()
+        irr1min = pd.Series(data=irr,index=index1min)
+        irr15min = irr1min.resample('15Min').mean()
         
         ### Strobe ###
         
@@ -82,14 +88,17 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         occupancy_10min = (occ==1).sum(axis=0) # when occupancy==1, the person is in the house and not sleeping
         occupancy_10min = (occupancy_10min>0)  # if there is at least one person awake in the house
         occupancy_10min = pd.Series(data=occupancy_10min, index = index10min)
-        occupancy_1min = occupancy_10min.reindex(index1min,method='nearest')
+        occupancy_15min = occupancy_10min.reindex(index15min,method='nearest')
         Qintgains = result['InternalGains'][n_scen]
-        n1min = len(result['InternalGains'][n_scen])
+        Qintgains = pd.Series(data=Qintgains,index=index1min)
+        Qintgains = Qintgains.resample('15Min').mean() 
+        n1min  = len(index1min)
+        n15min = len(index15min)
         
         ### House heating ###
         
-        Tset = np.full(n1min,defaults.T_sp_low) + np.full(n1min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_1min
-        ts = 1/60
+        Tset = np.full(n15min,defaults.T_sp_low) + np.full(n15min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_15min
+        ts15min = 0.25
         
         # Heat pump sizing
         if inputs['HP']['HeatPumpThermalPower'] is not None:
@@ -97,16 +106,23 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         else:
             QheatHP = HPSizing(inputs,defaults.fracmaxP) # W
             
-        Qheat,Tin_heat = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,defaults.heatseas_st,defaults.heatseas_end,ts)
+        res_househeat = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp15min,irr15min,n15min,defaults.heatseas_st,defaults.heatseas_end,ts15min)
+        Qheat = res_househeat['Qheat']
         
-        Eheat = np.zeros((1,n1min)) 
-        for i in range(n1min):
+        Eheat = np.zeros(n15min)
+        Eheat_final = np.zeros((1,n1min))
+        
+        for i in range(n15min):
             COP = COP_Tamb(temp[i])
-            Eheat[0,i] = Qheat[i]/COP # W
+            Eheat_final[0,i] = Qheat[i]/COP # W
         
-        # result['HeatPumpPower2'][n_scen] = Eheat
-        result['HeatPumpPower'] = Eheat
+        Eheat = pd.Series(data=Eheat,index=index15min)
+        Eheat = Eheat.resample('1Min').ffill()
+        Eheat = Eheat.reindex(index1min).fillna(method='ffill')
+        Eheat = Eheat.to_numpy()
+        Eheat_final[0,:] = Eheat
         
+        result['HeatPumpPower'] = Eheat_final
         
         ### RAMP-mobility ###
         

@@ -497,7 +497,9 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
             Tset[idx_tincrease] += defaults.Tincrease
             
         
-        Qshift,Tin_shift = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,defaults.heatseas_st,defaults.heatseas_end,ts)
+        res_househeat = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,defaults.heatseas_st,defaults.heatseas_end,ts)
+        Qshift = res_househeat['Qheat']
+        Tin_shift = res_househeat['Tinside']
         
         # T analysis
         Twhenon    = Tin_shift*occupancy_1min.values # °C
