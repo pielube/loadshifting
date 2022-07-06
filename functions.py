@@ -141,37 +141,35 @@ def ProcebarExtractor(buildtype,wellinsulated):
     df5 = df5.drop(np.nan,axis=1)
     
     # Obtaining the parameters needed by the RC model
-    # Single circuit
     
     heatedareas1 = ['Life','Night','Kitchen','Bathroom']
     heatedareas2 = ['Alife','Anight','Akitchen','Abathroom']
     
-    Awindows  = df5[heatedareas1].loc['Awind'].sum() 
-    Aglazed   = Awindows
-    Awalls    = df5[heatedareas1].loc['Awall'].sum()
-    Aroof     = df5[heatedareas1].loc['Aroof'].sum()
-    Aopaque   = Awalls + Aroof
-    Afloor    = df5[heatedareas1].loc['Afloor'].sum()
-    Ainternal = df5[heatedareas1].loc['Aint'].sum()
+    Awindows  = df5[heatedareas1].loc['Awind'].sum()  # m2
+    Awalls    = df5[heatedareas1].loc['Awall'].sum()  # m2
+    Aroof     = df5[heatedareas1].loc['Aroof'].sum()  # m2
+    Afloor    = df5[heatedareas1].loc['Afloor'].sum() # m2
+    Ainternal = df5[heatedareas1].loc['Aint'].sum()   # m2
     
-    volume = df4['Volume [m3]'].loc[heatedareas2].sum()
+    volume = df4['Volume [m3]'].loc[heatedareas2].sum() # m3
     
-    Atotal = Aglazed+Aopaque+Afloor+Ainternal
+    Atotal = max((Awindows + Awalls + Aroof + Afloor + Ainternal),Afloor*4.5) # m2  Afloor*4.5 from ISO13790 under eq. 9
     
-    Uwalls = df.iloc[rowind]['U_Wall']
-    Uwindows = df.iloc[rowind]['U_Window']
+    Uwalls = df.iloc[rowind]['U_Wall']     # W/(m2K)
+    Uwindows = df.iloc[rowind]['U_Window'] # W/(m2K)
     
+    Ctot = df.iloc[rowind]['C_Roof']   *Aroof  + \
+           df.iloc[rowind]['C_Wall']   *Awalls + \
+           df.iloc[rowind]['C_Floor']  *Afloor + \
+           df.iloc[rowind]['C_Window'] *Awindows # J/K
+           
     ACH_vent = 0.6 # Air changes per hour through ventilation [Air Changes Per Hour]
     ACH_infl = 0.6 # Air changes per hour through infiltration [Air Changes Per Hour]
     VentEff = 0. # The efficiency of the heat recovery system for ventilation. Set to 0 if there is no heat recovery []
     
-    Ctot = df.iloc[rowind]['C_Roof'] + df.iloc[rowind]['C_Wall'] + \
-            df.iloc[rowind]['C_Floor'] + df.iloc[rowind]['C_Window'] + \
-            df.iloc[rowind]['C_Door']
-    
     outputs = {
         'Aglazed': Awindows,
-        'Aopaque': Aopaque,
+        'Aopaque': Awalls,
         'Afloor': Afloor,
         'volume': volume,
         'Atotal': Atotal,
@@ -663,7 +661,7 @@ def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
     return out
 
 @memory.cache
-def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,heatseas_end,ts):
+def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nsteps,heatseas_st,heatseas_end,ts):
 
     # Rough estimation of solar gains based on data from Crest
     # Could be improved
@@ -692,15 +690,16 @@ def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,hea
                 ventilation_efficiency=inputs['HP']['VentEff'],
                 thermal_capacitance=inputs['HP']['Ctot'],
                 t_set_heating=Tset[0],
-                max_heating_power=QheatHP)
+                max_heating_power=QheatHP,
+                ts=ts)
             
-    Qheat = np.zeros(nminutes)
-    Tinside = np.zeros(nminutes)
-    Tm = np.zeros(nminutes)
+    Qheat = np.zeros(nsteps)
+    Tinside = np.zeros(nsteps)
+    Tm = np.zeros(nsteps)
 
     d1 = int(1/ts)*24*heatseas_end-1
     d2 = int(1/ts)*24*heatseas_st-1
-    concatenated = chain(range(1,d1), range(d2,nminutes))
+    concatenated = chain(range(1,d1), range(d2,nsteps))
 
     Tm[0] = 15.
     House.t_set_heating = Tset[0]    
@@ -721,7 +720,10 @@ def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nminutes,heatseas_st,hea
         Tinside[i] = House.t_air
         Tm[i] = House.t_m
                        
-    return Qheat, Tinside
+    
+    out = {'Qheat': Qheat,'Tinside':Tinside,'Tm':Tm}
+    
+    return out
 
 
 def EVshift_PV(pv,arrive,leave,starts,ends,idx_athomewindows,LOC_min,LOC_max,param,return_series=False):
