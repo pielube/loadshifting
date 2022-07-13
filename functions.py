@@ -569,29 +569,34 @@ def HPSizing(inputs,fracmaxP):
     if inputs['HP']['HeatPumpThermalPower'] == None:
         # Heat pump sizing
         # External T = -10°C, internal T = 21°C
-        House = Zone(window_area=inputs['HP']['Aglazed'],
-                     walls_area=inputs['HP']['Aopaque'],
-                     floor_area=inputs['HP']['Afloor'],
-                     room_vol=inputs['HP']['volume'],
-                     total_internal_area=inputs['HP']['Atotal'],
-                     u_walls=inputs['HP']['Uwalls'],
-                     u_windows=inputs['HP']['Uwindows'],
-                     ach_vent=inputs['HP']['ACH_vent'],
-                     ach_infl=inputs['HP']['ACH_infl'],
-                     ventilation_efficiency=inputs['HP']['VentEff'],
-                     thermal_capacitance=inputs['HP']['Ctot'],
-                     t_set_heating=21.,
-                     max_heating_power=float('inf'))
+
+        # Walls
+        walls_area=inputs['HP']['Aopaque']
+        u_walls=inputs['HP']['Uwalls']
+        # Windows
+        window_area=inputs['HP']['Aglazed']
+        u_windows=inputs['HP']['Uwindows']
+        # Total UA given by walls and windows
+        UA = u_walls*walls_area + u_windows*window_area
+        # Air changes
+        room_vol=inputs['HP']['volume']
+        ach_infl=inputs['HP']['ACH_infl']
+        ach_vent=inputs['HP']['ACH_vent']
+        ach_tot = ach_infl + ach_vent
+        ventilation_efficiency=inputs['HP']['VentEff']
+        b_ek = (1 - (ach_vent / (ach_tot)) * ventilation_efficiency)
+        # Static heat demand in sizing conditions
+        QheatHP = UA*(21-(-10)) + 1200*b_ek*room_vol*(ach_tot/3600)*(21-(-10))
+        # Fraction of heat demand to be considered for sizing
+        QheatHP = QheatHP*fracmaxP
         
-        Tm = (21.-(-10.))/2
-        House.solve_energy(0.,0.,-10.,Tm)
-        QheatHP = House.heating_demand*fracmaxP
-   
     else:
         # Heat pump size given as an input
         QheatHP = inputs['HP']['HeatPumpThermalPower']
-    
+        
     return QheatHP
+
+
 
 def COP_Tamb(Temp):
     COP = 0.001*Temp**2 + 0.0471*Temp + 2.1259
