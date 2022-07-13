@@ -567,7 +567,7 @@ def shift_appliance(app,admtimewin,probshift,max_shift=None,threshold_window=0,v
 def HPSizing(inputs,fracmaxP):
 
     if inputs['HP']['HeatPumpThermalPower'] == None:
-        # Heat pump sizing
+        # Heat pump sizing (pg. 24 Procebar report)
         # External T = -10°C, internal T = 21°C
 
         # Walls
