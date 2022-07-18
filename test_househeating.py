@@ -40,21 +40,22 @@ config,pvbatt_param,econ_param,tariffs,housetype,N = conf['config'],conf['pvbatt
 
 # housetype['HP']['HeatPumpThermalPower'] = 6000.
 
-# buildtype='Freestanding'
+# buildtype='Terraced'
 # wellinsulated = True
 # procebinp = ProcebarExtractor(buildtype,wellinsulated)
 
-procebinp={ 'ACH_infl': 0.5,        #forcing thermal parameters
-  'ACH_vent': 0.0,
+procebinp={'Aglazed': 46.489999999999995, # forcing thermal parameters
+  'Aopaque': 92.02000000000001,
   'Afloor': 131.7,
-  'Aglazed': 46.5,
-  'Aopaque': 92.2,
-  'Atotal': 270.2,
-  'Ctot': 16833573.,
-  'Uwalls': 0.5,
-  'Uwindows': 2.5,
+  'volume': 375.34499999999997,
+  'Atotal': 592.65,
+  'Uwalls': 0.48,
+  'Uwindows': 2.75,
+  'ACH_vent': 0.6,
+  'ACH_infl': 0.6,
   'VentEff': 0.0,
-  'volume': 375.0}
+  'Ctot': 16698806.413587457,
+  'Uavg': 1.0801380407830945}
 
 members = ['FTE','FTE','U12']       # forcing members
 out = compute_demand(housetype,N,members= members,thermal_parameters=procebinp)
@@ -68,17 +69,18 @@ occupancy_60min = occupancy_10min.reindex(index60min,method='nearest')
 """
 Recompute thermal demand
 """
-procebinp={ 'ACH_infl': 0.5,        #forcing thermal parameters
-  'ACH_vent': 0.0,
+procebinp={'Aglazed': 46.489999999999995,  # forcing thermal parameters
+  'Aopaque': 92.02000000000001,
   'Afloor': 131.7,
-  'Aglazed': 46.5,
-  'Aopaque': 92.2,
-  'Atotal': 270.2,
-  'Ctot': 16833573.,
-  'Uwalls': 0.5,
-  'Uwindows': 2.5,
+  'volume': 375.34499999999997,
+  'Atotal': 592.65,
+  'Uwalls': 0.48,
+  'Uwindows': 2.75,
+  'ACH_vent': 0.6,
+  'ACH_infl': 0.6,
   'VentEff': 0.0,
-  'volume': 375.0}
+  'Ctot': 16698806.413587457,
+  'Uavg': 1.0801380407830945}
 
 housetype['HP'] = {**housetype['HP'],**procebinp}
 
@@ -87,6 +89,7 @@ Tset_ref = np.full(n15min,defaults.T_sp_low) + np.full(n15min,defaults.T_sp_occ-
 housetype['HP']['HeatPumpThermalPower'] = None
 fracmaxP = 0.8 #defaults.fracmaxP 
 QheatHP = HPSizing(housetype,fracmaxP)
+
 
 # QheatHP = 8000.
 # housetype['HP']['HeatPumpThermalPower'] = QheatHP
@@ -356,6 +359,50 @@ Check on changing timestep
 
 # ax.set_ylim(0,10000)
 # ax1.set_ylim(0,21)
+
+
+"""
+Comparison between different COP functions
+"""
+
+# def COP_Tamb(Temp):
+#     COP = 0.001*Temp**2 + 0.0471*Temp + 2.1259
+#     return COP
+
+# # # 15 < deltaT < 60
+# # direct air heating: 25–35 °C
+# # underfloor heating: 30–45 °C
+# # large-area radiators: 45–60 °C
+# # conventional radiators: 60–75 °C
+
+# def COP_deltaT(deltaT):
+#     COP = 6.81 - 0.121*deltaT + 0.000630*deltaT**2
+#     return COP
+
+# def COP_Essam(COPn,deltaTessam):
+#     c0=1.01283
+#     c1=-9.6421
+#     c2=65.2973
+#     c3=359.06
+#     COPfl = COPn/(c0 + c1*deltaTessam+c2*deltaTessam**2+c3*deltaTessam**3)
+#     return COPfl
+
+
+# Tout = np.array([-5,0,5,10,15])
+# Tw = 45.
+# Tout_ref = 7.
+# Tw_ref = 35.
+
+# for i in Tout:
+#     COP1 = COP_Tamb(i)
+#     COP2 = COP_deltaT(Tw-i)
+#     deltaTEssam = ((i+273.15)/(Tw+273.15))-((Tout_ref+273.15)/(Tw_ref+273.15))
+#     COP3 = COP_Essam(4.2,deltaTEssam)
+#     print('##')
+#     print(COP1)
+#     print(COP2)
+#     print(COP3)
+#     print('##')
 
 
 

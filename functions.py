@@ -157,6 +157,8 @@ def ProcebarExtractor(buildtype,wellinsulated):
     
     Uwalls = df.iloc[rowind]['U_Wall']     # W/(m2K)
     Uwindows = df.iloc[rowind]['U_Window'] # W/(m2K)
+    Uroof = df.iloc[rowind]['U_Roof']      # W/(m2K)
+    Ufloor = df.iloc[rowind]['U_Floor']    # W/(m2K)
     
     Ctot = df.iloc[rowind]['C_Roof']   *Aroof  + \
            df.iloc[rowind]['C_Wall']   *Awalls + \
@@ -166,6 +168,10 @@ def ProcebarExtractor(buildtype,wellinsulated):
     ACH_vent = 0.6 # Air changes per hour through ventilation [Air Changes Per Hour]
     ACH_infl = 0.6 # Air changes per hour through infiltration [Air Changes Per Hour]
     VentEff = 0. # The efficiency of the heat recovery system for ventilation. Set to 0 if there is no heat recovery []
+    
+    # U average for choosing HP type
+    Uavg = (Uwalls*Awalls + Uwindows*Awindows + Uroof*Aroof + Ufloor*Afloor) / (Awalls + Awindows + Aroof + Afloor)
+
     
     outputs = {
         'Aglazed': Awindows,
@@ -178,7 +184,8 @@ def ProcebarExtractor(buildtype,wellinsulated):
         'ACH_vent': ACH_vent,
         'ACH_infl': ACH_infl,
         'VentEff': VentEff,
-        'Ctot': Ctot
+        'Ctot': Ctot,
+        'Uavg': Uavg
         }
     
     return outputs
@@ -598,8 +605,37 @@ def HPSizing(inputs,fracmaxP):
 
 
 
-def COP_Tamb(Temp):
-    COP = 0.001*Temp**2 + 0.0471*Temp + 2.1259
+def COP_Tamb(temp):
+    
+    """
+    DEPRECATED
+    Generic COP as a function of ambient temperature
+    from:
+    missing
+    """
+    
+    COP = 0.001*temp**2 + 0.0471*temp + 2.1259
+    
+    return COP
+
+def COP_deltaT(temp):
+    
+    """
+    COP for air-water residential heat pumps
+    as a function of ambient and water temperatures
+    from:
+    Staffell, Iain, et al. "A review of domestic heat pumps." Energy & Environmental Science 5.11 (2012): 9291-9306.
+    
+    ok for 15°C < deltaT < 60°C
+    direct air heating: 25–35 °C
+    underfloor heating: 30–45 °C
+    large-area radiators: 45–60 °C
+    conventional radiators: 60–75 °C
+    """
+    Tw = 45.
+    deltaT = Tw - temp
+    COP = 6.81 - 0.121*deltaT + 0.000630*deltaT**2
+    
     return COP
 
 

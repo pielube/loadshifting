@@ -12,7 +12,7 @@ import pandas as pd
 import json
 import time
 from prosumpy import dispatch_max_sc,print_analysis
-from functions import yearlyprices,HPSizing,COP_Tamb
+from functions import yearlyprices,HPSizing,COP_deltaT
 from functions import MostRepCurve,DHWShiftTariffs,HouseHeating,EVshift_PV,EVshift_tariffs,ResultsAnalysis,WriteResToExcel,load_climate_data
 from functions import shift_appliance,scale_timeseries
 from pv import pvgis_hist
@@ -512,7 +512,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
         # Electricity consumption
         Eshift = np.zeros(n1min) 
         for i in range(n1min):
-            COP = COP_Tamb(temp[i])
+            COP = COP_deltaT(temp[i])
             Eshift[i] = Qshift[i]/COP # W
         
         # Updating demand dataframe

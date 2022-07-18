@@ -6,7 +6,7 @@ import pandas as pd
 import strobe
 import ramp
 import json
-from functions import ProcebarExtractor,HouseholdMembers,load_climate_data,COP_Tamb,HPSizing,HouseHeating
+from functions import ProcebarExtractor,HouseholdMembers,load_climate_data,COP_deltaT,HPSizing,HouseHeating
 import os
 import pickle
 from joblib import Memory
@@ -113,7 +113,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         Eheat_final = np.zeros((1,n1min))
         
         for i in range(n15min):
-            COP = COP_Tamb(temp[i])
+            COP = COP_deltaT(temp[i])
             Eheat_final[0,i] = Qheat[i]/COP # W
         
         Eheat = pd.Series(data=Eheat,index=index15min)
