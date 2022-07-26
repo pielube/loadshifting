@@ -1,5 +1,4 @@
 
-"""First results"""
 
 import numpy as np
 import pandas as pd
@@ -8,7 +7,6 @@ import ramp
 import json
 from functions import ProcebarExtractor,HouseholdMembers,load_climate_data,COP_deltaT,HPSizing,HouseHeating
 import os
-import pickle
 from joblib import Memory
 import defaults
 
@@ -105,7 +103,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
             QheatHP = inputs['HP']['HeatPumpThermalPower']
         else:
             QheatHP = HPSizing(inputs,defaults.fracmaxP) # W
-            
+                        
         res_househeat = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp15min,irr15min,n15min,defaults.heatseas_st,defaults.heatseas_end,ts15min)
         Qheat = res_househeat['Qheat']
         
@@ -113,8 +111,8 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         Eheat_final = np.zeros((1,n1min))
         
         for i in range(n15min):
-            COP = COP_deltaT(temp[i])
-            Eheat_final[0,i] = Qheat[i]/COP # W
+            COP = COP_deltaT(temp15min[i])
+            Eheat[i] = Qheat[i]/COP # W
         
         Eheat = pd.Series(data=Eheat,index=index15min)
         Eheat = Eheat.resample('1Min').ffill()
@@ -154,6 +152,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
                 df[key] = res_ramp_charge_home[key]* 1000
             else:
                 df[key] = 0
+                
         # Dataframe with the occupancy data
         occupancy = pd.DataFrame(index=index_10min)
         for i,m in enumerate(result['members'][n_scen]):
@@ -185,27 +184,7 @@ if __name__ == "__main__":
           inputs = json.load(f)
         N = 1
       
-        out = compute_demand(inputs,N)
-            
-        """
-        Saving results, occupancy, and inputs
-        """
-        
-        path = './simulations'
-        if not os.path.exists(path):
-            os.makedirs(path)
-            
-        file = os.path.join(path,name+'.pkl')
-        with open(file, 'wb') as b:
-            pickle.dump(out['results'],b)
-            
-        file = os.path.join(path,name+'_occ.pkl')
-        with open(file, 'wb') as b:
-            pickle.dump(out['occupancy'],b)
-            
-        file = os.path.join(path,name+'_inputs.pkl')
-        with open(file, 'wb') as b:
-            pickle.dump(out['input_data'],b)    
+        out = compute_demand(inputs,N)   
 
 
 

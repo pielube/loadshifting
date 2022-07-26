@@ -12,7 +12,7 @@ import pandas as pd
 import json
 import time
 from prosumpy import dispatch_max_sc,print_analysis
-from functions import yearlyprices,HPSizing,COP_deltaT
+from functions import HPSizing,COP_deltaT
 from functions import MostRepCurve,DHWShiftTariffs,HouseHeating,EVshift_PV,EVshift_tariffs,ResultsAnalysis,WriteResToExcel,load_climate_data
 from functions import shift_appliance,scale_timeseries
 from pv import pvgis_hist
@@ -25,7 +25,7 @@ __location__ = os.path.realpath(
 from joblib import Memory
 memory = Memory(__location__ + '/cache/', verbose=defaults.verbose)
 
-def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',cf_econ='econ_param.json',cf_tariff = 'tariffs.json', cf_house='housetypes.json'):
+def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',cf_econ='econ_param.json', cf_house='housetypes.json'):
     '''
     Load the config files for a specific simulation
     
@@ -56,10 +56,6 @@ def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',c
     # Economic parameters
     with open(inputhpath + cf_econ,'r') as f:
         econ_cases = json.load(f)
-    
-    # Time of use tariffs
-    with open(inputhpath + cf_tariff,'r') as f:
-        out['tariffs'] = json.load(f)
     
     # Parameters for the dwelling
     with open(inputhpath + cf_house,'r') as f:
@@ -106,7 +102,7 @@ def load_cases(cf_cases='cases.json'):
 
 
 @memory.cache
-def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
+def shift_load(config,pvbatt_param,econ_param,inputs,N):
     '''
     
     Parameters
@@ -144,8 +140,8 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     HeatingBool    = "HeatPumpPower" in TechsShift
     EVBool         = "EVCharging" in TechsShift
     
-    FixedControl   = econ_param['FixedControlCost']
-    AnnualControl  = econ_param['AnnualControlCost']
+    FixedControl   = econ_param['C_control_fix']
+    AnnualControl  = econ_param['C_control_fix_annual']
     thresholdprice = econ_param['thresholdprice']
     
     demands = compute_demand(inputs,N,inputs['members'],inputs['thermal_parameters'])
@@ -167,23 +163,30 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     stepperh_15min = 4 # 1/h
     ts_15min = 0.25 # h
     
-    #%%
     # Electricity prices array - 15 min timestep
-    scenario = econ_param['scenario']
-    timeslots = tariffs['timeslots']
-    enprices = tariffs['prices']
-    gridfees = tariffs['gridfees']
-    yenprices_15min = yearlyprices(scenario,timeslots,enprices,stepperh_15min) # €/kWh
-    ygridfees_15min = yearlyprices(scenario,timeslots,gridfees,stepperh_15min) # €/kWh
+    tariffe = {}
+    
+    inputhpath = __location__ + '/inputs/' + econ_param['tariff'] + '.csv'
+    with open(inputhpath,'r') as f:
+        prices = pd.read_csv(f,index_col=0)
+        
+    tariffe[econ_param['tariff']] = prices
+    
+    yenprices_15min = prices['energy'].to_numpy() # €/kWh
+    ygridfees_15min = prices['grid'].to_numpy()   # €/kWh
     yprices_15min = yenprices_15min + ygridfees_15min  # €/kWh
     
-    #%%
+    inputhpath = __location__ + '/inputs/' + econ_param['tariff_ref'] + '.csv'
+    with open(inputhpath,'r') as f:
+        prices = pd.read_csv(f)
+        
+    tariffe[econ_param['tariff_ref']] = prices
     
     """
     3) Most representative curve
     """
     
-    idx = MostRepCurve(demands['results'],columns,yenprices_15min,ygridfees_15min,ts_15min,econ_param)
+    idx = MostRepCurve(demands['results'],columns,yenprices_15min,ygridfees_15min,ts_15min,econ_param,tariffe)
     
     # Inputs relative to the most representative curve:
     inputs = demands['input_data'][idx]
@@ -293,20 +296,14 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
         
         if defaults.verbose > 0:
             print('--- Shifting wet appliances ---')
-        
-        # Wet app demands to be shifted, 1 min timestep
-        demshift = demands['results'][idx][WetAppShift][:-1] # W
     
         """
         Admissible time windows
         """
         
         # Admissible time window based on electricity prices
-        yenprices_1min = yearlyprices(scenario,timeslots,enprices,stepperh_1min) # €/kWh
-        ygridfees_1min = yearlyprices(scenario,timeslots,gridfees,stepperh_1min) # €/kWh
-        yprices_1min = yenprices_1min + ygridfees_1min  # €/kWh
-        admprice = (enprices[scenario][thresholdprice] + gridfees[scenario][thresholdprice])/1000
-        admprices = np.where(yprices_1min <= admprice+0.001,1.,0.) #TODO fix this
+        yprices_1min   = pd.Series(index=index15min,data=yprices_15min).reindex(index1min,method='ffill').to_numpy() # €/kWh
+        admprices = np.where(yprices_1min <= thresholdprice+0.001,1.,0.) #TODO fix this
     
         # Reducing prices adm time window as not to be on the final hedge of useful windows
         admcustom = np.ones(n1min)
@@ -398,8 +395,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
         else: # strategy based on tariffs
             
             # prosumpy inspired tariffs based function
-            admprice = (enprices[scenario][thresholdprice] + gridfees[scenario][thresholdprice])/1000
-            outs = DHWShiftTariffs(demand_dhw, yprices_15min, admprice, param_tech_dhw, return_series=False)
+            outs = DHWShiftTariffs(demand_dhw, yprices_15min, thresholdprice, param_tech_dhw, return_series=False)
             demand_dhw_shift = outs['grid2load']+outs['grid2store'] # kW
             demand_dhw_shift = demand_dhw_shift.astype('float64')   # kW
             
@@ -419,13 +415,9 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     """  
     
     # TODO
-    # - save T inside house if needed to check how shift affects it
-    # - T setpoint could be saved as done for dem, occ, etc., here recalculated
     # - harmonize ambient data used in all simulations
     #   use TMY obtained from PVGIS everywhere
-    # - add fraction of max power when sizing HP
     # - revise heating season
-    # - check how much a 15 min ts would affect the results
     # - to decide how to handle T increase
     
     if HeatingBool:
@@ -434,15 +426,18 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
             print('--- Shifting house heating ---')
         
         temp,irr = load_climate_data()
-        temp = np.delete(temp,-1) # °C
-        irr = np.delete(irr,-1) # W/m2
-        ts = 1/60               # Temporary, to be changed
+        temp = pd.Series(data=temp[:-1],index=index1min)
+        temp15min = temp.resample('15Min').mean()
+        irr = pd.Series(data=irr[:-1],index=index1min)
+        irr15min = irr.resample('15Min').mean()
+        
+        ts = 1/4
         
         # internal gains
         Qintgains = demands['results'][idx]['InternalGains'][:-1].to_numpy() # W
     
         # T setpoint based on occupancy
-        Tset = np.full(n1min,defaults.T_sp_low) + np.full(n1min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_1min
+        Tset = np.full(n15min,defaults.T_sp_low) + np.full(n15min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_15min
         
         # Heat pump sizing
         if inputs['HP']['HeatPumpThermalPower'] is not None:
@@ -456,7 +451,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
             # increasing setpoint T of Tincrease when:
             # residual PV > 0.
         
-            Tset[pv_1min_res>0] += defaults.Tincrease
+            Tset[pv_15min_res>0] += defaults.Tincrease
        
         else: # strategy based on tariffs
         
@@ -467,11 +462,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
             # tariffs are low
             
             # Hours with admissible prices
-            yenprices_1min = yearlyprices(scenario,timeslots,enprices,stepperh_1min) # €/kWh
-            ygridfees_1min = yearlyprices(scenario,timeslots,gridfees,stepperh_1min) # €/kWh
-            yprices_1min = yenprices_1min + ygridfees_1min  # €/kWh
-            admprice = (enprices[scenario][thresholdprice] + gridfees[scenario][thresholdprice])/1000
-            admprices = np.where(yprices_1min <= admprice+0.01,1.,0.)
+            admprices = np.where(yprices_15min <= thresholdprice+0.01,1.,0.)
             
             # Hours close enough to when heating will be required
             offset = Tset.min()
@@ -487,7 +478,9 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
             idx_r = np.searchsorted(idx_z, idx_nz)
             timeleftarr[~mask_z] = idx_z[idx_r] - idx_nz
             
-            admtimes = (timeleftarr<defaults.t_preheat*60)
+            # admtimes = (timeleftarr<defaults.t_preheat*int(1/ts))
+            admtimes = [1. if 0<a<defaults.t_preheat*int(1/ts) else 0. for a in timeleftarr]
+            admtimes = np.array(admtimes)
             
             # Resulting hours in which to increase setpoint
             idx_tincrease = np.where(admprices*admtimes)[0]
@@ -495,29 +488,18 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
             # Recalculating T setpoint array with increase
             Tset += offset
             Tset[idx_tincrease] += defaults.Tincrease
-            
         
-        res_househeat = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp,irr,n1min,defaults.heatseas_st,defaults.heatseas_end,ts)
+        res_househeat = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp15min,irr15min,n15min,defaults.heatseas_st,defaults.heatseas_end,ts)
         Qshift = res_househeat['Qheat']
-        Tin_shift = res_househeat['Tinside']
-        
-        # T analysis
-        Twhenon    = Tin_shift*occupancy_1min.values # °C
-        Twhenon_hs = Twhenon[np.r_[0:60*24*defaults.heatseas_end,60*24*defaults.heatseas_st:-1]] # °C
-        whenon     = np.nonzero(Twhenon_hs)
-        Twhenon_hs_mean = np.mean(Twhenon_hs[whenon]) # °C
-        Twhenon_hs_min  = np.min(Twhenon_hs[whenon]) # °C
-        Twhenon_hs_max  = np.max(Twhenon_hs[whenon]) # °C
         
         # Electricity consumption
-        Eshift = np.zeros(n1min) 
-        for i in range(n1min):
-            COP = COP_deltaT(temp[i])
+        Eshift = np.zeros(n15min) 
+        for i in range(n15min):
+            COP = COP_deltaT(temp15min[i])
             Eshift[i] = Qshift[i]/COP # W
         
         # Updating demand dataframe
-        demand_HP_shift = pd.Series(data=Eshift,index=index1min)
-        demand_shifted['HeatPumpPower'] = demand_HP_shift.resample('15Min').mean().to_numpy()/1000. # kW
+        demand_shifted['HeatPumpPower'] = Eshift/1000. # kW
         
         # Check results
         HPcons_pre  = np.sum(demand_15min['HeatPumpPower'])/4. # kWh
@@ -530,7 +512,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
         
         if PVBool:        
             # Updating residual PV
-            pv_15min_res = np.maximum(0,pv_15min_res-demand_HP_shift) # kW
+            pv_15min_res = np.maximum(0,pv_15min_res- demand_shifted['HeatPumpPower']) # kW
             pv_1min_res  = scale_timeseries(pv_15min_res,index1min) # kW 
         
             
@@ -538,9 +520,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     """
     8D) Load shifting - EV
     """
-    
-    #demand_shifted['EVCharging'] = demand_15min['EVCharging']  # temporary value to run the rest of the code        
-    
+        
     if EVBool:
         
         # Main driver - household member using the car
@@ -581,7 +561,7 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
                 arrive = np.insert(arrive,0,0)
                 leave = np.append(leave,n1min-1)
                 
-        #  Charging at-home time window: find starting and stopping charge times
+        # Charging at-home time window: find starting and stopping charge times
         # Shift the app consumption vector by one time step:
         charge_home_s  = np.roll(charge_home,1)
         
@@ -651,13 +631,9 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
             
         else:
             
-            yenprices_1min = yearlyprices(scenario,timeslots,enprices,stepperh_1min) # €/kWh
-            ygridfees_1min = yearlyprices(scenario,timeslots,gridfees,stepperh_1min) # €/kWh
-            yprices_1min = yenprices_1min + ygridfees_1min  # €/kWh            
-            yprices_1min = pd.Series(data=yprices_1min,index=index1min)
-            pricelim = (enprices[scenario][thresholdprice] + gridfees[scenario][thresholdprice])/1000
+            yprices_1min   = pd.Series(index=index15min,data=yprices_15min).reindex(index1min,method='ffill').to_numpy() # €/kWh
             
-            out_EV = EVshift_tariffs(yprices_1min,pricelim,
+            out_EV = EVshift_tariffs(yprices_1min,thresholdprice,
                                      arrive,leave,
                                      starts_chhome,ends_chhome,
                                      idx_athomewindows,
@@ -682,10 +658,9 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     # Saving demand profile obtained thanks to shifting techs
     # Not yet considering battery
     # Equal to pflows['demand_noshift'] if no shifting
-    pflows['demand_shifted_nobatt'] = demand_shifted[TechsNoShift+TechsShift].sum(axis=1) # kW
-    #demand_pspy.insert(len(demand_pspy.columns),'TotalShiftPreBattery',demand_prebatt.to_numpy(),True) # kW
+    pflows['demand_shifted_nobatt'] = demand_shifted[TechsNoShift+TechsShift].sum(axis=1) # kW    
     
-       
+    
     """
     8F) Load shifting - Standard battery
     """
@@ -728,12 +703,8 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
     
     # TODO
     # - add how much energy has been shifted by each technology
-    # - add to outs:
-    #   - time horizon
-    #   - energy prices
-    #   - fixed and capacity-related tariffs
     
-    outs = ResultsAnalysis(config_pv['Ppeak'],config_bat['BatteryCapacity'],config_inv['Ppeak'],pflows,yenprices_15min,ygridfees_15min,enprices,gridfees,scenario,econ_param)
+    outs = ResultsAnalysis(config_pv['Ppeak'],config_bat['BatteryCapacity'],config_inv['Ppeak'],pflows,econ_param,tariffe)
 
     return outs,demand_15min,demand_shifted,pflows
 
@@ -741,9 +712,9 @@ def shift_load(config,pvbatt_param,econ_param,tariffs,inputs,N):
 if __name__ == '__main__':
     
     conf = load_config('default')
-    config,pvbatt_param,econ_param,tariffs,housetype,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N']
+    config,pvbatt_param,econ_param,housetype,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['housetype'],conf['N']
     
-    results,demand_15min,demand_shifted,pflows = shift_load(config,pvbatt_param,econ_param,tariffs,housetype,N)
+    results,demand_15min,demand_shifted,pflows = shift_load(config,pvbatt_param,econ_param,housetype,N)
     
     print(json.dumps(results, indent=4))
     

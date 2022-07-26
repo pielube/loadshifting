@@ -11,7 +11,7 @@ from prosumpy import dispatch_max_sc
 from strobe.Data.Households import households
 from RC_BuildingSimulator import Zone
 
-from economics import EconomicAnalysis,EconomicAnalysisRefPV
+from economics import EconomicAnalysis
 import defaults
 
 
@@ -23,24 +23,10 @@ from joblib import Memory
 memory = Memory(__location__ + '/cache/', verbose=defaults.verbose)
 
 
-# List of functions this .py file should contain
-
-# - EconomicAnalysis
-# - MostRapCurve
-# - AdmTimeWinShift
-# - DHWShiftTariffs
-# - DHWShiftSC
-# - HouseHeatingShiftTariffs
-# - HouseHeatingShiftSC
-# - EVShiftTariffs
-# - EVShiftSC
-# - ResultsAnalysis
-# - WriteToExcel
 
 # TODO
 # - add description of all functions
 # - comment all functions
-# - change name of this file
 
 
 def scale_timeseries(data,index):
@@ -165,8 +151,8 @@ def ProcebarExtractor(buildtype,wellinsulated):
            df.iloc[rowind]['C_Floor']  *Afloor + \
            df.iloc[rowind]['C_Window'] *Awindows # J/K
            
-    ACH_vent = 0.6 # Air changes per hour through ventilation [Air Changes Per Hour]
-    ACH_infl = 0.6 # Air changes per hour through infiltration [Air Changes Per Hour]
+    ACH_vent = 0.5 # Air changes per hour through ventilation [Air Changes Per Hour]
+    ACH_infl = 0.0 # Air changes per hour through infiltration [Air Changes Per Hour]
     VentEff = 0. # The efficiency of the heat recovery system for ventilation. Set to 0 if there is no heat recovery []
     
     # U average for choosing HP type
@@ -232,66 +218,9 @@ def HouseholdMembers(members=None):
         print('Error: type of inputs must be None, int or list')
     
     return out
-  
 
-def yearlyprices(scenario,timeslots,prices,stepperhour):
-    
-    stepperhour = int(stepperhour)
 
-    endday = datetime.datetime.strptime('1900-01-02 00:00:00',"%Y-%m-%d %H:%M:%S")
-
-    HSdayhours = []
-    HSdaytariffs = []
-    CSdayhours = []
-    CSdaytariffs = []
-    
-    for i in timeslots['HSday']:
-        starthour = datetime.datetime.strptime(i[0],'%H:%M:%S')
-        HSdayhours.append(starthour)
-    
-    for i in range(len(HSdayhours)):
-        start = HSdayhours[i]
-        end = HSdayhours[i+1] if i < len(HSdayhours)-1 else endday
-        delta = end - start
-        for j in range(stepperhour*int(delta.seconds/3600)):
-            price = prices[scenario][timeslots['HSday'][i][1]]/1000.
-            HSdaytariffs.append(price)
-    
-    for i in timeslots['CSday']:
-        starthour = datetime.datetime.strptime(i[0],'%H:%M:%S')
-        CSdayhours.append(starthour)
-    
-    for i in range(len(CSdayhours)):
-        start = CSdayhours[i]
-        end = CSdayhours[i+1] if i < len(CSdayhours)-1 else endday
-        delta = end - start
-        for j in range(stepperhour*int(delta.seconds/3600)):
-            price = prices[scenario][timeslots['CSday'][i][1]]/1000.
-            CSdaytariffs.append(price)
-    
-    startyear = datetime.datetime.strptime('2015-01-01 00:00:00',"%Y-%m-%d %H:%M:%S")
-    HSstart = datetime.datetime.strptime(timeslots['HSstart'],"%Y-%m-%d %H:%M:%S")
-    CSstart = datetime.datetime.strptime(timeslots['CSstart'],"%Y-%m-%d %H:%M:%S")
-    endyear = datetime.datetime.strptime('2016-01-01 00:00:00',"%Y-%m-%d %H:%M:%S")
-    
-    ytariffs = []
-    
-    deltaCS1 = HSstart - startyear
-    deltaHS  = CSstart - HSstart
-    deltaCS2 = endyear - CSstart
-    
-    for i in range(deltaCS1.days):
-        ytariffs.extend(CSdaytariffs)
-    for i in range(deltaHS.days):
-        ytariffs.extend(HSdaytariffs)
-    for i in range(deltaCS2.days):
-        ytariffs.extend(CSdaytariffs)
-    
-    out = np.asarray(ytariffs)
-            
-    return out
-
-def MostRepCurve(demands,columns,yenprices,ygridfees,timestep,econ_param):
+def MostRepCurve(demands,columns,yenprices,ygridfees,timestep,econ_param,tariffe):
     
     """
     Choosing most representative curve among a list of demand curves
@@ -307,11 +236,16 @@ def MostRepCurve(demands,columns,yenprices,ygridfees,timestep,econ_param):
                   'InverterEfficiency': 1.,
                   'timestep': 0.25}
     
-    # Technology parameters required by economic analysis
+    # Input parameters required by economic analysis
     # PV and battery forced to be 0
-    inputs = {'PVCapacity': 0.,
-              'BatteryCapacity': 0.,
-              'InvCapacity': 0} 
+    
+    inp = econ_param
+    inp['PV'] = 0.
+    inp['battery'] = 0.
+    inp['inverter'] = 0.
+    inp['ts'] = 0.25
+    inp['PV_ref'] = 0.
+    inp['inverter_ref'] = 0.   
     
     results = []
     
@@ -321,6 +255,7 @@ def MostRepCurve(demands,columns,yenprices,ygridfees,timestep,econ_param):
     pv = pv.iloc[:,0]
     
     for ii in range(len(demands)):
+        
         demand = demands[ii][columns]
         demand = demand.sum(axis=1)
         demand = demand/1000. # W to kW
@@ -332,17 +267,23 @@ def MostRepCurve(demands,columns,yenprices,ygridfees,timestep,econ_param):
         demand = demand.drop(nye)
         demand = demand.iloc[:,0]
         
-        outputs = dispatch_max_sc(pv,demand,param_tech,return_series=False)
-        # print_analysis(pv, demand, param_tech, outputs)
+        E = {}
+        E['ACGeneration'] = np.zeros(len(date)) 
+        E['Load']         = demand.to_numpy()
+        E['ToGrid']       = np.zeros(len(date)) 
+        E['FromGrid']     = demand.to_numpy() 
+        E['SC']           = np.zeros(len(date))
+        E['FromBattery']  = np.zeros(len(date)) 
         
-        inputs['ACGeneration'] = pv.to_numpy() # should be equal to outputs['inv2grid']+outputs['inv2load']
-        inputs['Load'] = demand.to_numpy()
-        inputs['ToGrid'] = outputs['inv2grid']
-        inputs['FromGrid'] = outputs['grid2load']
-        inputs['SC'] = outputs['inv2load']
-        inputs['FromBattery'] = outputs['store2inv']
+        E_ref = {}
+        E_ref['ACGeneration'] = np.zeros(len(date))
+        E_ref['Load']         = demand.to_numpy()
+        E_ref['ToGrid']       = np.zeros(len(date))
+        E_ref['FromGrid']     = demand.to_numpy()
+        E_ref['SC']           = np.zeros(len(date))
+        E_ref['FromBattery']  = np.zeros(len(date))
         
-        out = EconomicAnalysis(inputs,econ_param,yenprices,ygridfees,timestep,inputs['Load'])
+        out = EconomicAnalysis(inp,tariffe,E,E_ref)
         results.append(out['ElBill'])
     
     meanelbill = mean(results)
@@ -671,7 +612,6 @@ def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
     store2load = np.zeros(Nsteps)
 
     admprices = np.where(prices <= thresholdprice,1,0)   
-    demand1 = demand.to_numpy()
 
     LevelOfCharge[0] = bat_size_e_adj / 2.
     
@@ -872,7 +812,7 @@ def EVshift_tariffs(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewin
     
     
     Parameters:
-        yprices_1min (pandas Series): vector Nsteps long with energy prices, €
+        yprices_1min (numpy array): vector Nsteps long with energy prices, €
         arrive (numpy array): vector of indexes, start at-home time windows  
         leave  (numpy array): vector of indexes, end   at-home time windows
         starts (numpy array): vector of indexes, start charging at-home time windows
@@ -891,11 +831,10 @@ def EVshift_tariffs(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewin
     """
     
     bat_size_p_adj = param['MaxPower']
-    n_inv = param['InverterEfficiency']
     timestep = param['timestep']
     
     Nsteps = len(yprices_1min)
-    yprices_1min_np = yprices_1min.to_numpy()
+    yprices_1min_np = yprices_1min
 
     grid2store = np.zeros(Nsteps)
     LOC = np.zeros(Nsteps)
@@ -925,21 +864,21 @@ def EVshift_tariffs(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewin
     
     if return_series:
         out_pd = {}
-        for k, v in out.items():  # Create dictionary of pandas series with same index as the input pv
-            out_pd[k] = pd.Series(v, index=yprices_1min.index)
+        for k, v in out.items():  # Create dictionary of pandas series
+            index1min = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='T')
+            out_pd[k] = pd.Series(v, index=index1min)
         out = out_pd
     return out
 
 
-
-def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,yenprices,ygridfees,enprices,gridfees,scenario,econ_param):
+def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,econ_param,tariffe):
     
-    # Yearly total electricity prices
-    ElPrices = yenprices + ygridfees
-
-    # Running prosumpy to get SC and SSR and energy fluxes for economic analysis
-    # All shifting must have already been modelled, including battery
-    # param_tech is hence defined here and battery forced to be 0
+    """
+    Prosumpy run 1
+    Running prosumpy to get SC and SSR and energy fluxes for economic analysis
+    All shifting must have already been modelled, including battery
+    param_tech is hence defined here and battery forced to be 0
+    """
     
     pv,demand_ref = pflows.pv,pflows.demand_noshift
     
@@ -955,91 +894,133 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,yenprices,ygri
                   'timestep': 0.25}
     
     res_pspy = dispatch_max_sc(pv,demand,param_tech,return_series=False)
-
+    
     Epspy = {}
-    Epspy['PVCapacity']      = pv_capacity
-    Epspy['BatteryCapacity'] = batt_capacity
-    Epspy['InvCapacity']     = inv_capacity
+    
     Epspy['ACGeneration'] = pv.to_numpy()
     Epspy['Load']         = demand.to_numpy()
-    Epspy['ToGrid']       = res_pspy['inv2grid']
-    Epspy['FromGrid']     = res_pspy['grid2load']
-    Epspy['SC']           = res_pspy['inv2load']
-    # Not used by economic analysis and would be all 0 considerng how prosumpy has been used
-    # Epspy['FromBattery'] = outputs['store2inv']
+    Epspy['ToGrid']       = res_pspy['inv2grid'].to_numpy()
+    Epspy['FromGrid']     = res_pspy['grid2load'].to_numpy()
+    Epspy['SC']           = res_pspy['inv2load'].to_numpy()
+    # Epspy['FromBattery'] = outputs['store2inv'] not used by economic analysis and would be all 0 considering how prosumpy has been used
     
-    timestep = 0.25
+    """
+    Reference case energy balances
+    """
     
-    res_EA = EconomicAnalysis(Epspy,econ_param,yenprices,ygridfees,timestep,demand_ref)
+    E_ref = {}
     
+    E_ref['ACGeneration'] = np.zeros(len(demand_ref))
+    E_ref['Load']         = demand_ref.to_numpy()
+    E_ref['ToGrid']       = np.zeros(len(demand_ref))
+    E_ref['FromGrid']     = demand_ref.to_numpy()
+    E_ref['SC']           = np.zeros(len(demand_ref))
+    
+    """
+    Economic analysis
+    """
+    
+    inp = econ_param
+    inp['PV'] = pv_capacity
+    inp['battery'] = batt_capacity
+    inp['inverter'] = inv_capacity
+    inp['ts'] = 0.25
+    inp['PV_ref'] = 0 #pv_capacity
+    inp['inverter_ref'] = 0 #inv_capacity
+    
+    res_EA = EconomicAnalysis(econ_param, tariffe, Epspy, E_ref)
+    
+    # """
+    # Prosumpy run 2
     # Running prosumpy for reference case with only PV
     # Used in another economic analysis to get NPV, PBP and PI
     # of the only shifting part, considering PV in the ref case
+    # """
+       
+    # demand_ref_series = pd.Series(data=demand_ref,index=demand.index)
+    # res_pspy_pv = dispatch_max_sc(pv,demand_ref_series,param_tech,return_series=False)
     
-    demand_ref_series = pd.Series(data=demand_ref,index=demand.index)
-    res_pspy_pv = dispatch_max_sc(pv,demand_ref_series,param_tech,return_series=False)
+    # Epspy_pv = {}
+    # Epspy_pv['PVCapacity']      = pv_capacity
+    # Epspy_pv['BatteryCapacity'] = 0.
+    # Epspy_pv['ACGeneration'] = pv.to_numpy()
+    # Epspy_pv['Load']         = demand_ref
+    # Epspy_pv['ToGrid']       = res_pspy_pv['inv2grid']
+    # Epspy_pv['FromGrid']     = res_pspy_pv['grid2load']
+    # Epspy_pv['SC']           = res_pspy_pv['inv2load']
     
-    Epspy_pv = {}
-    Epspy_pv['PVCapacity']      = pv_capacity
-    Epspy_pv['BatteryCapacity'] = 0.
-    Epspy_pv['ACGeneration'] = pv.to_numpy()
-    Epspy_pv['Load']         = demand_ref
-    Epspy_pv['ToGrid']       = res_pspy_pv['inv2grid']
-    Epspy_pv['FromGrid']     = res_pspy_pv['grid2load']
-    Epspy_pv['SC']           = res_pspy_pv['inv2load']
+    # """
+    # Economic analysis with PV as reference case
+    # """
     
-    res_EA_pv = EconomicAnalysisRefPV(Epspy,econ_param,yenprices,ygridfees,timestep,Epspy_pv)
+    # res_EA_pv = EconomicAnalysisRefPV(Epspy,econ_param,yenprices,ygridfees,timestep,Epspy_pv)   
+    
+    """
+    Outputs
+    """
     
     # Preparing function outputs
     
     out = {}
-
-    price_heel   = (enprices[scenario]['heel']+gridfees[scenario]['heel'])/1000
-    price_hollow = (enprices[scenario]['hollow']+gridfees[scenario]['hollow'])/1000
-    price_full   = (enprices[scenario]['full']+gridfees[scenario]['full'])/1000
-    price_peak   = (enprices[scenario]['peak']+gridfees[scenario]['peak'])/1000
-
-    # heel   = np.where(ElPrices == price_heel,1.,0.)
-    # hollow = np.where(ElPrices == price_hollow,1.,0.)
-    # full   = np.where(ElPrices == price_full,1.,0.)
-    # peak   = np.where(ElPrices == price_peak,1.,0.)
     
-    heel   = np.where(abs(ElPrices-price_heel)<0.01,1.,0.)
-    hollow = np.where(abs(ElPrices-price_hollow)<0.01,1.,0.)
-    full   = np.where(abs(ElPrices-price_full)<0.01,1.,0.)
-    peak   = np.where(abs(ElPrices-price_peak)<0.01,1.,0.)
-   
-    consrefheel   = np.sum(demand_ref*heel)*timestep
-    consrefhollow = np.sum(demand_ref*hollow)*timestep
-    consreffull   = np.sum(demand_ref*full)*timestep
-    consrefpeak   = np.sum(demand_ref*peak)*timestep
-
-    out['PVCapacity']      = res_EA['PVCapacity'] 
-    out['BatteryCapacity'] = res_EA['BatteryCapacity'] 
-    out['InvCapacity']     = res_EA['InvCapacity']
+    # Yearly total electricity prices
     
-    out['CostPV']       = res_EA['CostPV']
-    out['CostBattery']  = res_EA['CostBattery']
-    out['CostInverter'] = res_EA['CostInverter']
-
+    yenprices  = tariffe[econ_param['tariff']]['energy'].to_numpy()
+    ygridfees  = tariffe[econ_param['tariff']]['grid'].to_numpy()
+    ysellprice = tariffe[econ_param['tariff']]['sell'].to_numpy()
+    yprices    = yenprices + ygridfees
+    
+    out['PVCapacity']      = inp['PV'] 
+    out['BatteryCapacity'] = inp['battery'] 
+    out['InvCapacity']     = inp['inverter']
+    
+    out['CostPV']       = res_EA['PVInv']
+    out['CostBattery']  = res_EA['BatteryInv']
+    out['CostInverter'] = res_EA['InverterInv']
+    
+    out['sellprice'] = ysellprice[0]
+    
+    out['totenprice_00_06'] = yprices[0]
+    out['totenprice_06_11'] = yprices[int(6/econ_param['ts'])]
+    out['totenprice_11_17'] = yprices[int(11/econ_param['ts'])]
+    out['totenprice_17_22'] = yprices[int(17/econ_param['ts'])]
+    out['totenprice_22_24'] = yprices[int(22/econ_param['ts'])]    
+     
     out['peakdem'] = np.max(demand)
     
-    out['cons_total'] = np.sum(demand)*timestep
-
-    out['cons_heel']   = np.sum(res_pspy['grid2load']*heel)*timestep
-    out['cons_hollow'] = np.sum(res_pspy['grid2load']*hollow)*timestep
-    out['cons_full']   = np.sum(res_pspy['grid2load']*full)*timestep
-    out['cons_peak']   = np.sum(res_pspy['grid2load']*peak)*timestep
-        
-    out['varperc_cons_heel']   = (out['cons_heel']-consrefheel)/out['cons_total']*100
-    out['varperc_cons_hollow'] = (out['cons_hollow']-consrefhollow)/out['cons_total']*100
-    out['varperc_cons_full']   = (out['cons_full']-consreffull)/out['cons_total']*100
-    out['varperc_cons_peak']   = (out['cons_peak']-consrefpeak)/out['cons_total']*100
+    out['cons_total'] = np.sum(demand)*econ_param['ts']
+    out['cons_total_incr'] = out['cons_total'] - np.sum(demand_ref)*econ_param['ts']
     
-    out['el_prod']           = np.sum(pv)*timestep
-    out['el_selfcons']       = np.sum(res_pspy['inv2load'])*timestep
-    out['el_soldtogrid']     = np.sum(res_pspy['inv2grid'])*timestep
-    out['el_boughtfromgrid'] = np.sum(res_pspy['grid2load'])*timestep
+    idx = pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')
+        
+    out['cons_00_06'] = np.sum(demand*np.where(idx.hour< 6,1,0))*econ_param['ts']
+    out['cons_06_11'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour, 6),np.less(idx.hour,11)),1,0))*econ_param['ts']
+    out['cons_11_17'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour,11),np.less(idx.hour,17)),1,0))*econ_param['ts']
+    out['cons_17_22'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*econ_param['ts']
+    out['cons_22_24'] = np.sum(demand*np.where(idx.hour>=22,1,0))*econ_param['ts']
+    
+    cons_00_06_ref = np.sum(demand_ref*np.where(idx.hour< 6,1,0))*econ_param['ts']
+    cons_06_11_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour, 6),np.less(idx.hour,11)),1,0))*econ_param['ts']
+    cons_11_17_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,11),np.less(idx.hour,17)),1,0))*econ_param['ts']
+    cons_17_22_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*econ_param['ts']
+    cons_22_24_ref = np.sum(demand_ref*np.where(idx.hour>=22,1,0))*econ_param['ts'] 
+    
+    # out['cons_00_06_percent'] = (out['cons_00_06'] - cons_00_06_ref)/out['cons_total']*100
+    # out['cons_06_11_percent'] = (out['cons_06_11'] - cons_06_11_ref)/out['cons_total']*100
+    # out['cons_11_17_percent'] = (out['cons_11_17'] - cons_11_17_ref)/out['cons_total']*100
+    # out['cons_17_22_percent'] = (out['cons_17_22'] - cons_17_22_ref)/out['cons_total']*100
+    # out['cons_22_24_percent'] = (out['cons_22_24'] - cons_22_24_ref)/out['cons_total']*100  
+    
+    out['cons_00_06_percent'] = out['cons_00_06'] - cons_00_06_ref
+    out['cons_06_11_percent'] = out['cons_06_11'] - cons_06_11_ref
+    out['cons_11_17_percent'] = out['cons_11_17'] - cons_11_17_ref
+    out['cons_17_22_percent'] = out['cons_17_22'] - cons_17_22_ref
+    out['cons_22_24_percent'] = out['cons_22_24'] - cons_22_24_ref
+    
+    out['el_prod']           = np.sum(pv)*econ_param['ts']
+    out['el_selfcons']       = np.sum(res_pspy['inv2load'])*econ_param['ts']
+    out['el_soldtogrid']     = np.sum(res_pspy['inv2grid'])*econ_param['ts']
+    out['el_boughtfromgrid'] = np.sum(res_pspy['grid2load'])*econ_param['ts']
     
     out['selfsuffrate'] = out['el_selfcons']/out['cons_total']
     out['el_shifted'] = np.abs(pflows.demand_noshift-pflows.demand_shifted).sum()/2/4
@@ -1049,7 +1030,7 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,yenprices,ygri
         out['selfconsrate'] = 0
     else:
         out['selfconsrate'] = out['el_selfcons']/out['el_prod']
-
+    
     out["EnSold"]     = res_EA["EnSold"]         
     out["CostToSell"] = res_EA["CostToSell"]
     out["TotalSell"]  = res_EA["TotalSell"] 
@@ -1066,82 +1047,64 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,yenprices,ygri
     out['NPV'] = res_EA['NPV']
     out['PI']  = res_EA['PI']
     
-    out['PBP_onlyshift'] = res_EA_pv['PBP']
-    out['NPV_onlyshift'] = res_EA_pv['NPV']
-    out['PI_onlyshift']  = res_EA_pv['PI']
+    # out['PBP_onlyshift'] = res_EA_pv['PBP']
+    # out['NPV_onlyshift'] = res_EA_pv['NPV']
+    # out['PI_onlyshift']  = res_EA_pv['PI']
     
     return out
-
-
+    
+    
 def WriteResToExcel(file,sheet,results,econ_param,enprices,gridfees,row):
     
     df = pd.read_excel(file,sheet_name=sheet,header=0,index_col=0)
     
-    df.at[row,'Investissement fixe pilotage [€]'] = econ_param['FixedControlCost']
-    df.at[row,'Investissement annuel pilotage [€] (abonnement, … )'] = econ_param['AnnualControlCost']
-    df.at[row,"Année d'étude"] = econ_param['time_horizon']
-    
-    df.at[row,"Valeur de vendue de l'élec [€/kWh]"] = econ_param['P_FtG']/1000.
-    
-    df.at[row,'Heure Talon [1h-7h]  [€/kWh]'] = (enprices['heel']+gridfees['heel'])/1000.
-    df.at[row,'Heure creuse [23h-1h et 7h-10h]  [€/kWh]'] = (enprices['hollow']+gridfees['hollow'])/1000.
-    df.at[row,'Heure pleine [10h-18h et 21h-23h]  [€/kWh]'] = (enprices['full']+gridfees['full'])/1000.
-    df.at[row,'Heure pointe [18h-21h]  [€/kWh]'] = (enprices['peak']+gridfees['peak'])/1000.
-    
-    df.at[row,'Fixe [€/an]'] = econ_param['C_grid_fixed']
-    df.at[row,'Capacitaire [€/kW]'] = econ_param['C_grid_kW']
-    
-    df.at[row,'PV [kWp]'] = results['PVCapacity']
-    df.at[row,'Inverter [kW]'] = results['InvCapacity']
-    df.at[row,'Battery [kWh]'] = results['BatteryCapacity']
-    
-    df.at[row,'Investissement PV [€]'] = results['CostPV']
-    df.at[row,'Investissement Inverter [€]'] = results['CostInverter']
-    df.at[row,'Investissement Battery [€]'] = results['CostBattery']
-    
-    df.at[row,"Capacité d'accès kW"]  = results['peakdem']
-    
-    df.at[row,'Total  [kWh]']  = results['cons_total']
+    df.at[row,'Investment - Control system [€]']	      = econ_param['C_control_fix']
+    df.at[row,'Annual cost - Control system [€]']		  = econ_param['C_control_fix_annual']
+    df.at[row,'PV [kWp]']		                          = results['PVCapacity']
+    df.at[row,'Inverter [kW]']		                      = results['InvCapacity']
+    df.at[row,'Battery [kWh]']		                      = results['BatteryCapacity']
+    df.at[row,'Investment - PV [€]']		              = results['CostPV']
+    df.at[row,'Investment - Inverter [€]']		          = results['CostInverter']
+    df.at[row,'Investment - Battery [€]']		          = results['CostBattery']
+    df.at[row,'Time-horizon [years]']		              = econ_param['time_horizon']
+    df.at[row,'Energy price - Selling [€/kWh]']		      = results['sellprice']       
+    df.at[row,'Energy price [0-6] [€/kWh]']		          = results['totenprice_00_06']
+    df.at[row,'Energy price [6-11] [€/kWh]']		      = results['totenprice_06_11']
+    df.at[row,'Energy price [11-17] [€/kWh]']		      = results['totenprice_11_17']
+    df.at[row,'Energy price [17-22] [€/kWh]']		      = results['totenprice_17_22']
+    df.at[row,'Energy price [22-00] [€/kWh]']		      = results['totenprice_22_24']
+    df.at[row,'Power consumption max [kW]']		          = results['peakdem']
+    df.at[row,'Total consumption [kWh]']		          = results['cons_total']
+    df.at[row,'Total consumption increase [kWh]']		 = results['cons_total_incr']
+    df.at[row,'Energy produced [kWh]'] 		              = results['el_prod']
+    df.at[row,'Energy self-consumed [kWh]'] 		        = results['el_selfcons']
+    df.at[row,'Energy sold [kWh]'] 		                 = results['el_soldtogrid']
+    df.at[row,'Energy bought [kWh]'] 		                 = results['el_boughtfromgrid']
+    df.at[row,'Energy consumption [0-6] [kWh]']           = results['cons_00_06']
+    df.at[row,'Energy consumption [6-11] [kWh]']          = results['cons_06_11']
+    df.at[row,'Energy consumption [11-17] [kWh]']         = results['cons_11_17']
+    df.at[row,'Energy consumption [17-22] [kWh]']         = results['cons_17_22']
+    df.at[row,'Energy consumption [22-00] [kWh]']         = results['cons_22_24']
+    df.at[row,'Energy consumption variation [0-6] [%]']	  = results['cons_00_06_percent']
+    df.at[row,'Energy consumption variation [6-11] [%]']  = results['cons_06_11_percent']
+    df.at[row,'Energy consumption variation [11-17] [%]'] = results['cons_11_17_percent']
+    df.at[row,'Energy consumption variation [17-22] [%]'] = results['cons_17_22_percent']
+    df.at[row,'Energy consumption variation [22-00] [%]'] = results['cons_22_24_percent']
+    df.at[row,'Self-sufficiency ratio [%]']		          = results['selfsuffrate']
+    df.at[row,'Self-consumption ratio [%]']		          = results['selfconsrate']
+    df.at[row,'Energy consumption shifted [kWh]']		  = results['el_shifted']
+    df.at[row,'Energy sold - Revenue [€]']		          = results['EnSold']
+    df.at[row,'Energy sold - Grid fees [€]']		      = results['CostToSell']
+    df.at[row,'Energy sold - Net revenue [€]']		      = results['TotalSell']
+    df.at[row,'Energy bought - Energy expenditure [€]']	  = results['EnBought']
+    df.at[row,'Energy bought - Grid fees [€]']		      = results['CostToBuy']
+    df.at[row,'Energy bought - Total expenditure [€]']	  = results['TotalBuy']
+    df.at[row,'Energy net expenditure [€]']		          = results['el_netexpend']
+    df.at[row,'Average electricity cost [€/kWh]']		  = results['el_costperkwh']
+    df.at[row,'PBP [years]']		                      = results['PBP']
+    df.at[row,'NPV [€]']		                          = results['NPV']
+    df.at[row,'PI [-]']		                              = results['PI']
 
-    df.at[row,'Electricté Produite [kWh] ']  = results['el_prod']
-    df.at[row,'Electricté autoconsommée [kWh] ']  = results['el_selfcons']
-    df.at[row,'Electricté injectée [kWh] '] = results['el_soldtogrid']
-    df.at[row,'Electricté achetée [kWh] '] = results['el_boughtfromgrid']
-    
-    df.at[row,'Heure Talon [1h-7h] [kWh]'] = results['cons_heel']
-    df.at[row,'Heure creuse [23h-1h et 7h-10h] [kWh]']  = results['cons_hollow']
-    df.at[row,'Heure pleine [10h-18h et 21h-23h]  [kWh]']  = results['cons_full']
-    df.at[row,'Heure pointe [18h-21h]  [kWh]']  =  results['cons_peak']
-    
-    df.at[row,'Variation Heure Talon [1h-7h]'] = results['varperc_cons_heel']
-    df.at[row,'Variation Heure creuse [23h-1h et 7h-10h]'] = results['varperc_cons_hollow']
-    df.at[row,'Variation Heure pleine [10h-18h et 21h-23h]'] =  results['varperc_cons_full']
-    df.at[row,'Variation Heure pointe [18h-21h]'] = results['varperc_cons_peak']
-    
-    df.at[row,'Taux autosuff [%]']  = results['selfsuffrate']
-    df.at[row,'Taux autocons [%]']  = results['selfconsrate']
-    
-    df.at[row,'Electricitédéplacée [kWh]'] = results['el_shifted']
-        
-    df.at[row,'Electricté vendue [€]']      = results['EnSold']
-    df.at[row,'Coûts du réseau vendre [€]'] = results["CostToSell"]
-    df.at[row,'Electricté vendue net [€]']  = results["TotalSell"]
-    
-    df.at[row,'Electricté achetée [€]']      = results["EnBought"]
-    df.at[row,'Coûts du réseau acheter [€]'] = results["CostToBuy"]
-    df.at[row,'Electricté achetée net [€]']  = results["TotalBuy"]
-
-    df.at[row,'Elec dépenses [€]'] = results['el_netexpend']
-    df.at[row,"Coût de l'électricité [€/kWh]"] = results['el_costperkwh']
-        
-    df.at[row,'PBP [years]'] = results['PBP']
-    df.at[row,'NPV [€]']     = results['NPV']
-    df.at[row,'PI [-]']      = results['PI'] 
-    
-    df.at[row,'PBP_onlyshift [years]'] = results['PBP_onlyshift']
-    df.at[row,'NPV_onlyshift [€]']     = results['NPV_onlyshift']
-    df.at[row,'PI_onlyshift [-]']      = results['PI_onlyshift'] 
-    
     df.to_excel(file,sheet_name=sheet)
 
 
@@ -1154,14 +1117,3 @@ if __name__ == "__main__":
     test = HouseholdMembers(['FTE','FTE'])
     print(test)
         
-
-
-
-
-
-
-
-
-
-
-
