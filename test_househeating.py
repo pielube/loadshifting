@@ -5,9 +5,13 @@ import numpy as np
 import pandas as pd
 
 from simulation import load_config
-from functions import ProcebarExtractor, HPSizing, yearlyprices, HouseHeating, load_climate_data, COP_Tamb
+from functions import ProcebarExtractor, HPSizing, HouseHeating, load_climate_data, COP_Tamb
 from demands import compute_demand
 import defaults
+
+import os
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 index1min  = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='T')
 index10min = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='10T')
@@ -36,7 +40,7 @@ irr = pd.Series(data=irr[:-1],index=index1min)
 irr15min = irr.resample('15Min').mean()
 
 conf = load_config('case16')
-config,pvbatt_param,econ_param,tariffs,housetype,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N']
+config,pvbatt_param,econ_param,housetype,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['housetype'],conf['N']
 
 # housetype['HP']['HeatPumpThermalPower'] = 6000.
 
@@ -44,18 +48,32 @@ config,pvbatt_param,econ_param,tariffs,housetype,N = conf['config'],conf['pvbatt
 # wellinsulated = True
 # procebinp = ProcebarExtractor(buildtype,wellinsulated)
 
-procebinp={'Aglazed': 46.489999999999995, # forcing thermal parameters
-  'Aopaque': 92.02000000000001,
-  'Afloor': 131.7,
-  'volume': 375.34499999999997,
-  'Atotal': 592.65,
-  'Uwalls': 0.48,
-  'Uwindows': 2.75,
-  'ACH_vent': 0.6,
-  'ACH_infl': 0.6,
-  'VentEff': 0.0,
-  'Ctot': 16698806.413587457,
-  'Uavg': 1.0801380407830945}
+# procebinp={'Aglazed': 46.489999999999995, # forcing thermal parameters
+#   'Aopaque': 92.02000000000001,
+#   'Afloor': 131.7,
+#   'volume': 375.34499999999997,
+#   'Atotal': 592.65,
+#   'Uwalls': 0.48,
+#   'Uwindows': 2.75,
+#   'ACH_vent': 0.6,
+#   'ACH_infl': 0.6,
+#   'VentEff': 0.0,
+#   'Ctot': 16698806.413587457,
+#   'Uavg': 1.0801380407830945}
+
+procebinp = {
+             'Aglazed': 46.489999999999995,
+             'Aopaque': 92.02000000000001,
+             'Afloor': 131.7,
+             'volume': 375.34499999999997,
+             'Atotal': 592.65,
+             'Uwalls': 0.48,
+             'Uwindows': 2.75,
+             'ACH_vent': 0.5,
+             'ACH_infl':0.0,
+             'VentEff': 0.0,
+             'Ctot': 16698806.413587457,
+             'Uavg': 0.7261926799532233}
 
 members = ['FTE','FTE','U12']       # forcing members
 out = compute_demand(housetype,N,members= members,thermal_parameters=procebinp)
@@ -69,18 +87,35 @@ occupancy_60min = occupancy_10min.reindex(index60min,method='nearest')
 """
 Recompute thermal demand
 """
-procebinp={'Aglazed': 46.489999999999995,  # forcing thermal parameters
-  'Aopaque': 92.02000000000001,
-  'Afloor': 131.7,
-  'volume': 375.34499999999997,
-  'Atotal': 592.65,
-  'Uwalls': 0.48,
-  'Uwindows': 2.75,
-  'ACH_vent': 0.6,
-  'ACH_infl': 0.6,
-  'VentEff': 0.0,
-  'Ctot': 16698806.413587457,
-  'Uavg': 1.0801380407830945}
+# procebinp={'Aglazed': 46.489999999999995,  # forcing thermal parameters
+#   'Aopaque': 92.02000000000001,
+#   'Afloor': 131.7,
+#   'volume': 375.34499999999997,
+#   'Atotal': 592.65,
+#   'Uwalls': 0.48,
+#   'Uwindows': 2.75,
+#   'ACH_vent': 0.6,
+#   'ACH_infl': 0.6,
+#   'VentEff': 0.0,
+#   'Ctot': 16698806.413587457,
+#   'Uavg': 1.0801380407830945}
+
+
+procebinp = {
+             'Aglazed': 46.489999999999995,
+             'Aopaque': 92.02000000000001,
+             'Afloor': 131.7,
+             'volume': 375.34499999999997,
+             'Atotal': 592.65,
+             'Uwalls': 0.48,
+             'Uwindows': 2.75,
+             'ACH_vent': 0.5,
+             'ACH_infl':0.0,
+             'VentEff': 0.0,
+             'Ctot': 16698806.413587457,
+             'Uavg': 0.7261926799532233}
+
+
 
 housetype['HP'] = {**housetype['HP'],**procebinp}
 
@@ -119,16 +154,17 @@ out['results'][0]['HeatPumpPower'] = Eheat
 Shifting
 """
 
-scenario = econ_param['scenario']
-timeslots = tariffs['timeslots']
-enprices = tariffs['prices']
-gridfees = tariffs['gridfees']
-thresholdprice = econ_param['thresholdprice']
 
-yenprices_15min = yearlyprices(scenario,timeslots,enprices,stepperh_15min) # €/kWh
-ygridfees_15min = yearlyprices(scenario,timeslots,gridfees,stepperh_15min) # €/kWh
+
+inputhpath = __location__ + '/inputs/' + econ_param['tariff'] + '.csv'
+with open(inputhpath,'r') as f:
+    prices = pd.read_csv(f,index_col=0)
+    
+yenprices_15min = prices['energy'].to_numpy() # €/kWh
+ygridfees_15min = prices['grid'].to_numpy()   # €/kWh
 yprices_15min = yenprices_15min + ygridfees_15min  # €/kWh
-admprice = (enprices[scenario][thresholdprice] + gridfees[scenario][thresholdprice])/1000
+
+admprice = econ_param['thresholdprice']
 admprices = np.where(yprices_15min <= admprice+0.01,1.,0.)
 
 
@@ -214,7 +250,6 @@ print("Original consumption: {:.2f} kWh".format(HPcons_pre))
 print("Consumption after shifting: {:.2f} kWh".format(HPcons_post))
 print("Consumption increase: {:.2f}%".format(HPconsincr))
 
-
 Tin_pre = pd.Series(data=Tin_heat,index=index15min)
 Tin_post = pd.Series(data=Tin_sh,index=index15min)
 
@@ -223,12 +258,12 @@ Tm_post = pd.Series(data=Tm_sh,index=index15min)
 
 xx1 = sum(demand_HP/4*yprices_15min)
 xx2 = sum(demand_HP_shift/4*yprices_15min)
-print("Annual expense pre: {:.2f} kWh".format(xx1))
-print("Annual expense post: {:.2f} kWh".format(xx2))
+print("Annual expense pre: {:.2f} €".format(xx1))
+print("Annual expense post: {:.2f} €".format(xx2))
 
 xxx = demand_HP_shift - demand_HP
-yy1 = abs(sum(xxx[np.where(xxx>0)[0]]))
-yy2 = abs(sum(xxx[np.where(xxx<0)[0]]))
+yy1 = abs(sum(xxx[np.where(xxx>0)[0]]))/4
+yy2 = abs(sum(xxx[np.where(xxx<0)[0]]))/4
 print("Preheating: {:.2f} kWh".format(yy1))
 print("Heating avoided: {:.2f} kWh".format(yy2))
 
