@@ -81,8 +81,36 @@ econparam = {
            "thresholdprice": "hollow"
            }
 
-econparams = {}
-econparams['default'] = econparam
+
+inp = {
+       'start_year': 2023,
+       'time_horizon': 30,
+       'WACC': 0.04,
+       'elpriceincrease': 0.02,
+       'tariff': 'multi_price',
+       'meter': 'smart_meter',
+       't_PV': 30,
+       't_battery': 10,
+       't_inverter': 15,
+       'C_PV_fix': 0.0,
+       'C_PV_kW': 1300.0,
+       'C_batt_fix': 0.0,
+       'C_batt_kWh': 600.0,
+       'C_invert_fix': 0.0,
+       'C_invert_kW': 100.0,
+       'C_control_fix': 500.0,
+       'C_OM_annual': 0.0,
+       'C_grid_fix_annual': 0.0,
+       'C_grid_kW_annual': 0.0,
+       'C_control_fix_annual': 0.0,
+       'C_prosumertax': 88.81,
+       "thresholdprice": 0.3,
+       'tariff_ref': 'multi_price',
+       'meter_ref': 'smart_meter'
+       }
+
+inps = {}
+inps['default'] = inp
 
 for i in range(83):
     
@@ -129,26 +157,28 @@ for i in range(83):
 
     cases['case'+str(i+1)] = newcase
     
-    neweconparam = econparam.copy()
+    newinp = inp.copy()
     
     fixed = 0
     annual = 0
+    
     if data['wetapp_shift_auto'][i] == 1:
         fixed += 50.
-        neweconparam['thresholdprice'] = 'heel'
+        newinp['thresholdprice'] = 0.2
 
     aa = data['dhw_shift'][i] == 1
     bb = data['househeat_shift'][i] == 1
     cc = data['ev_shift'][i] == 1
     dd = data['battery'][i] == 1
+    
     if aa or bb or cc or dd:
         fixed += 500.
         annual += 30.
     
-    neweconparam['FixedControlCost'] = fixed
-    neweconparam['AnnualControlCost'] = annual
+    newinp['C_control_fix'] = fixed
+    newinp['C_control_fix_annual'] = annual
 
-    econparams['case'+str(i+1)] = neweconparam
+    inps['case'+str(i+1)] = newinp
 
 
 filename = 'cases.json'
@@ -158,7 +188,7 @@ with open(filename, 'w',encoding='utf-8') as f:
 
 filename = 'econ_param.json'
 with open(filename, 'w',encoding='utf-8') as f:
-    json.dump(econparams, f,ensure_ascii=False, indent=4) 
+    json.dump(inps, f,ensure_ascii=False, indent=4) 
 
 
 
