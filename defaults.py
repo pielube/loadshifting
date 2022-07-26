@@ -23,7 +23,7 @@ T_sp_occ = 20
 Tincrease = 3
 
 # maximum number of hours allowed to consider pre-heating
-t_preheat = 3  
+t_preheat = 1  
 
 # Heating season definition (in days)
 heatseas_st = 244
