@@ -192,6 +192,9 @@
             "DomesticHotWater"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater"
         ],
         "WetAppManualShifting": false,
@@ -226,6 +229,9 @@
             "DomesticHotWater"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater"
         ],
         "WetAppManualShifting": false,
@@ -260,6 +266,9 @@
             "DomesticHotWater"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater"
         ],
         "WetAppManualShifting": false,
@@ -296,6 +305,9 @@
             "HeatPumpPower"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "HeatPumpPower"
         ],
@@ -333,6 +345,9 @@
             "HeatPumpPower"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "HeatPumpPower"
         ],
@@ -370,6 +385,9 @@
             "HeatPumpPower"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "HeatPumpPower"
         ],
@@ -409,6 +427,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "HeatPumpPower",
             "EVCharging"
@@ -449,6 +470,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "HeatPumpPower",
             "EVCharging"
@@ -489,6 +513,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "HeatPumpPower",
             "EVCharging"
         ],
@@ -524,6 +551,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "EVCharging"
         ],
         "WetAppManualShifting": false,
@@ -558,6 +588,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "EVCharging"
         ],
         "WetAppManualShifting": false,
@@ -592,6 +625,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "EVCharging"
         ],
         "WetAppManualShifting": false,
@@ -628,6 +664,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "EVCharging"
         ],
@@ -665,6 +704,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "EVCharging"
         ],
@@ -702,6 +744,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "EVCharging"
         ],
@@ -877,6 +922,9 @@
             "DomesticHotWater"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater"
         ],
         "WetAppManualShifting": false,
@@ -911,6 +959,9 @@
             "DomesticHotWater"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater"
         ],
         "WetAppManualShifting": false,
@@ -945,6 +996,9 @@
             "DomesticHotWater"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater"
         ],
         "WetAppManualShifting": false,
@@ -981,6 +1035,9 @@
             "HeatPumpPower"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "HeatPumpPower"
         ],
@@ -1018,6 +1075,9 @@
             "HeatPumpPower"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "HeatPumpPower"
         ],
@@ -1055,6 +1115,9 @@
             "HeatPumpPower"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "HeatPumpPower"
         ],
@@ -1094,6 +1157,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "HeatPumpPower",
             "EVCharging"
@@ -1134,6 +1200,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "HeatPumpPower",
             "EVCharging"
@@ -1174,6 +1243,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "HeatPumpPower",
             "EVCharging"
         ],
@@ -1209,6 +1281,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "EVCharging"
         ],
         "WetAppManualShifting": false,
@@ -1243,6 +1318,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "EVCharging"
         ],
         "WetAppManualShifting": false,
@@ -1277,6 +1355,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "EVCharging"
         ],
         "WetAppManualShifting": false,
@@ -1313,6 +1394,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "EVCharging"
         ],
@@ -1350,6 +1434,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "EVCharging"
         ],
@@ -1387,6 +1474,9 @@
             "EVCharging"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "EVCharging"
         ],
@@ -1475,6 +1565,9 @@
             "DomesticHotWater"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater"
         ],
         "WetAppManualShifting": false,
@@ -1511,6 +1604,9 @@
             "HeatPumpPower"
         ],
         "TechsShift": [
+            "TumbleDryer",
+            "DishWasher",
+            "WashingMachine",
             "DomesticHotWater",
             "HeatPumpPower"
         ],
