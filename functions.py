@@ -895,14 +895,14 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,econ_param,tar
     
     res_pspy = dispatch_max_sc(pv,demand,param_tech,return_series=False)
     
-    Epspy = {}
+    E = {}
     
-    Epspy['ACGeneration'] = pv.to_numpy()
-    Epspy['Load']         = demand.to_numpy()
-    Epspy['ToGrid']       = res_pspy['inv2grid'].to_numpy()
-    Epspy['FromGrid']     = res_pspy['grid2load'].to_numpy()
-    Epspy['SC']           = res_pspy['inv2load'].to_numpy()
-    # Epspy['FromBattery'] = outputs['store2inv'] not used by economic analysis and would be all 0 considering how prosumpy has been used
+    E['ACGeneration'] = pv.to_numpy()
+    E['Load']         = demand.to_numpy()
+    E['ToGrid']       = res_pspy['inv2grid'].to_numpy()
+    E['FromGrid']     = res_pspy['grid2load'].to_numpy()
+    E['SC']           = res_pspy['inv2load'].to_numpy()
+    # E['FromBattery'] = outputs['store2inv'] not used by economic analysis and would be all 0 considering how prosumpy has been used
     
     """
     Reference case energy balances
@@ -928,32 +928,48 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,econ_param,tar
     inp['PV_ref'] = 0 #pv_capacity
     inp['inverter_ref'] = 0 #inv_capacity
     
-    res_EA = EconomicAnalysis(econ_param, tariffe, Epspy, E_ref)
+    res_EA = EconomicAnalysis(inp, tariffe, E, E_ref)
     
-    # """
-    # Prosumpy run 2
-    # Running prosumpy for reference case with only PV
-    # Used in another economic analysis to get NPV, PBP and PI
-    # of the only shifting part, considering PV in the ref case
-    # """
-       
-    # demand_ref_series = pd.Series(data=demand_ref,index=demand.index)
-    # res_pspy_pv = dispatch_max_sc(pv,demand_ref_series,param_tech,return_series=False)
+    """
+    Prosumpy run 2
+    Running prosumpy for reference case with only PV
+    Used in another economic analysis to get NPV, PBP and PI
+    of the only shifting part, considering PV in the ref case
+    """
     
-    # Epspy_pv = {}
-    # Epspy_pv['PVCapacity']      = pv_capacity
-    # Epspy_pv['BatteryCapacity'] = 0.
-    # Epspy_pv['ACGeneration'] = pv.to_numpy()
-    # Epspy_pv['Load']         = demand_ref
-    # Epspy_pv['ToGrid']       = res_pspy_pv['inv2grid']
-    # Epspy_pv['FromGrid']     = res_pspy_pv['grid2load']
-    # Epspy_pv['SC']           = res_pspy_pv['inv2load']
+    res_EA_pv = {}
+    res_EA_pv['NPV'] = None
+    res_EA_pv['PBP'] = None
+    res_EA_pv['PI']  = None
     
-    # """
-    # Economic analysis with PV as reference case
-    # """
+    if pv_capacity > 0:
+        
+        demand_ref_series = pd.Series(data=demand_ref,index=demand.index)
+        res_pspy_pv = dispatch_max_sc(pv,demand_ref_series,param_tech,return_series=False)
+        
+        E_ref_pv = {}
+        
+        E_ref_pv['PVCapacity']      = pv_capacity
+        E_ref_pv['BatteryCapacity'] = 0.
+        E_ref_pv['ACGeneration']    = pv.to_numpy()
+        E_ref_pv['Load']            = demand_ref.to_numpy()
+        E_ref_pv['ToGrid']          = res_pspy_pv['inv2grid'].to_numpy()
+        E_ref_pv['FromGrid']        = res_pspy_pv['grid2load'].to_numpy()
+        E_ref_pv['SC']              = res_pspy_pv['inv2load'].to_numpy()
     
-    # res_EA_pv = EconomicAnalysisRefPV(Epspy,econ_param,yenprices,ygridfees,timestep,Epspy_pv)   
+        """
+        Economic analysis - PV as reference case
+        """
+        
+        inp_pv = econ_param
+        inp_pv['PV'] = pv_capacity
+        inp_pv['battery'] = batt_capacity
+        inp_pv['inverter'] = inv_capacity
+        inp_pv['ts'] = 0.25
+        inp_pv['PV_ref'] = pv_capacity
+        inp_pv['inverter_ref'] = inv_capacity
+        
+        res_EA_pv = EconomicAnalysis(inp_pv, tariffe, E, E_ref_pv)   
     
     """
     Outputs
@@ -1005,17 +1021,11 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,econ_param,tar
     cons_17_22_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*econ_param['ts']
     cons_22_24_ref = np.sum(demand_ref*np.where(idx.hour>=22,1,0))*econ_param['ts'] 
     
-    # out['cons_00_06_percent'] = (out['cons_00_06'] - cons_00_06_ref)/out['cons_total']*100
-    # out['cons_06_11_percent'] = (out['cons_06_11'] - cons_06_11_ref)/out['cons_total']*100
-    # out['cons_11_17_percent'] = (out['cons_11_17'] - cons_11_17_ref)/out['cons_total']*100
-    # out['cons_17_22_percent'] = (out['cons_17_22'] - cons_17_22_ref)/out['cons_total']*100
-    # out['cons_22_24_percent'] = (out['cons_22_24'] - cons_22_24_ref)/out['cons_total']*100  
-    
-    out['cons_00_06_percent'] = out['cons_00_06'] - cons_00_06_ref
-    out['cons_06_11_percent'] = out['cons_06_11'] - cons_06_11_ref
-    out['cons_11_17_percent'] = out['cons_11_17'] - cons_11_17_ref
-    out['cons_17_22_percent'] = out['cons_17_22'] - cons_17_22_ref
-    out['cons_22_24_percent'] = out['cons_22_24'] - cons_22_24_ref
+    out['cons_00_06_var'] = out['cons_00_06'] - cons_00_06_ref
+    out['cons_06_11_var'] = out['cons_06_11'] - cons_06_11_ref
+    out['cons_11_17_var'] = out['cons_11_17'] - cons_11_17_ref
+    out['cons_17_22_var'] = out['cons_17_22'] - cons_17_22_ref
+    out['cons_22_24_var'] = out['cons_22_24'] - cons_22_24_ref
     
     out['el_prod']           = np.sum(pv)*econ_param['ts']
     out['el_selfcons']       = np.sum(res_pspy['inv2load'])*econ_param['ts']
@@ -1047,9 +1057,9 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,econ_param,tar
     out['NPV'] = res_EA['NPV']
     out['PI']  = res_EA['PI']
     
-    # out['PBP_onlyshift'] = res_EA_pv['PBP']
-    # out['NPV_onlyshift'] = res_EA_pv['NPV']
-    # out['PI_onlyshift']  = res_EA_pv['PI']
+    out['PBP_refPV'] = res_EA_pv['PBP']
+    out['NPV_refPV'] = res_EA_pv['NPV']
+    out['PI_refPV']  = res_EA_pv['PI']
     
     return out
     
@@ -1058,52 +1068,55 @@ def WriteResToExcel(file,sheet,results,econ_param,enprices,gridfees,row):
     
     df = pd.read_excel(file,sheet_name=sheet,header=0,index_col=0)
     
-    df.at[row,'Investment - Control system [€]']	      = econ_param['C_control_fix']
-    df.at[row,'Annual cost - Control system [€]']		  = econ_param['C_control_fix_annual']
-    df.at[row,'PV [kWp]']		                          = results['PVCapacity']
-    df.at[row,'Inverter [kW]']		                      = results['InvCapacity']
-    df.at[row,'Battery [kWh]']		                      = results['BatteryCapacity']
-    df.at[row,'Investment - PV [€]']		              = results['CostPV']
-    df.at[row,'Investment - Inverter [€]']		          = results['CostInverter']
-    df.at[row,'Investment - Battery [€]']		          = results['CostBattery']
-    df.at[row,'Time-horizon [years]']		              = econ_param['time_horizon']
-    df.at[row,'Energy price - Selling [€/kWh]']		      = results['sellprice']       
-    df.at[row,'Energy price [0-6] [€/kWh]']		          = results['totenprice_00_06']
-    df.at[row,'Energy price [6-11] [€/kWh]']		      = results['totenprice_06_11']
-    df.at[row,'Energy price [11-17] [€/kWh]']		      = results['totenprice_11_17']
-    df.at[row,'Energy price [17-22] [€/kWh]']		      = results['totenprice_17_22']
-    df.at[row,'Energy price [22-00] [€/kWh]']		      = results['totenprice_22_24']
-    df.at[row,'Power consumption max [kW]']		          = results['peakdem']
-    df.at[row,'Total consumption [kWh]']		          = results['cons_total']
-    df.at[row,'Total consumption increase [kWh]']		 = results['cons_total_incr']
-    df.at[row,'Energy produced [kWh]'] 		              = results['el_prod']
+    df.at[row,'Investment - Control system [€]']	        = econ_param['C_control_fix']
+    df.at[row,'Annual cost - Control system [€]']		    = econ_param['C_control_fix_annual']
+    df.at[row,'PV [kWp]']		                            = results['PVCapacity']
+    df.at[row,'Inverter [kW]']		                        = results['InvCapacity']
+    df.at[row,'Battery [kWh]']		                        = results['BatteryCapacity']
+    df.at[row,'Investment - PV [€]']		                = results['CostPV']
+    df.at[row,'Investment - Inverter [€]']		            = results['CostInverter']
+    df.at[row,'Investment - Battery [€]']		            = results['CostBattery']
+    df.at[row,'Time-horizon [years]']		                = econ_param['time_horizon']
+    df.at[row,'Energy price - Selling [€/kWh]']		        = results['sellprice']       
+    df.at[row,'Energy price [0-6] [€/kWh]']		            = results['totenprice_00_06']
+    df.at[row,'Energy price [6-11] [€/kWh]']		        = results['totenprice_06_11']
+    df.at[row,'Energy price [11-17] [€/kWh]']		        = results['totenprice_11_17']
+    df.at[row,'Energy price [17-22] [€/kWh]']		        = results['totenprice_17_22']
+    df.at[row,'Energy price [22-00] [€/kWh]']		        = results['totenprice_22_24']
+    df.at[row,'Power consumption max [kW]']		            = results['peakdem']
+    df.at[row,'Total consumption [kWh]']		            = results['cons_total']
+    df.at[row,'Total consumption increase [kWh]']		    = results['cons_total_incr']
+    df.at[row,'Energy produced [kWh]'] 		                = results['el_prod']
     df.at[row,'Energy self-consumed [kWh]'] 		        = results['el_selfcons']
-    df.at[row,'Energy sold [kWh]'] 		                 = results['el_soldtogrid']
-    df.at[row,'Energy bought [kWh]'] 		                 = results['el_boughtfromgrid']
-    df.at[row,'Energy consumption [0-6] [kWh]']           = results['cons_00_06']
-    df.at[row,'Energy consumption [6-11] [kWh]']          = results['cons_06_11']
-    df.at[row,'Energy consumption [11-17] [kWh]']         = results['cons_11_17']
-    df.at[row,'Energy consumption [17-22] [kWh]']         = results['cons_17_22']
-    df.at[row,'Energy consumption [22-00] [kWh]']         = results['cons_22_24']
-    df.at[row,'Energy consumption variation [0-6] [%]']	  = results['cons_00_06_percent']
-    df.at[row,'Energy consumption variation [6-11] [%]']  = results['cons_06_11_percent']
-    df.at[row,'Energy consumption variation [11-17] [%]'] = results['cons_11_17_percent']
-    df.at[row,'Energy consumption variation [17-22] [%]'] = results['cons_17_22_percent']
-    df.at[row,'Energy consumption variation [22-00] [%]'] = results['cons_22_24_percent']
-    df.at[row,'Self-sufficiency ratio [%]']		          = results['selfsuffrate']
-    df.at[row,'Self-consumption ratio [%]']		          = results['selfconsrate']
-    df.at[row,'Energy consumption shifted [kWh]']		  = results['el_shifted']
-    df.at[row,'Energy sold - Revenue [€]']		          = results['EnSold']
-    df.at[row,'Energy sold - Grid fees [€]']		      = results['CostToSell']
-    df.at[row,'Energy sold - Net revenue [€]']		      = results['TotalSell']
-    df.at[row,'Energy bought - Energy expenditure [€]']	  = results['EnBought']
-    df.at[row,'Energy bought - Grid fees [€]']		      = results['CostToBuy']
-    df.at[row,'Energy bought - Total expenditure [€]']	  = results['TotalBuy']
-    df.at[row,'Energy net expenditure [€]']		          = results['el_netexpend']
-    df.at[row,'Average electricity cost [€/kWh]']		  = results['el_costperkwh']
-    df.at[row,'PBP [years]']		                      = results['PBP']
-    df.at[row,'NPV [€]']		                          = results['NPV']
-    df.at[row,'PI [-]']		                              = results['PI']
+    df.at[row,'Energy sold [kWh]'] 		                    = results['el_soldtogrid']
+    df.at[row,'Energy bought [kWh]'] 		                = results['el_boughtfromgrid']
+    df.at[row,'Energy consumption [0-6] [kWh]']             = results['cons_00_06']
+    df.at[row,'Energy consumption [6-11] [kWh]']            = results['cons_06_11']
+    df.at[row,'Energy consumption [11-17] [kWh]']           = results['cons_11_17']
+    df.at[row,'Energy consumption [17-22] [kWh]']           = results['cons_17_22']
+    df.at[row,'Energy consumption [22-00] [kWh]']           = results['cons_22_24']
+    df.at[row,'Energy consumption variation [0-6] [kWh]']   = results['cons_00_06_var']
+    df.at[row,'Energy consumption variation [6-11] [kWh]']  = results['cons_06_11_var']
+    df.at[row,'Energy consumption variation [11-17] [kWh]'] = results['cons_11_17_var']
+    df.at[row,'Energy consumption variation [17-22] [kWh]'] = results['cons_17_22_var']
+    df.at[row,'Energy consumption variation [22-00] [kWh]'] = results['cons_22_24_var']
+    df.at[row,'Self-sufficiency ratio [%]']		            = results['selfsuffrate']
+    df.at[row,'Self-consumption ratio [%]']		            = results['selfconsrate']
+    df.at[row,'Energy consumption shifted [kWh]']		    = results['el_shifted']
+    df.at[row,'Energy sold - Revenue [€]']		            = results['EnSold']
+    df.at[row,'Energy sold - Grid fees [€]']		        = results['CostToSell']
+    df.at[row,'Energy sold - Net revenue [€]']		        = results['TotalSell']
+    df.at[row,'Energy bought - Energy expenditure [€]']	    = results['EnBought']
+    df.at[row,'Energy bought - Grid fees [€]']		        = results['CostToBuy']
+    df.at[row,'Energy bought - Total expenditure [€]']	    = results['TotalBuy']
+    df.at[row,'Energy net expenditure [€]']		            = results['el_netexpend']
+    df.at[row,'Average electricity cost [€/kWh]']		    = results['el_costperkwh']
+    df.at[row,'PBP [years]']		                        = results['PBP']
+    df.at[row,'NPV [€]']		                            = results['NPV']
+    df.at[row,'PI [-]']		                                = results['PI']
+    df.at[row,'PBP ref case PV [years]']		            = results['PBP_refPV']
+    df.at[row,'NPV ref case PV [€]']		                = results['NPV_refPV']
+    df.at[row,'PI ref case PV [-]']		                    = results['PI_refPV']
 
     df.to_excel(file,sheet_name=sheet)
 

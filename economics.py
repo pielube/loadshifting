@@ -153,9 +153,6 @@ def EconomicAnalysis(inp, tariffs, E, E_ref):
     NPVcurve[0] = CashFlowsAct[0]
     for i in range(len(CashFlows)-1):
         NPVcurve[i+1] = NPVcurve[i]+CashFlowsAct[i+1]
-        
-    # import matplotlib.pyplot as plt
-    # plt.plot(NPVcurve)
 
     # Final NPV
      
