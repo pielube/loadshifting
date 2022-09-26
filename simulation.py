@@ -51,7 +51,7 @@ def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',c
     
     # PV and battery technology parameters
     with open(inputhpath + cf_pvbatt,'r') as f:
-        out['pvbatt_param'] = json.load(f)
+        pvbatt = json.load(f)
     
     # Economic parameters
     with open(inputhpath + cf_econ,'r') as f:
@@ -68,6 +68,7 @@ def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',c
     
     out['config'] = cases[namecase]
     out['econ_param'] = econ_cases[namecase]
+    out['pvbatt_param'] = pvbatt[namecase]
     out['housetype'] = housetypes[cases[namecase]['house']]
         
     return out
