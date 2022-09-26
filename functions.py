@@ -1119,19 +1119,6 @@ def WriteResToExcel(file,sheet,results,econ_param,enprices,gridfees,row):
     df.at[row,'PI ref case PV [-]']		                    = results['PI_refPV']
 
     df.to_excel(file,sheet_name=sheet)
-
-
-
-import openpyxl
-
-def WriteResToExcel2(file): #,sheet,results,econ_param,enprices,gridfees,row):
-    
-    wb = openpyxl.load_workbook(file)
-    sheet = wb.active
-    
-    sheet.cell(row = 2, column = 1).value = 'test'
-    
-    wb.save(file)
     
 
 
@@ -1141,9 +1128,8 @@ if __name__ == "__main__":
     # Testing functions
     # """
 
-    # test = HouseholdMembers(['FTE','FTE'])
-    # print(test)
+    test = HouseholdMembers(['FTE','FTE'])
+    print(test)
     
-    file = './test.xlsx'
-    WriteResToExcel2(file)
+
         
