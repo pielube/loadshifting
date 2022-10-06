@@ -1,10 +1,12 @@
-    
 import openpyxl
 import ast
 import json
 import pandas as pd
 import os
+import datetime
 
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 def input_general(ws1,inputpath):
     
@@ -66,6 +68,9 @@ def input_general(ws1,inputpath):
     filename = inputpath + 'pvbatt_param.json'
     with open(filename, 'w',encoding='utf-8') as f:
         json.dump(pvbatt, f,ensure_ascii=False, indent=4)
+        
+    return dict1
+
 
 
 def input_elprices(ws2,inputpath):
@@ -118,11 +123,47 @@ def input_elprices(ws2,inputpath):
             name = inputpath + i + '_price.csv'
             df.to_csv(name)          
      
+def read_sheet(file,sheet):
+    '''
+    function that reads one sheet of the excel config file and outputs it in a dataframe
+    '''
+    raw = pd.read_excel(file,sheet_name=sheet)
+    raw.rename(columns={ raw.columns[0]: "varname" }, inplace = True)
+    raw = raw.loc[raw['varname'].notna(),:]
+    raw.index = raw['varname']
+    return raw[['Variable','Valeur','Description']]
+
+
+def read_config(filename):
+    '''
+    Function that read the excel config file for the load-shifting library
+    Parameters
+    ----------
+    filename : string
+        path to the config file
+
+    Returns
+    -------
+    dict
+    '''
+    config = read_sheet(filename,'main')
+    ownership = read_sheet(filename,'ownership')
+    
+    sellprice_2D = pd.read_excel(filename,sheet_name='sellprice',index_col=0)
+    gridprice_2D = pd.read_excel(filename,sheet_name='gridprice',index_col=0)
+    
+    idx = pd.date_range(start=datetime.datetime(year = sellprice_2D.index[0].year, month = 1, day = 1,hour=0),end = datetime.datetime(year = sellprice_2D.index[0].year, month = 12, day = 31,hour=23),freq='1h')
+    
+    # turn data into a column (pd.Series)
+    sellprice = sellprice_2D.stack()
+    sellprice.index = idx
+    
+    gridprice = gridprice_2D.stack()
+    gridprice.index = idx
+
+    return {'config':config,'ownership':ownership,'gridprice':gridprice,'sellprice':sellprice}    
 
 if __name__ == '__main__':
-    
-    __location__ = os.path.realpath(
-        os.path.join(os.getcwd(), os.path.dirname(__file__)))
     
     # Open workbook and select worksheets
     wb = openpyxl.load_workbook('./inputs.xlsx')
@@ -132,8 +173,14 @@ if __name__ == '__main__':
     inputpath =  __location__ + '/'
 
     input_general(ws1,inputpath)
-    input_elprices(ws2,inputpath)
+    input_elprices(ws2,inputpath)    
+    
+    # load the new, all-included config file:
+    filename = './config.xlsx'
+    conf = read_config(filename)
+    
 
+    
 
 
 
