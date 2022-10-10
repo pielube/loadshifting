@@ -139,7 +139,7 @@ def pvlib_detailed(coordinates,surface_tilt):
     return ac_15min,losses,dc_peak['p_mp']
 
 @memory.cache
-def pvgis_hist(inputs):
+def pvgis_hist(inputs,loc):
     """
     PV production taken from PVGIS data
 
@@ -162,13 +162,13 @@ def pvgis_hist(inputs):
     """
 
 
-    latitude,longitude,name,altitude,timezone = inputs['location']
-    peakp = inputs['Ppeak']
-    year = inputs['year']
+    latitude,longitude,name,altitude,timezone = loc['latitude'],loc['longitude'],loc['name'],loc['altitude'],loc['timezone']
+    peakp = inputs['ppeak']
+    year = defaults.year
     losses = inputs['losses']
     tilt = inputs['tilt']
-    azimuth = inputs['azimuth']
-    tmybool = inputs['TMY']
+    azimuth = inputs['azimut']
+    tmybool = True
     
     index60min = pd.date_range(start=str(year)+'-01-01 00:00:00',end=str(year)+'-12-31 23:00:00',freq='60T')
     index15min = pd.date_range(start=str(year)+'-01-01 00:00:00',end=str(year)+'-12-31 23:45:00',freq='15T')

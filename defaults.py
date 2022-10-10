@@ -6,6 +6,8 @@ Created on Mon Feb 14 09:38:12 2022
 @author: sylvain
 """
 
+# Number of stochastic demand scenarios to run:
+N = 1
 
 # Heat pump
 hp_thermal_power = 7000
@@ -54,3 +56,70 @@ max_shift = 24
 
 # Verbosity:
 verbose = 0
+
+# reference year for the weather data 
+year = 2015
+
+# translation the input variables into standard english to be used in the library:
+translate = {
+    'dwelling_type': {'Appartement':'1f',
+                      "2 façades":'2f',
+                      '3 façades':'3f',
+                      '4 façades':'4f'},
+    'econ_tariff': {'Facturation nette':'net-metering',
+                    'Double flux:':'bi-directional'},
+    'cont_strategy': {'Aucune':'none',
+                      'Auto-consommation':'self-consumption',
+                      'Tarif variable':'time-of-use'},
+    'cont_wetapp': {'Aucun':'none',
+                    'Manuel':'manual',
+                    'Automatisé':'automated'},
+    'dwelling_member1':{'Aucun':None,
+              'Aléatoire':'Random',
+              'Travailleur à temps plein':'FTE',
+              'Travailleur à temps partiel':'PTE',
+              'Enfant':'U12',
+              'Retraité':'Retired',
+              'Sans emploi':'Unemployed',
+              'Etudiant':'School'},
+    'dwelling_member2':{'Aucun':None,
+              'Aléatoire':'Random',
+              'Travailleur à temps plein':'FTE',
+              'Travailleur à temps partiel':'PTE',
+              'Enfant':'U12',
+              'Retraité':'Retired',
+              'Sans emploi':'Unemployed',
+              'Etudiant':'School'},
+    'dwelling_member3':{'Aucun':None,
+              'Aléatoire':'Random',
+              'Travailleur à temps plein':'FTE',
+              'Travailleur à temps partiel':'PTE',
+              'Enfant':'U12',
+              'Retraité':'Retired',
+              'Sans emploi':'Unemployed',
+              'Etudiant':'School'},
+    'dwelling_member4':{'Aucun':None,
+              'Aléatoire':'Random',
+              'Travailleur à temps plein':'FTE',
+              'Travailleur à temps partiel':'PTE',
+              'Enfant':'U12',
+              'Retraité':'Retired',
+              'Sans emploi':'Unemployed',
+              'Etudiant':'School'},
+    'dwelling_member5':{'Aucun':None,
+              'Aléatoire':'Random',
+              'Travailleur à temps plein':'FTE',
+              'Travailleur à temps partiel':'PTE',
+              'Enfant':'U12',
+              'Retraité':'Retired',
+              'Sans emploi':'Unemployed',
+              'Etudiant':'School'},
+    'dhw_type': {'Résistif':'ElectricBoiler',
+                 'Thermodynamique':'HeatPump'}
+    }
+
+
+#Translate the loadprogen building type into the procebar building types:
+convert_building = {'1f':'Apartment','2f':'Terraced','3f':'Semi-detached','4f':'Freestanding'}
+
+    

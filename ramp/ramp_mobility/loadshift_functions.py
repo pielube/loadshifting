@@ -10,19 +10,19 @@ import pathlib, os
 ramppath = pathlib.Path(__file__).parent.parent.resolve()
 datapath = os.path.join(ramppath,'database')
 
-def MainDriver(inputs):
+def MainDriver(members):
     plausibleMDs = ['FTE','PTE','Retired','Unemployed'] # list of plausible main drivers
-    plausibleMDsinDwelling = [value for value in inputs['members'] if value in plausibleMDs] # list of plausible main drivers among house members
+    plausibleMDsinDwelling = [value for value in members if value in plausibleMDs] # list of plausible main drivers among house members
     MD = random.choice(plausibleMDsinDwelling) # main driver
     return MD
 
 
-def EVCharging(inputs,occupancy):
+def EVCharging(conf,occupancy):
 
-    MD = MainDriver(inputs)
-    MDathome = occupancy[inputs['members'].index(MD)]
+    MD = MainDriver(conf['members'])
+    MDathome = occupancy[conf['members'].index(MD)]
     
-    ndays = inputs['ndays']
+    ndays = conf['sim']['ndays']
     nminutes = ndays * 1440 + 1 
     MDathome_min = np.zeros(nminutes)
     
@@ -44,11 +44,10 @@ def EVCharging(inputs,occupancy):
         # "results/inputfile/simulation_name" leave simulation_name False (or "")
         # to avoid the creation of the additional folder
         inputfile = f'Europe/{c}'
-        simulation_name = ''
         
         # Define country and year to be considered when generating profiles
         country = f'{c}'
-        year = inputs['year']
+        year = conf['sim']['year']
         
         # Define attributes for the charging profiles
         charging_mode = 'Uncontrolled' # Select charging mode (Uncontrolled', 'Night Charge', 'RES Integration', 'Perfect Foresight')

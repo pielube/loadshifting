@@ -13,7 +13,8 @@ import json
 import time
 from prosumpy import dispatch_max_sc,print_analysis
 from functions import HPSizing,COP_deltaT
-from functions import MostRepCurve,DHWShiftTariffs,HouseHeating,EVshift_PV,EVshift_tariffs,ResultsAnalysis,WriteResToExcel,load_climate_data
+from functions import scale_vector,MostRepCurve,DHWShiftTariffs,HouseHeating,EVshift_PV,EVshift_tariffs,ResultsAnalysis,WriteResToExcel,load_climate_data
+from readinputs import read_config
 from functions import shift_appliance,scale_timeseries
 from pv import pvgis_hist
 from demands import compute_demand
@@ -101,25 +102,48 @@ def load_cases(cf_cases='cases.json'):
         
     return out
 
+def list_appliances(conf):
+    '''
+    Small function that generates a list of appliances present in the household.
+    If they are shiftable, a second list is returned with the flexible appliances
+    '''
+    techs = ['StaticLoad']
+    techshift = []
+    if conf['dwelling']['washing_machine']:
+        techs.append('WashingMachine')
+        if conf['cont']['wetapp'] in ['automated','manual']:
+            techshift.append('WashingMachine')
+    if conf['dwelling']['tumble_dryer']:
+        techs.append('TumbleDryer')
+        if conf['cont']['wetapp'] in ['automated','manual']:
+            techshift.append('TumbleDryer')
+    if conf['dwelling']['dish_washer']:
+        techs.append('DishWasher')
+        if conf['cont']['wetapp'] in ['automated','manual']:
+            techshift.append('DishWasher')
+    if conf['hp']['yesno']:
+        techs.append('HeatPumpPower')
+        if conf['hp']['loadshift']:
+            techshift.append('HeatPumpPower')
+    if conf['dhw']['yesno']:
+        techs.append('DomesticHotWater')
+        if conf['dhw']['loadshift']:
+            techshift.append('DomesticHotWater')
+    if conf['ev']['yesno']:
+        techs.append('EVCharging')
+        if conf['ev']['loadshift']:
+            techshift.append('EVCharging')
+    return techs,techshift
+    
 
 @memory.cache
-def shift_load(config,pvbatt_param,econ_param,inputs,N):
+def shift_load(conf):
     '''
     
     Parameters
     ----------
-    config : dict
+    conf : dict
         Pre-defined simulation case to be simulated.
-    pvbatt_param : dict
-        PV and battery parameters.
-    econ_param : dict
-        Economic parameters.
-    tariffs : dict
-        Time-of-use electricity tariffs.
-    inputs : dict
-        House parameters.
-    N : int
-        Number of stochastic scenarios to be simulated.
 
     Returns
     -------
@@ -128,69 +152,45 @@ def shift_load(config,pvbatt_param,econ_param,inputs,N):
 
     '''
 
-    house          = config['house']
-    columns        = config['columns'] 
-    TechsShift     = config['TechsShift']
+    columns,TechsShift = list_appliances(conf)
     WetAppShift    = [x for x in TechsShift if x in ['TumbleDryer','DishWasher','WashingMachine']]
     TechsNoShift   = [x for x in columns if x not in TechsShift]
     WetAppBool     = len(WetAppShift)>0
-    WetAppManBool  = config['WetAppManualShifting']
-    PVBool         = config['PresenceOfPV']
-    BattBool       = config['PresenceOfBattery']
+    WetAppManBool  = conf['cont']['wetapp'] == 'manual'
+    PVBool         = conf['pv']['yesno']
+    BattBool       = conf['batt']['yesno']
     DHWBool        = "DomesticHotWater" in TechsShift
     HeatingBool    = "HeatPumpPower" in TechsShift
     EVBool         = "EVCharging" in TechsShift
     
-    FixedControl   = econ_param['C_control_fix']
-    AnnualControl  = econ_param['C_control_fix_annual']
-    thresholdprice = econ_param['thresholdprice']
+    thresholdprice = conf['cont']['thresholdprice']
     
-    demands = compute_demand(inputs,N,inputs['members'],inputs['thermal_parameters'])
+    #demands = compute_demand(conf,N,inputs['members'],inputs['thermal_parameters'])
+    demands = compute_demand(conf)
     
-    config_pv  = pvbatt_param['pv']
-    config_inv = pvbatt_param['inv']
-    config_bat = pvbatt_param['battery']
-    
-    pvadim = pvgis_hist(config_pv)  
+    pvadim = pvgis_hist(conf['pv'],conf['loc'])  
     
     # Various array sizes and timesteps used throughout the code
     index1min  = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='T')
     index10min = pd.date_range(start='2015-01-01',end='2015-12-31 23:50:00',freq='10T')
     index15min = pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')
     n1min  = len(index1min)
-    n10min = int(n1min/10)
     n15min = int(n1min/15)
-    stepperh_1min = 60 # 1/h
-    stepperh_15min = 4 # 1/h
     ts_15min = 0.25 # h
-    
-    # Electricity prices array - 15 min timestep
-    tariffe = {}
-    
-    inputhpath = __location__ + '/inputs/' + econ_param['tariff'] + '.csv'
-    with open(inputhpath,'r') as f:
-        prices = pd.read_csv(f,index_col=0)
-        
-    tariffe[econ_param['tariff']] = prices
-    
-    yenprices_15min = prices['energy'].to_numpy() # €/kWh
-    ygridfees_15min = prices['grid'].to_numpy()   # €/kWh
+           
+    yenprices_15min = scale_vector(conf['energyprice'].to_numpy(),len(index15min)) # €/kWh
+    ygridfees_15min = scale_vector(conf['gridprice'].to_numpy(),len(index15min))  # €/kWh
     yprices_15min = yenprices_15min + ygridfees_15min  # €/kWh
     
-    inputhpath = __location__ + '/inputs/' + econ_param['tariff_ref'] + '.csv'
-    with open(inputhpath,'r') as f:
-        prices = pd.read_csv(f)
-        
-    tariffe[econ_param['tariff_ref']] = prices
     
     """
     3) Most representative curve
     """
     
-    idx = MostRepCurve(demands['results'],columns,yenprices_15min,ygridfees_15min,ts_15min,econ_param,tariffe)
+    idx = MostRepCurve(conf,demands['results'],columns,yenprices_15min,ygridfees_15min,ts_15min)
     
     # Inputs relative to the most representative curve:
-    inputs = demands['input_data'][idx]
+    conf = demands['input_data'][idx]              # this overwrites the conf dictionnary passed as argument!!
     if defaults.verbose > 0:
         print('Most representative curve index: {:}'.format(idx))
     
@@ -238,17 +238,17 @@ def shift_load(config,pvbatt_param,econ_param,inputs,N):
     
     if PVBool:
     
-        if config_pv['AutomaticSizing']:
+        if conf['pv']['automatic_sizing']:
             yield_pv = pvadim.sum()/4
-            pvpeak = min(ydemand/yield_pv,config_pv['Plim']) # kWp
+            pvpeak = min(ydemand/yield_pv,conf['pv']['plim_kva']) # kWp  TODO: check thi!
         else:
-            pvpeak = config_pv['Ppeak']
+            pvpeak = conf['pv']['ppeak']
             
-        if config_inv['AutomaticSizing']:
-            inv_lim = config_inv['Plim_kVA'] * config_inv['powerfactor'] # kW max inv power
+        if conf['pv']['automatic_sizing']:
+            inv_lim = conf['pv']['plim_kva'] * conf['pv']['powerfactor'] # kW max inv power
             invpeak = min(pvpeak/1.2,inv_lim)
         else:
-            invpeak = config_inv['Ppeak']
+            invpeak = conf['pv']['inverter_pmax']
             
         # 15 min timestep series, with upper limit given by inverter   
         pflows['pv'] = np.clip(pvadim*pvpeak,None,invpeak) # kW
@@ -268,20 +268,17 @@ def shift_load(config,pvbatt_param,econ_param,inputs,N):
         invpeak = 0. # kWi
     
     # Update PV capacity
-    pvbatt_param['pv']['Ppeak'] = pvpeak # kWp
-    config_pv['Ppeak'] = pvpeak
+    conf['pv']['ppeak'] = pvpeak # kWp
     
     # Update inverter capacity
-    pvbatt_param['inv']['Ppeak'] = invpeak # kWi
-    config_inv['Ppeak'] = invpeak
+    conf['pv']['inverter_pmax'] = invpeak # kWi
     
     """
     7) Battery size
     """
     
     if not BattBool:
-        pvbatt_param['battery']['BatteryCapacity'] = 0. # kWh
-        config_bat['BatteryCapacity'] = 0.
+        conf['batt']['capacity'] = 0. # kWh
     	   
     
     """
@@ -366,9 +363,9 @@ def shift_load(config,pvbatt_param,econ_param,inputs,N):
     
         # equivalent battery
         # TODO check these entries
-        Vcyl = inputs['DHW']['Vcyl'] # litres
-        Ttarget = inputs['DHW']['Ttarget'] # °C
-        PowerDHWMax = inputs['DHW']['PowerElMax']/1000. # kW
+        Vcyl = conf['dhw']['vol'] # litres
+        Ttarget = conf['dhw']['set_point'] # °C
+        PowerDHWMax = conf['dhw']['pnom']/1000. # kW
     
         Tmin = defaults.T_min_dhw # °C
         Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
@@ -441,10 +438,10 @@ def shift_load(config,pvbatt_param,econ_param,inputs,N):
         Tset = np.full(n15min,defaults.T_sp_low) + np.full(n15min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_15min
         
         # Heat pump sizing
-        if inputs['HP']['HeatPumpThermalPower'] is not None:
-            QheatHP = inputs['HP']['HeatPumpThermalPower']
+        if conf['hp']['pnom'] is not None:
+            QheatHP = conf['hp']['pnom']
         else:
-            QheatHP = HPSizing(inputs,defaults.fracmaxP) # W
+            QheatHP = HPSizing(conf['BuildingEnvelope'],defaults.fracmaxP) # W   conf['BuildingEnvelope'] should was defined in the function compute_demand
         
         if PVBool: # strategy based on enhancing self-consumption
         
@@ -490,7 +487,7 @@ def shift_load(config,pvbatt_param,econ_param,inputs,N):
             Tset += offset
             Tset[idx_tincrease] += defaults.Tincrease
         
-        res_househeat = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp15min,irr15min,n15min,defaults.heatseas_st,defaults.heatseas_end,ts)
+        res_househeat = HouseHeating(conf['BuildingEnvelope'],QheatHP,Tset,Qintgains,temp15min,irr15min,n15min,defaults.heatseas_st,defaults.heatseas_end,ts)
         Qshift = res_househeat['Qheat']
         
         # Electricity consumption
@@ -525,7 +522,7 @@ def shift_load(config,pvbatt_param,econ_param,inputs,N):
     if EVBool:
         
         # Main driver - household member using the car
-        MD = inputs['EV']['MainDriver']
+        MD = conf['ev']['MainDriver']       # this was defined in the function compute_demand
         
         # Home charging profile
         charge_home = demands['results'][idx]['EVCharging']/1000. # kW
@@ -533,7 +530,7 @@ def shift_load(config,pvbatt_param,econ_param,inputs,N):
         
         # Occupancy of the main driver profile
         # 1 at home (active or inactive) 0 not at home
-        occ_10min_MD = demands['occupancy'][idx].iloc[:,inputs['members'].index(MD)][:-1]
+        occ_10min_MD = demands['occupancy'][idx].iloc[:,conf['members'].index(MD)][:-1]
         occ_10min_MD = pd.Series(data=np.where(occ_10min_MD<3,1,0),index=index10min)
         occ_1min_MD  = occ_10min_MD.reindex(index1min,method='pad').to_numpy()
         
@@ -673,8 +670,13 @@ def shift_load(config,pvbatt_param,econ_param,inputs,N):
             print('--- Shifting resulting demand with battery ---')
          
         # Battery applied to demand profile shifted by all other shifting techs
-        param_tech_batt_pspy = pvbatt_param['battery']
-        param_tech_batt_pspy['timestep']=.25
+        param_tech_batt_pspy = {'BatteryCapacity':conf['batt']['capacity'],
+                                'BatteryEfficiency':conf['batt']['efficiency'],
+                                'InverterEfficiency':1,
+                                'timestep':conf['sim']['ts'],
+                                'MaxPower':conf['batt']['pnom']
+            
+            }
         
         dispatch_bat = dispatch_max_sc(pflows.pv,pflows.demand_shifted_nobatt,param_tech_batt_pspy,return_series=False)
         
@@ -705,17 +707,18 @@ def shift_load(config,pvbatt_param,econ_param,inputs,N):
     # TODO
     # - add how much energy has been shifted by each technology
     
-    outs = ResultsAnalysis(config_pv['Ppeak'],config_bat['BatteryCapacity'],config_inv['Ppeak'],pflows,econ_param,tariffe)
+    outs = ResultsAnalysis(conf,pflows)
 
     return outs,demand_15min,demand_shifted,pflows
 
 
 if __name__ == '__main__':
     
-    conf = load_config('default')
-    config,pvbatt_param,econ_param,housetype,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['housetype'],conf['N']
+    conf = read_config(__location__ + '/inputs/config.xlsx')
     
-    results,demand_15min,demand_shifted,pflows = shift_load(config,pvbatt_param,econ_param,housetype,N)
+    # delete unnecessary entries:
+    
+    results,demand_15min,demand_shifted,pflows = shift_load(conf)
     
     print(json.dumps(results, indent=4))
     

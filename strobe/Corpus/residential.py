@@ -25,21 +25,16 @@ strobepath = pathlib.Path(__file__).parent.parent.resolve()
 datapath = os.path.join(strobepath,'Data')
 
 
-def CustomAppOwnership(inputs,dict_appliances):
+def CustomAppOwnership(conf,dict_appliances):
     '''
     Function that modifies the appliances characteristics based on the user inputs
 
     Parameters
     ----------
-    updappownership: dict
-        Contains the updated appliances ownerhisp probabilities, not considering
-        load shifting, based on 
-        BILAN ÉNERGÉTIQUE DE LA WALLONIE 2018 SECTEUR DOMESTIQUE ET ÉQUIVALENTS
-       Table 8 (Hob) and Table 9 (all other appliances)
-    inputs : dict
-        Contains the appliances of which the presence must be forced to 
-        be considered for load shifting applications
-    set_appliances : dict
+    conf : dict
+        Contains the general configuration for LoadShifting with at least the keys
+        'ownership' and 'dwelling'
+    dict_appliances : dict
         Appliances description, as defined in by the file Data/Appliances.py.
 
     Returns
@@ -50,43 +45,28 @@ def CustomAppOwnership(inputs,dict_appliances):
     
     # Updating not load shifting related app ownerhisps
     
-    dict_appliances["Hob"]["owner"]            = inputs["appliances"]["prob_own"]["Hob"]
-    dict_appliances["Microwave"]["owner"]      = inputs["appliances"]["prob_own"]["Microwave"]  
-    dict_appliances["PC"]["owner"]             = inputs["appliances"]["prob_own"]["PC"]   
-    dict_appliances["TV1"]["owner"]            = inputs["appliances"]["prob_own"]["TV1"]    
-    dict_appliances["TumbleDryer"]["owner"]    = inputs["appliances"]["prob_own"]["TumbleDryer"]
-    dict_appliances["DishWasher"]["owner"]     = inputs["appliances"]["prob_own"]["DishWasher"] 
-    dict_appliances["WashingMachine"]["owner"] = inputs["appliances"]["prob_own"]["WashingMachine"] 
-    dict_appliances["WasherDryer"]["owner"]    = inputs["appliances"]["prob_own"]["WasherDryer"] 
-    dict_appliances['Refrigerator']['owner']   = inputs["appliances"]["prob_own"]["Refrigerator"]  
-    dict_appliances['FridgeFreezer']['owner']  = inputs["appliances"]["prob_own"]["FridgeFreezer"] 
-    dict_appliances['ChestFreezer']['owner']   = inputs["appliances"]["prob_own"]["ChestFreezer"]  
-    dict_appliances['UprightFreezer']['owner'] = inputs["appliances"]["prob_own"]["UprightFreezer"]
-    
-    # dict_appliances["Kettle"]["owner"]    = inputs["appliances"]["prob_own"]["Kettle"] 
-    # dict_appliances['HiFi']['owner']   = inputs["appliances"]["prob_own"]["HiFi"]  
-    # dict_appliances['Vacuum']['owner']  = inputs["appliances"]["prob_own"]["Vacuum"] 
-    # dict_appliances['TV2']['owner']   = inputs["appliances"]["prob_own"]["TV2"]  
-    # dict_appliances['TV3']['owner'] = inputs["appliances"]["prob_own"]["TV3"]    
-    # dict_appliances['Iron']['owner'] = inputs["appliances"]["prob_own"]["Iron"]  
-    # dict_appliances['Oven']['owner'] = inputs["appliances"]["prob_own"]["Oven"]  
+    dict_appliances["Hob"]["owner"]            = conf['ownership']["Hob"]
+    dict_appliances["Microwave"]["owner"]      = conf['ownership']["Microwave"]  
+    dict_appliances["PC"]["owner"]             = conf['ownership']["PC"]   
+    dict_appliances["TV1"]["owner"]            = conf['ownership']["TV1"]    
+    dict_appliances["TumbleDryer"]["owner"]    = conf['ownership']["TumbleDryer"]
+    dict_appliances["DishWasher"]["owner"]     = conf['ownership']["DishWasher"] 
+    dict_appliances["WashingMachine"]["owner"] = conf['ownership']["WashingMachine"] 
+    dict_appliances["WasherDryer"]["owner"]    = conf['ownership']["WasherDryer"] 
+    dict_appliances['Refrigerator']['owner']   = conf['ownership']["Refrigerator"]  
+    dict_appliances['FridgeFreezer']['owner']  = conf['ownership']["FridgeFreezer"] 
+    dict_appliances['ChestFreezer']['owner']   = conf['ownership']["ChestFreezer"]  
+    dict_appliances['UprightFreezer']['owner'] = conf['ownership']["UprightFreezer"]
 
     # Forcing appliances to be there is necessary for load shifting
-   
-    if not inputs['appliances']['loadshift']:
-        return
-    if 'apps' not in inputs['appliances']:
-        return
-    if 'apps' in inputs and inputs['appliances']['apps'] == None:
-        return
-        
-    if "TumbleDryer" in inputs['appliances']['apps']:
+
+    if conf['dwelling']['tumble_dryer']:
         dict_appliances["TumbleDryer"]["owner"] = 1.0
         
-    if "DishWasher" in inputs['appliances']['apps']:
+    if conf['dwelling']['dish_washer']:
         dict_appliances["DishWasher"]["owner"] = 1.0
         
-    if "WashingMachine" in inputs['appliances']['apps']:
+    if conf['dwelling']['washing_machine']:
         dict_appliances["WashingMachine"]["owner"] = 1.0
 
 
@@ -115,7 +95,7 @@ class Household(object):
             name = 'nameless'
             
         #Adding the inputs config variable:
-        self.inputs = kwargs   
+        self.config = kwargs   
 
         # first define the name of the household object
         self.creation = time.asctime()

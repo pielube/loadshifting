@@ -4,6 +4,7 @@ import json
 import pandas as pd
 import os
 import datetime
+import defaults
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -146,37 +147,73 @@ def read_config(filename):
     -------
     dict
     '''
-    config = read_sheet(filename,'main')
-    ownership = read_sheet(filename,'ownership')
+    out = {}
+    out['config_full'] = read_sheet(filename,'main')
+    out['ownership'] = read_sheet(filename,'ownership')
+    out['ownership'] = out['ownership']['Valeur'].to_dict()
     
     sellprice_2D = pd.read_excel(filename,sheet_name='sellprice',index_col=0)
     gridprice_2D = pd.read_excel(filename,sheet_name='gridprice',index_col=0)
+    energyprice_2D = pd.read_excel(filename,sheet_name='energyprice',index_col=0)
     
     idx = pd.date_range(start=datetime.datetime(year = sellprice_2D.index[0].year, month = 1, day = 1,hour=0),end = datetime.datetime(year = sellprice_2D.index[0].year, month = 12, day = 31,hour=23),freq='1h')
     
     # turn data into a column (pd.Series)
     sellprice = sellprice_2D.stack()
     sellprice.index = idx
+    out['sellprice'] = sellprice
     
     gridprice = gridprice_2D.stack()
     gridprice.index = idx
-
-    return {'config':config,'ownership':ownership,'gridprice':gridprice,'sellprice':sellprice}    
+    out['gridprice'] = gridprice
+    
+    energyprice = energyprice_2D.stack()
+    energyprice.index = idx
+    out['energyprice'] = energyprice
+    
+    config = out['config_full']['Valeur']
+    # Transform selected string variables to boolean:
+    for x in ['dwelling_washing_machine','dwelling_tumble_dryer','dwelling_dish_washer','hp_yesno','hp_loadshift','hp_automatic_sizing',
+              'dhw_yesno','dhw_loadshift','ev_yesno','ev_loadshift','pv_yesno','pv_automatic_sizing','batt_yesno','econ_smart_meter',
+              'pv_inverter_automatic_sizing']:
+        if config[x] in ['Oui','Yes','yes']:
+            config[x] = True
+        else:
+            config[x] = False
+   
+    # translate text variables into the standard english form used by the library:
+    for key in defaults.translate:
+        config[key] = defaults.translate[key][config[key]]
+        
+    # Add the reference weather-year if not present:
+    if 'sim_year' not in config:
+        config['sim_year'] = defaults.year
+       
+    # write the configuration into sub-dictionnaries
+    for prefix in ['sim','dwelling','hp','dhw','ev','pv','batt','econ','cont','loc']:
+        subset = config[[x.startswith(prefix + '_') for x in config.index]]
+        n = len(prefix)+1
+        subset.index = [x[n:] for x in subset.index]
+        out[prefix] = subset.to_dict()
+        
+    out['config'] = config
+    
+    return out   
 
 if __name__ == '__main__':
     
-    # Open workbook and select worksheets
-    wb = openpyxl.load_workbook('./inputs.xlsx')
-    ws1 = wb['inputs']
-    ws2 = wb['elprices']
+    # # Open workbook and select worksheets
+    # wb = openpyxl.load_workbook('inputs/inputs.xlsx')
+    # ws1 = wb['inputs']
+    # ws2 = wb['elprices']
     
-    inputpath =  __location__ + '/'
+    # inputpath =  __location__ + '/'
 
-    input_general(ws1,inputpath)
-    input_elprices(ws2,inputpath)    
+    # input_general(ws1,inputpath)
+    # input_elprices(ws2,inputpath)    
     
     # load the new, all-included config file:
-    filename = './config.xlsx'
+    filename = 'inputs/config.xlsx'
     conf = read_config(filename)
     
 

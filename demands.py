@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 import strobe
 import ramp
-import json
 from functions import ProcebarExtractor,HouseholdMembers,load_climate_data,COP_deltaT,HPSizing,HouseHeating
-import os
+import os,sys
 from joblib import Memory
 import defaults
+from readinputs import read_config
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -16,7 +16,7 @@ __location__ = os.path.realpath(
 memory = Memory(__location__ + '/cache/', verbose=defaults.verbose)
 
 @memory.cache
-def compute_demand(inputs,N,members= None,thermal_parameters=None):
+def compute_demand(conf,thermal_parameters=None):
     '''
     Function that generates the stochastic time series for
     - The occupancy profiles
@@ -27,14 +27,10 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
 
     Parameters
     ----------
-    inputs : dict
-        Dictionary with the simulation inputs.
-    N : int
-        Number of stochastic simulations to be run.
-    members: None, int, list
-        Optional. If None inputs['members'] is used, if int or list follows HousholdMemebers func logic
+    conf : dict
+        Dictionary with the simulation inputs. Requires the keys 'dwelling', 'hp', 'ev'
     thermal_parameters: None, dict
-        Optional. If None thermal parameters taken from Procebar
+        Optional. If None, thermal parameters taken from Procebar
 
     Returns
     -------
@@ -42,24 +38,34 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         Contains, for each simulation, the demand curves, the occupancy profile and the input data.
 
     '''
-    
+    N=conf['sim']['N']
     out = {'results':[],'occupancy':[],'input_data':[]}
 
     for jj in range(N):          # run the simulation N times and append the results to the list
     
         # People living in the dwelling, taken as input or from Strobe's list
-        if members is not None:
-            inputs['members'] = HouseholdMembers(members)
-        else:
-            inputs['members'] = HouseholdMembers(inputs['members'])
+        conf['members'] = HouseholdMembers(conf)
                
         # Thermal parameters of the dwelling
         # Taken from Procebar .xls files
         if thermal_parameters is not None:
-            inputs['HP'] = {**inputs['HP'],**thermal_parameters}
+            conf['BuildingEnvelope'] = thermal_parameters
         else:
-            procebinp = ProcebarExtractor(inputs['HP']['dwelling_type'],True)
-            inputs['HP'] = {**inputs['HP'],**procebinp}
+            conf['BuildingEnvelope'] = ProcebarExtractor(conf['dwelling']['type'],True)
+            
+        # Rough estimation of solar gains based on data from Crest
+        # Could be improved
+        typeofdwelling = conf['dwelling']['type'] 
+        if typeofdwelling == '4f':
+            conf['BuildingEnvelope']['A_s'] = 4.327106037
+        elif typeofdwelling == '3f':
+            conf['BuildingEnvelope']['A_s'] = 4.862912117
+        elif typeofdwelling == '2f':
+            conf['BuildingEnvelope']['A_s'] = 2.790283243
+        elif typeofdwelling == '1f':
+            conf['BuildingEnvelope']['A_s'] = 1.5  
+        else:
+            sys.exit('invalid dwelling type')
         
         """
         Running the models
@@ -79,7 +85,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         
         # Occupancy, appliances, water withdrawals, heat gains
         # DHW
-        result,textoutput = strobe.simulate_scenarios(1,inputs)
+        result,textoutput = strobe.simulate_scenarios(1,conf)
         n_scen = 0 # Working only with the first scenario
         
         occ = np.array(result['occupancy'][n_scen])
@@ -99,12 +105,12 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         ts15min = 0.25
         
         # Heat pump sizing
-        if inputs['HP']['HeatPumpThermalPower'] is not None:
-            QheatHP = inputs['HP']['HeatPumpThermalPower']
+        if not conf['hp']['automatic_sizing']:
+            QheatHP = conf['hp']['pnom']
         else:
-            QheatHP = HPSizing(inputs,defaults.fracmaxP) # W
+            QheatHP = HPSizing(conf['BuildingEnvelope'],defaults.fracmaxP) # W
                         
-        res_househeat = HouseHeating(inputs,QheatHP,Tset,Qintgains,temp15min,irr15min,n15min,defaults.heatseas_st,defaults.heatseas_end,ts15min)
+        res_househeat = HouseHeating(conf['BuildingEnvelope'],QheatHP,Tset,Qintgains,temp15min,irr15min,n15min,defaults.heatseas_st,defaults.heatseas_end,ts15min)
         Qheat = res_househeat['Qheat']
         
         Eheat = np.zeros(n15min)
@@ -124,10 +130,10 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         
         ### RAMP-mobility ###
         
-        if inputs['EV']['loadshift']:
-            result_ramp = ramp.EVCharging(inputs, result['occupancy'][n_scen])
+        if conf['ev']['loadshift']:
+            result_ramp = ramp.EVCharging({x:conf[x] for x in ['sim','ev','members']}, result['occupancy'][n_scen])
             res_ramp_charge_home = result_ramp['charge_profile_home']
-            inputs['EV']['MainDriver'] = result_ramp['main_driver']
+            conf['ev']['MainDriver'] = result_ramp['main_driver']
         else:
             res_ramp_charge_home = pd.DataFrame()
     
@@ -161,7 +167,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         
         out['results'].append(df)
         out['occupancy'].append(occupancy)
-        out['input_data'].append(inputs)    
+        out['input_data'].append(conf)    
 
     return out
 
@@ -170,7 +176,7 @@ if __name__ == "__main__":
     """
     Testing the main function and saving the results
     """
-    path = './inputs'
+    conf = read_config('inputs/config.xlsx')
     names = ['4f']# ['1f','2f','4f']
     
     for name in names:            # For each house type
@@ -178,13 +184,9 @@ if __name__ == "__main__":
         """
         Loading inputs
         """
-        filename = name+'.json'
-        file = os.path.join(path,filename)
-        with open(file) as f:
-          inputs = json.load(f)
-        N = 1
+        conf['config']['dwelling_type'] = name
       
-        out = compute_demand(inputs,N)   
+        out = compute_demand(conf)   
 
 
 

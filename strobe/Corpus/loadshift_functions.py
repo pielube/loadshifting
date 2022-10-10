@@ -16,20 +16,14 @@ datapath = os.path.join(strobepath,'Data')
 
 
 
-def simulate_scenarios(n_scen,inputs):
+def simulate_scenarios(n_scen,conf):
     
     """Simulate scenarios of demands during ndays.
     Parameters
     ----------
     n_scen : int
         Number of scenarios to generate
-    year : int
-        Year to consider
-        
-    ndays : int
-        Number of days to consider
-    members : str
-        Member list of household
+    conf: general config dictionnary for the simulation. Must contain the keys 'dwelling','pv','ev','dhw'
     Returns
     -------
     elec : numpy array, shape (n_scen, nminutes)
@@ -42,15 +36,14 @@ def simulate_scenarios(n_scen,inputs):
         DHW demands scenarios, sampled at a
         10 minute time-step
     """
-    year = inputs['year']
-    ndays = inputs['ndays']
+    year = conf['sim']['year']
+    ndays = conf['sim']['ndays']
 
     nminutes = ndays * 1440 + 1
-    ntenm = ndays * 144 + 1
     
     Tamb, irr = ambientdata()
     
-    family = Household(**inputs)
+    family = Household(**conf)
 
     # Define arrays storing the scenarios
     # Total receptacle loads and lights
@@ -92,17 +85,17 @@ def simulate_scenarios(n_scen,inputs):
         # WM,TD and DW added later if not considered for load shifting
         pstatic[i, :] = family.Pst
         # Washing machine
-        if inputs['appliances']['loadshift'] and 'WashingMachine' in inputs['appliances']['apps']:
+        if conf['dwelling']['washing_machine']:
             ptd[i, :] = family.Ptd
         else:
             pstatic[i, :] = pstatic[i, :] + family.Ptd        
         # Tumble dryer
-        if inputs['appliances']['loadshift'] and 'TumbleDryer' in inputs['appliances']['apps']:
+        if conf['dwelling']['tumble_dryer']:
             pwm[i, :] = family.Pwm
         else:
             pstatic[i, :] = pstatic[i, :] + family.Pwm
         # Dish washer
-        if inputs['appliances']['loadshift'] and 'DishWasher' in inputs['appliances']['apps']:
+        if conf['dwelling']['dish_washer']:
             pdw[i, :] = family.Pdw
         else:
             pstatic[i, :] = pstatic[i, :] + family.Pdw            
@@ -149,8 +142,8 @@ def simulate_scenarios(n_scen,inputs):
         """
         
         # Electric boiler with hot water tank
-        if inputs['DHW']['loadshift']:
-            Qeb[i,:] = DomesticHotWater(inputs,family.mDHW,Tamb,family.sh_day)
+        if conf['dhw']['yesno']:
+            Qeb[i,:] = DomesticHotWater(conf['dhw'],family.mDHW,Tamb,family.sh_day)
             E_eb = int(sum(Qeb[i,:])/1000./60.)
             print(' - Domestic hot water electricity consumption: ',E_eb,' kWh')
             textoutput.append(' - Domestic hot water electricity consumption: ' + str(E_eb) +' kWh')
@@ -203,16 +196,16 @@ def COP_Tamb(Temp):
     return COP
 
 
-def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
+def DomesticHotWater(config_dhw,mDHW,Tamb,Tbath):
     
     """
     Domestic hot water heater
     Can be both 
     
     In:
-    inputs    dictionary with input data from JSON
+    config_dwh dictionary with input data
     mDHW      tap water required l/min [every min]
-    Tamb      ambient temperature [every min]
+    Tamb      ambient temperature [every min]. Equal to T_bath the heat source is the air from the room
     Tbath     temperature in the room where the boiler is stored [every 10 min]
     
     Out: 
@@ -222,12 +215,12 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
     
     tstep   = 60.  # s
 
-    PowerElMax = inputs['DHW']['PowerElMax']   # W  
-    Ttarget    = inputs['DHW']['Ttarget'] #°C
-    Tfaucet    = inputs['DHW']['Tfaucet'] #°C
-    Tcw        = inputs['DHW']['Tcw']     #°C
-    Vcyl       = inputs['DHW']['Vcyl']    # l
-    Hloss      = inputs['DHW']['Hloss']  # W/K
+    PowerElMax = config_dhw['pnom']  # W  
+    Ttarget    = config_dhw['set_point'] #°C
+    Tfaucet    = config_dhw['tfaucet'] #°C
+    Tcw        = config_dhw['tcold']    #°C
+    Vcyl       = config_dhw['vol']    # l
+    Hloss      = config_dhw['hloss']  # W/K
     
     phi_t = np.zeros(np.size(mDHW))
     phi_a = np.zeros(np.size(mDHW))
@@ -240,7 +233,7 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
     resH = resM * 4200.       # from kg/s to W/K, cp = 4200. J/kg/K
     Ccyl = Vcyl * 1000. /1000. * 4200. # J/K
 
-    if inputs['DHW']['type'] == 'ElectricBoiler':
+    if config_dhw['type'] == 'ElectricBoiler':
         
         for i in range(np.size(mDHW)):
             
@@ -254,7 +247,7 @@ def DomesticHotWater(inputs,mDHW,Tamb,Tbath):
             deltaTcyl = (tstep/Ccyl) * (Hloss*Tbath[j] - (Hloss+resH[i])*Tcyl + resH[i]*Tcw + phi_a[i])
             Tcyl += deltaTcyl
             
-    elif inputs['DHW']['type'] == 'HeatPump':
+    elif config_dhw['type'] == 'HeatPump':
         
         for i in range(np.size(mDHW)):
             

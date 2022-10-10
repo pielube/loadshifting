@@ -1,6 +1,7 @@
 
 import random
 import datetime
+import sys
 
 import numpy as np
 import pandas as pd
@@ -27,6 +28,16 @@ memory = Memory(__location__ + '/cache/', verbose=defaults.verbose)
 # TODO
 # - add description of all functions
 # - comment all functions
+
+def read_sheet(file,sheet):
+    '''
+    function that reads one sheet of the excel config file and outputs it in a dataframe
+    '''
+    raw = pd.read_excel(file,sheet_name=sheet)
+    raw.rename(columns={ raw.columns[0]: "varname" }, inplace = True)
+    raw = raw.loc[raw['varname'].notna(),:]
+    raw.index = raw['varname']
+    return raw[['Variable','Valeur','Description']]
 
 
 def scale_timeseries(data,index):
@@ -81,6 +92,8 @@ def ProcebarExtractor(buildtype,wellinsulated):
                 
     filename1 = __location__ + '/inputs/Building_Stock_arboresence_SG_130118_EME.xls'
     sheets1 = ['Freestanding','Semi-detached','Terraced','Apartment']
+
+    buildtype = defaults.convert_building[buildtype]
     data1 = pd.read_excel (filename1,sheet_name=sheets1,header=0)
         
     df = data1[buildtype]
@@ -177,7 +190,7 @@ def ProcebarExtractor(buildtype,wellinsulated):
     return outputs
 
 
-def HouseholdMembers(members=None):
+def HouseholdMembers(conf):
     
     """
     Function to pick household members composition from Strobe's list
@@ -192,60 +205,60 @@ def HouseholdMembers(members=None):
     out      list of dwelling members
 
     """
+    config = conf['dwelling']
     
-    adults = ['FTE','PTE','Retired','Unemployed'] # TODO decide if School is considered adult or not, change also in drivers in RAMP-mobility
-
-    out = []
+    N = 0           # number of occupants
+    N_random = 0    # number of occupants to be randomly determined
+    defined = []
+    adults = ['FTE','PTE','Retired','Unemployed']
     
-    if members is None: # picking randomly from strobe list
+    for key in ['member1','member2','member3','member4','member5']:
+        if config[key] is not None:
+            N +=1
+            if config[key] == 'Random':
+                N_random += 1
+            else:
+                defined.append(config[key])
+    if N == 0:              # if no occupants are defined, we randomize their number and type by picking from the strobe list
+        print('No occupant defined. Selecting a random number of occupants')
         finished = False
         while not finished: 
             subset = {key: value for key, value in households.items()}
             out = random.choice(list(subset.values()))
             finished = not set(out).isdisjoint(adults)
-        
-    elif type(members) is int: # picking randomly from strobe list with given number of members
+    elif N == N_random:      # All occupants are random but their number is defined. Picking from the list (restricted to this number)
         finished = False
         while not finished: 
-            subset = {key: value for key, value in households.items() if np.size(value) == members}
+            subset = {key: value for key, value in households.items() if np.size(value) == N}
             out = random.choice(list(subset.values()))
-            finished = not set(out).isdisjoint(adults)
-        
-    elif type(members) is list: # list of members given
-        out = members
-        
-    else:
-        print('Error: type of inputs must be None, int or list')
+            finished = not set(out).isdisjoint(adults)        
+    elif N_random == 0:      # all occupants are defined
+        out = defined
+    elif N_random < N:       # some occupants are defined, others not. Randomly picking the remaining ones
+        out = defined
+        for i in range(N_random):
+            out.append(random.choice(adults))
     
     return out
 
 
-def MostRepCurve(demands,columns,yenprices,ygridfees,timestep,econ_param,tariffe):
+def MostRepCurve(conf,demands,columns,yenprices,ygridfees,timestep):
     
     """
     Choosing most representative curve among a list of demand curves
     based on electricity bill buying all electricity from grid
     hence wiithout PV or batteries
     """
-
-    # Technology parameters required by prosumpy
-    # Battery forced to be 0 
-    param_tech = {'BatteryCapacity': 0.,
-                  'BatteryEfficiency': 1.0,
-                  'MaxPower': 0.,
-                  'InverterEfficiency': 1.,
-                  'timestep': 0.25}
     
     # Input parameters required by economic analysis
     # PV and battery forced to be 0
     
-    inp = econ_param
-    inp['PV'] = 0.
-    inp['battery'] = 0.
-    inp['inverter'] = 0.
-    inp['ts'] = 0.25
-    inp['PV_ref'] = 0.
-    inp['inverter_ref'] = 0.   
+    conf2 = conf.copy()
+    
+    conf2['pv']['ppeak'] = 0.
+    conf2['batt']['capacity'] = 0.
+    conf2['inverter_pmax'] = 0.
+    conf2['sim']['ts'] = 0.25
     
     results = []
     
@@ -283,7 +296,7 @@ def MostRepCurve(demands,columns,yenprices,ygridfees,timestep,econ_param,tariffe
         E_ref['SC']           = np.zeros(len(date))
         E_ref['FromBattery']  = np.zeros(len(date))
         
-        out = EconomicAnalysis(inp,tariffe,E,E_ref)
+        out = EconomicAnalysis(conf,E)
         results.append(out['ElBill'])
     
     meanelbill = mean(results)
@@ -512,35 +525,42 @@ def shift_appliance(app,admtimewin,probshift,max_shift=None,threshold_window=0,v
 
 
 
-def HPSizing(inputs,fracmaxP):
+def HPSizing(config_envelope,fracmaxP,T_in=21,T_amb=-10):
+    '''
+    Function that size the HP as a fraction of the maximum heat demand
 
-    if inputs['HP']['HeatPumpThermalPower'] == None:
-        # Heat pump sizing (pg. 24 Procebar report)
-        # External T = -10°C, internal T = 21°C
+    Parameters
+    ----------
+    config_envelope : dict
+        Dictionnary with the envelope parameters.
+    fracmaxP : float
+        Fraction of the maximum thermal load to be covered by the heat pumps.
 
-        # Walls
-        walls_area=inputs['HP']['Aopaque']
-        u_walls=inputs['HP']['Uwalls']
-        # Windows
-        window_area=inputs['HP']['Aglazed']
-        u_windows=inputs['HP']['Uwindows']
-        # Total UA given by walls and windows
-        UA = u_walls*walls_area + u_windows*window_area
-        # Air changes
-        room_vol=inputs['HP']['volume']
-        ach_infl=inputs['HP']['ACH_infl']
-        ach_vent=inputs['HP']['ACH_vent']
-        ach_tot = ach_infl + ach_vent
-        ventilation_efficiency=inputs['HP']['VentEff']
-        b_ek = (1 - (ach_vent / (ach_tot)) * ventilation_efficiency)
-        # Static heat demand in sizing conditions
-        QheatHP = UA*(21-(-10)) + 1200*b_ek*room_vol*(ach_tot/3600)*(21-(-10))
-        # Fraction of heat demand to be considered for sizing
-        QheatHP = QheatHP*fracmaxP
-        
-    else:
-        # Heat pump size given as an input
-        QheatHP = inputs['HP']['HeatPumpThermalPower']
+    Returns
+    -------
+    QheatHP : TYPE
+        Heat pump nominal thermal power.
+
+    '''
+    # Walls
+    walls_area=config_envelope['Aopaque']
+    u_walls=config_envelope['Uwalls']
+    # Windows
+    window_area=config_envelope['Aglazed']
+    u_windows=config_envelope['Uwindows']
+    # Total UA given by walls and windows
+    UA = u_walls*walls_area + u_windows*window_area
+    # Air changes
+    room_vol=config_envelope['volume']
+    ach_infl=config_envelope['ACH_infl']
+    ach_vent=config_envelope['ACH_vent']
+    ach_tot = ach_infl + ach_vent
+    ventilation_efficiency=config_envelope['VentEff']
+    b_ek = (1 - (ach_vent / (ach_tot)) * ventilation_efficiency)
+    # Static heat demand in sizing conditions
+    QheatHP = UA*(T_in-T_amb) + 1200*b_ek*room_vol*(ach_tot/3600)*(T_in-T_amb)
+    # Fraction of heat demand to be considered for sizing
+    QheatHP = QheatHP*fracmaxP
         
     return QheatHP
 
@@ -642,34 +662,23 @@ def DHWShiftTariffs(demand, prices, thresholdprice, param, return_series=False):
     return out
 
 @memory.cache
-def HouseHeating(inputs,QheatHP,Tset,Qintgains,Tamb,irr,nsteps,heatseas_st,heatseas_end,ts):
+def HouseHeating(config_dwelling,QheatHP,Tset,Qintgains,Tamb,irr,nsteps,heatseas_st,heatseas_end,ts):
 
-    # Rough estimation of solar gains based on data from Crest
-    # Could be improved
-    
-    typeofdwelling = inputs['HP']['dwelling_type'] 
-    if typeofdwelling == 'Freestanding':
-        A_s = 4.327106037
-    elif typeofdwelling == 'Semi-detached':
-        A_s = 4.862912117
-    elif typeofdwelling == 'Terraced':
-        A_s = 2.790283243
-    elif typeofdwelling == 'Apartment':
-        A_s = 1.5   
-    Qsolgains = irr * A_s
+
+    Qsolgains = irr * config_dwelling['A_s']
         
     # Defining the house to be modelled with obtained HP size
-    House = Zone(window_area=inputs['HP']['Aglazed'],
-                walls_area=inputs['HP']['Aopaque'],
-                floor_area=inputs['HP']['Afloor'],
-                room_vol=inputs['HP']['volume'],
-                total_internal_area=inputs['HP']['Atotal'],
-                u_walls=inputs['HP']['Uwalls'],
-                u_windows=inputs['HP']['Uwindows'],
-                ach_vent=inputs['HP']['ACH_vent'],
-                ach_infl=inputs['HP']['ACH_infl'],
-                ventilation_efficiency=inputs['HP']['VentEff'],
-                thermal_capacitance=inputs['HP']['Ctot'],
+    House = Zone(window_area=config_dwelling['Aglazed'],
+                walls_area=config_dwelling['Aopaque'],
+                floor_area=config_dwelling['Afloor'],
+                room_vol=config_dwelling['volume'],
+                total_internal_area=config_dwelling['Atotal'],
+                u_walls=config_dwelling['Uwalls'],
+                u_windows=config_dwelling['Uwindows'],
+                ach_vent=config_dwelling['ACH_vent'],
+                ach_infl=config_dwelling['ACH_infl'],
+                ventilation_efficiency=config_dwelling['VentEff'],
+                thermal_capacitance=config_dwelling['Ctot'],
                 t_set_heating=Tset[0],
                 max_heating_power=QheatHP,
                 ts=ts)
@@ -871,7 +880,7 @@ def EVshift_tariffs(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewin
     return out
 
 
-def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,econ_param,tariffe):
+def ResultsAnalysis(conf,pflows):
     
     """
     Prosumpy run 1
@@ -882,7 +891,9 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,econ_param,tar
     
     pv,demand_ref = pflows.pv,pflows.demand_noshift
     
-    if batt_capacity > 0:
+    ts = conf['sim']['ts']
+    
+    if conf['batt']['capacity'] > 0:
         demand = pflows.demand_shifted
     else:
         demand = pflows.demand_shifted_nobatt
@@ -905,71 +916,10 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,econ_param,tar
     # E['FromBattery'] = outputs['store2inv'] not used by economic analysis and would be all 0 considering how prosumpy has been used
     
     """
-    Reference case energy balances
-    """
-    
-    E_ref = {}
-    
-    E_ref['ACGeneration'] = np.zeros(len(demand_ref))
-    E_ref['Load']         = demand_ref.to_numpy()
-    E_ref['ToGrid']       = np.zeros(len(demand_ref))
-    E_ref['FromGrid']     = demand_ref.to_numpy()
-    E_ref['SC']           = np.zeros(len(demand_ref))
-    
-    """
     Economic analysis
     """
     
-    inp = econ_param
-    inp['PV'] = pv_capacity
-    inp['battery'] = batt_capacity
-    inp['inverter'] = inv_capacity
-    inp['ts'] = 0.25
-    inp['PV_ref'] = 0 #pv_capacity
-    inp['inverter_ref'] = 0 #inv_capacity
-    
-    res_EA = EconomicAnalysis(inp, tariffe, E, E_ref)
-    
-    """
-    Prosumpy run 2
-    Running prosumpy for reference case with only PV
-    Used in another economic analysis to get NPV, PBP and PI
-    of the only shifting part, considering PV in the ref case
-    """
-    
-    res_EA_pv = {}
-    res_EA_pv['NPV'] = None
-    res_EA_pv['PBP'] = None
-    res_EA_pv['PI']  = None
-    
-    if pv_capacity > 0:
-        
-        demand_ref_series = pd.Series(data=demand_ref,index=demand.index)
-        res_pspy_pv = dispatch_max_sc(pv,demand_ref_series,param_tech,return_series=False)
-        
-        E_ref_pv = {}
-        
-        E_ref_pv['PVCapacity']      = pv_capacity
-        E_ref_pv['BatteryCapacity'] = 0.
-        E_ref_pv['ACGeneration']    = pv.to_numpy()
-        E_ref_pv['Load']            = demand_ref.to_numpy()
-        E_ref_pv['ToGrid']          = res_pspy_pv['inv2grid'].to_numpy()
-        E_ref_pv['FromGrid']        = res_pspy_pv['grid2load'].to_numpy()
-        E_ref_pv['SC']              = res_pspy_pv['inv2load'].to_numpy()
-    
-        """
-        Economic analysis - PV as reference case
-        """
-        
-        inp_pv = econ_param
-        inp_pv['PV'] = pv_capacity
-        inp_pv['battery'] = batt_capacity
-        inp_pv['inverter'] = inv_capacity
-        inp_pv['ts'] = 0.25
-        inp_pv['PV_ref'] = pv_capacity
-        inp_pv['inverter_ref'] = inv_capacity
-        
-        res_EA_pv = EconomicAnalysis(inp_pv, tariffe, E, E_ref_pv)   
+    res_EA = EconomicAnalysis(conf,E)
     
     """
     Outputs
@@ -981,14 +931,14 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,econ_param,tar
     
     # Yearly total electricity prices
     
-    yenprices  = tariffe[econ_param['tariff']]['energy'].to_numpy()
-    ygridfees  = tariffe[econ_param['tariff']]['grid'].to_numpy()
-    ysellprice = tariffe[econ_param['tariff']]['sell'].to_numpy()
+    yenprices  = conf['energyprice'].to_numpy()
+    ygridfees  = conf['gridprice'].to_numpy()
+    ysellprice = conf['sellprice'].to_numpy()
     yprices    = yenprices + ygridfees
     
-    out['PVCapacity']      = inp['PV'] 
-    out['BatteryCapacity'] = inp['battery'] 
-    out['InvCapacity']     = inp['inverter']
+    out['PVCapacity']      = conf['pv']['ppeak']
+    out['BatteryCapacity'] = conf['batt']['capacity']
+    out['InvCapacity']     = conf['pv']['inverter_pmax']
     
     out['CostPV']       = res_EA['PVInv']
     out['CostBattery']  = res_EA['BatteryInv']
@@ -997,29 +947,30 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,econ_param,tar
     out['sellprice'] = ysellprice[0]
     
     out['totenprice_00_06'] = yprices[0]
-    out['totenprice_06_11'] = yprices[int(6/econ_param['ts'])]
-    out['totenprice_11_17'] = yprices[int(11/econ_param['ts'])]
-    out['totenprice_17_22'] = yprices[int(17/econ_param['ts'])]
-    out['totenprice_22_24'] = yprices[int(22/econ_param['ts'])]    
+    out['totenprice_06_11'] = yprices[int(6/ts)]
+    out['totenprice_11_17'] = yprices[int(11/ts)]
+    out['totenprice_17_22'] = yprices[int(17/ts)]
+    out['totenprice_22_24'] = yprices[int(22/ts)]    
      
     out['peakdem'] = np.max(demand)
     
-    out['cons_total'] = np.sum(demand)*econ_param['ts']
-    out['cons_total_incr'] = out['cons_total'] - np.sum(demand_ref)*econ_param['ts']
+    out['cons_total'] = np.sum(demand)*ts
+    #out['cons_total_incr'] = out['cons_total'] - np.sum(demand_ref)*ts
+    out['cons_total_incr'] = 0
     
     idx = pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')
         
-    out['cons_00_06'] = np.sum(demand*np.where(idx.hour< 6,1,0))*econ_param['ts']
-    out['cons_06_11'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour, 6),np.less(idx.hour,11)),1,0))*econ_param['ts']
-    out['cons_11_17'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour,11),np.less(idx.hour,17)),1,0))*econ_param['ts']
-    out['cons_17_22'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*econ_param['ts']
-    out['cons_22_24'] = np.sum(demand*np.where(idx.hour>=22,1,0))*econ_param['ts']
+    out['cons_00_06'] = np.sum(demand*np.where(idx.hour< 6,1,0))*ts
+    out['cons_06_11'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour, 6),np.less(idx.hour,11)),1,0))*ts
+    out['cons_11_17'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour,11),np.less(idx.hour,17)),1,0))*ts
+    out['cons_17_22'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*ts
+    out['cons_22_24'] = np.sum(demand*np.where(idx.hour>=22,1,0))*ts
     
-    cons_00_06_ref = np.sum(demand_ref*np.where(idx.hour< 6,1,0))*econ_param['ts']
-    cons_06_11_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour, 6),np.less(idx.hour,11)),1,0))*econ_param['ts']
-    cons_11_17_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,11),np.less(idx.hour,17)),1,0))*econ_param['ts']
-    cons_17_22_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*econ_param['ts']
-    cons_22_24_ref = np.sum(demand_ref*np.where(idx.hour>=22,1,0))*econ_param['ts'] 
+    cons_00_06_ref = np.sum(demand_ref*np.where(idx.hour< 6,1,0))*ts
+    cons_06_11_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour, 6),np.less(idx.hour,11)),1,0))*ts
+    cons_11_17_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,11),np.less(idx.hour,17)),1,0))*ts
+    cons_17_22_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*ts
+    cons_22_24_ref = np.sum(demand_ref*np.where(idx.hour>=22,1,0))*ts 
     
     out['cons_00_06_var'] = out['cons_00_06'] - cons_00_06_ref
     out['cons_06_11_var'] = out['cons_06_11'] - cons_06_11_ref
@@ -1027,10 +978,10 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,econ_param,tar
     out['cons_17_22_var'] = out['cons_17_22'] - cons_17_22_ref
     out['cons_22_24_var'] = out['cons_22_24'] - cons_22_24_ref
     
-    out['el_prod']           = np.sum(pv)*econ_param['ts']
-    out['el_selfcons']       = np.sum(res_pspy['inv2load'])*econ_param['ts']
-    out['el_soldtogrid']     = np.sum(res_pspy['inv2grid'])*econ_param['ts']
-    out['el_boughtfromgrid'] = np.sum(res_pspy['grid2load'])*econ_param['ts']
+    out['el_prod']           = np.sum(pv)*ts
+    out['el_selfcons']       = np.sum(res_pspy['inv2load'])*ts
+    out['el_soldtogrid']     = np.sum(res_pspy['inv2grid'])*ts
+    out['el_boughtfromgrid'] = np.sum(res_pspy['grid2load'])*ts
     
     out['selfsuffrate'] = out['el_selfcons']/out['cons_total']
     out['el_shifted'] = np.abs(pflows.demand_noshift-pflows.demand_shifted).sum()/2/4
@@ -1057,9 +1008,6 @@ def ResultsAnalysis(pv_capacity,batt_capacity,inv_capacity,pflows,econ_param,tar
     out['NPV'] = res_EA['NPV']
     out['PI']  = res_EA['PI']
     
-    out['PBP_refPV'] = res_EA_pv['PBP']
-    out['NPV_refPV'] = res_EA_pv['NPV']
-    out['PI_refPV']  = res_EA_pv['PI']
     
     return out
     
@@ -1114,13 +1062,49 @@ def WriteResToExcel(file,sheet,results,econ_param,enprices,gridfees,row):
     df.at[row,'PBP [years]']		                        = results['PBP']
     df.at[row,'NPV [€]']		                            = results['NPV']
     df.at[row,'PI [-]']		                                = results['PI']
-    df.at[row,'PBP ref case PV [years]']		            = results['PBP_refPV']
-    df.at[row,'NPV ref case PV [€]']		                = results['NPV_refPV']
-    df.at[row,'PI ref case PV [-]']		                    = results['PI_refPV']
+    df.at[row,'PBP ref case PV [years]']		            = 0
+    df.at[row,'NPV ref case PV [€]']		                = 0
+    df.at[row,'PI ref case PV [-]']		                    = 0
 
     df.to_excel(file,sheet_name=sheet)
     
-
+def scale_vector(vec_in,N,silent=False):
+    ''' 
+    Function that scales a numpy vector or Pandas Series to the desired length
+    
+    :param vec_in: Input vector
+    :param N: Length of the output vector
+    :param silent: Set to True to avoid verbosity
+    '''    
+    N_in = len(vec_in)
+    if type(N) != int:
+        N = int(N) 
+        if not silent:
+            print('Converting Argument N to int: ' + str(N))
+    if N > N_in:
+        if np.mod(N,N_in)==0:
+            if not silent:
+                print('Target size is a multiple of input vector size. Repeating values')
+            vec_out = np.repeat(vec_in,N/N_in)
+        else:
+            if not silent:
+                print('Target size is larger but not a multiple of input vector size. Interpolating')
+            vec_out = np.interp(np.linspace(start=0,stop=N_in,num=N),range(N_in),vec_in)
+    elif N == N_in:
+        print('Target size is iqual to input vector size. Not doing anything')
+        vec_out = vec_in
+    else:
+        if np.mod(N_in,N)==0:
+            if not silent:
+                print('Target size is entire divisor of the input vector size. Averaging')
+            vec_out = np.zeros(N)
+            for i in range(N):
+                vec_out[i] = np.mean(vec_in[i*N_in/N:(i+1)*N_in/N])
+        else:
+            if not silent:
+                print('Target size is lower but not a divisor of the input vector size. Interpolating')
+            vec_out = np.interp(np.linspace(start=0,stop=N_in,num=N),range(N_in),vec_in)
+    return vec_out  
 
 if __name__ == "__main__":
     

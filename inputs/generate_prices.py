@@ -66,9 +66,11 @@ if __name__ == '__main__':
     elprices.index = [elprices.index.date, elprices.index.hour]
     sellprice = elprices['sell'].unstack()
     gridprice = elprices['grid'].unstack()
+    energyprice = elprices['energy'].unstack()
     
     with pd.ExcelWriter('./config.xlsx', engine='openpyxl', mode='a',if_sheet_exists='replace') as writer:  
         sellprice.to_excel(writer, sheet_name='sellprice')
         gridprice.to_excel(writer, sheet_name='gridprice')
+        energyprice.to_excel(writer, sheet_name='energyprice')
 
 
