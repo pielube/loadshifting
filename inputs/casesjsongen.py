@@ -3,6 +3,7 @@
 Created on Sat Feb 19 18:52:07 2022
 
 @author: pietro
+
 """
 
 import json
@@ -13,182 +14,179 @@ sheet = ['Matrix']
 data = pd.read_excel (filename,sheet_name=sheet,header=0)
 data = data['Matrix']
 
-
-
-case=    {
-	       "house": "f",
-           "sheet": "F",
-		   "row": 0,
-           "columns": [],
-		   "TechsShift": [],
-           "WetAppManualShifting": False,
-           "PresenceOfPV": False,
-           "PresenceOfBattery": False,
-           }
-
-case_default = {
-        "house": "4f",
-        "sheet": "4F",
-        "row": 0,
-        "columns": [
-            "StaticLoad",
-            "TumbleDryer",
-            "DishWasher",
-            "WashingMachine",
-            "DomesticHotWater",
-            "HeatPumpPower",
-            "EVCharging"
-        ],
-        "TechsShift": [
-            "TumbleDryer",
-            "DishWasher",
-            "WashingMachine",
-            "DomesticHotWater",
-            "HeatPumpPower",
-            "EVCharging"
-        ],
-        "WetAppManualShifting": True,
-        "PresenceOfPV": True,
-        "PresenceOfBattery": True
-    }
+# default, generated with: pp = pprint.PrettyPrinter(depth=4) ; pp.pprint(conf)
+default = {'batt': {'capacity': 14,
+          'efficiency': 0.9,
+          'lifetime': 10,
+          'pnom': 4,
+          'yesno': True},
+ 'cont': {'strategy': 'self-consumption',
+          'thresholdprice': 0.3,
+          'wetapp': 'automated'},
+ 'dhw': {'hloss': 2,
+         'loadshift': True,
+         'pnom': 2000,
+         'set_point': 60,
+         'tcold': 10,
+         'tfaucet': 40,
+         'type': 'ElectricBoiler',
+         'vol': 150,
+         'yesno': True},
+ 'dwelling': {'dish_washer': True,
+              'member1': None,
+              'member2': None,
+              'member3': None,
+              'member4': None,
+              'member5': None,
+              'tumble_dryer': True,
+              'type': '1f',
+              'washing_machine': True},
+ 'econ': {'C_OM_annual': 0,
+          'C_PV_fix': 10,
+          'C_PV_kW': 10,
+          'C_batt_fix': 10,
+          'C_batt_kWh': 10,
+          'C_control': 500,
+          'C_control_annual': 0,
+          'C_grid_fix_annual': 0,
+          'C_grid_kW_annual': 0,
+          'C_invert_share': 0.077,
+          'C_prosumertax': 88.81,
+          'elpriceincrease': 0.02,
+          'smart_meter': True,
+          'start_year': 2023,
+          'tariff': 'net-metering',
+          'time_horizon': 30,
+          'wacc': 0.04},
+ 'ev': {'loadshift': True, 'yesno': True},
+ 'hp': {'automatic_sizing': True,
+        'deadband': 2,
+        'loadshift': True,
+        'pnom': 5000,
+        'set_point': 20,
+        'yesno': True},
+ 'loc': {'altitude': 20,
+         'latitude': 50.6,
+         'longitude': 4.3,
+         'name': 'Europe/Brussels',
+         'timezone': 'Etc/GMT-2'},
+ 'ownership': {'ChestFreezer': 0.56,
+               'DishWasher': 0.66,
+               'FridgeFreezer': 0.64,
+               'Hob': 0.751,
+               'Microwave': 0.9,
+               'PC': 0.8,
+               'Refrigerator': 0.61,
+               'TV1': 0.95,
+               'TumbleDryer': 0.6,
+               'UprightFreezer': 0.0,
+               'WasherDryer': 0.0,
+               'WashingMachine': 0.93},
+ 'prices': 'config_prices.csv',
+ 'pv': {'automatic_sizing': True,
+        'azimut': 0,
+        'inverter_automatic_sizing': True,
+        'inverter_lifetime': 15,
+        'inverter_pmax': 5,
+        'lifetime': 30,
+        'losses': 0.13,
+        'plim_kva': 10,
+        'powerfactor': 0.9,
+        'ppeak': 5,
+        'tilt': 35,
+        'yesno': True},
+ 'sim': {'N': 10, 'ndays': 365, 'ts': 0.25, 'year': 2015}}
 
 cases ={}
-cases['default'] = case_default
-
-econparam = {
-		   "WACC": 0.04,
-           "elpriceincr": 0.02,
-           "net_metering": False,
-           "start_year": 2022,
-           "time_horizon": 30,
-           "C_grid_fixed": 100.0,
-           "C_grid_kW": 0.0,
-           "C_pros_tax": 88.81,
-           "P_FtG": 40.0,
-		   "FixedPVCost": 0.0,
-           "PVCost_kW": 1300.0,
-           "FixedBatteryCost":0.0,
-           "BatteryCost_kWh":600.0,
-           "FixedInverterCost": 0.0,
-           "InverterCost_kW": 100.0,
-           "PVLifetime": 30,
-           "BatteryLifetime": 10,
-           "InverterLifetime": 15,
-           "OM": 0.0,
-           "FixedControlCost": 0.0,
-           "AnnualControlCost": 0.0,
-		   "scenario": "test",
-           "thresholdprice": "hollow"
-           }
-
-
-inp = {
-       'start_year': 2023,
-       'time_horizon': 30,
-       'WACC': 0.04,
-       'elpriceincrease': 0.02,
-       'tariff': 'multi_price',
-       'meter': 'smart_meter',
-       't_PV': 30,
-       't_battery': 10,
-       't_inverter': 15,
-       'C_PV_fix': 0.0,
-       'C_PV_kW': 1300.0,
-       'C_batt_fix': 0.0,
-       'C_batt_kWh': 600.0,
-       'C_invert_fix': 0.0,
-       'C_invert_kW': 100.0,
-       'C_control_fix': 500.0,
-       'C_OM_annual': 0.0,
-       'C_grid_fix_annual': 0.0,
-       'C_grid_kW_annual': 0.0,
-       'C_control_fix_annual': 0.0,
-       'C_prosumertax': 88.81,
-       "thresholdprice": 0.3,
-       'tariff_ref': 'multi_price',
-       'meter_ref': 'smart_meter'
-       }
-
-inps = {}
-inps['default'] = inp
+cases['default'] = default
 
 for i in range(83):
     
-    newcase = case.copy()
+    newcase = default.copy()
     
-    newcase['house'] = str(data['facades'][i])+'f'
-    newcase['sheet'] = str(data['facades'][i])+'F'
+    newcase['dwelling']['type'] = str(data['facades'][i])+'f'
     newcase['row'] = i
     
     columns = []
     if data['static'][i] == 1:
         columns.append('StaticLoad')
     if data['wetapp'][i] == 1:
-        columns.append('TumbleDryer')
-        columns.append('DishWasher')
-        columns.append('WashingMachine')
+        newcase['dwelling']['washing_machine'] = True
+        newcase['dwelling']['dish_washer'] = True
+        newcase['dwelling']['tumble_dryer'] = True
+    else:
+        newcase['dwelling']['washing_machine'] = False
+        newcase['dwelling']['dish_washer'] = False
+        newcase['dwelling']['tumble_dryer'] = False        
     if data['dhw'][i] == 1:
-        columns.append('DomesticHotWater')
+        newcase['dhw']['yesno'] = True
+    else:
+        newcase['dhw']['yesno'] = False
     if data['househeat'][i] == 1:
-        columns.append('HeatPumpPower')
+        newcase['hp']['yesno'] = True
+    else:
+        newcase['hp']['yesno'] = False
     if data['ev'][i] == 1:
-        columns.append('EVCharging')
-    newcase['columns'] = columns
+        newcase['ev']['yesno'] = True
+    else:
+        newcase['ev']['yesno'] = False
     
-    columns_shift = []
     if data['wetapp_shift'][i] == 1:
-        columns_shift.append('TumbleDryer')
-        columns_shift.append('DishWasher')
-        columns_shift.append('WashingMachine')
+        newcase['cont']['wetapp'] = 'automated'
+    else:
+        newcase['cont']['wetapp'] = 'none'
     if data['wetapp_shift_manual'][i] == 1:
-        newcase['WetAppManualShifting'] = True
+        newcase['cont']['wetapp'] = 'manual'
+    
     if data['dhw_shift'][i] == 1:
-        columns_shift.append('DomesticHotWater')
+        newcase['dhw']['loadshift'] = True
+    else:
+        newcase['dhw']['loadshift'] = False
     if data['househeat_shift'][i] == 1:
-        columns_shift.append('HeatPumpPower')
+        newcase['hp']['loadshift'] = True
+    else:
+        newcase['hp']['loadshift'] = False
     if data['ev_shift'][i] == 1:
-        columns_shift.append('EVCharging')
-    newcase['TechsShift'] = columns_shift
+        newcase['ev']['loadshift'] = True
+    else:
+        newcase['ev']['loadshift'] = False
 
     if data['pv'][i] == 1:
-        newcase['PresenceOfPV'] =True
+        newcase['pv']['yesno'] =True
+    else:
+        newcase['pv']['yesno'] =False
     if data['battery'][i] ==1:
-        newcase['PresenceOfBattery'] = True
+        newcase['batt']['yesno'] =True
+    else:
+        newcase['batt']['yesno'] =True
 
-    cases['case'+str(i+1)] = newcase
-    
-    newinp = inp.copy()
-    
+    # compute the cost of the control system:    
     fixed = 0
     annual = 0
     
-    if data['wetapp_shift_auto'][i] == 1:
+    if newcase['cont']['wetapp']:
         fixed += 50.
-        newinp['thresholdprice'] = 0.2
+        newcase['cont']['thresholdprice'] = 0.2
 
     aa = data['dhw_shift'][i] == 1
     bb = data['househeat_shift'][i] == 1
     cc = data['ev_shift'][i] == 1
     dd = data['battery'][i] == 1
     
-    if aa or bb or cc or dd:
+    if newcase['dhw']['loadshift'] or newcase['hp']['loadshift'] or newcase['ev']['loadshift'] or newcase['batt']['yesno']:
         fixed += 500.
         annual += 30.
     
-    newinp['C_control_fix'] = fixed
-    newinp['C_control_fix_annual'] = annual
+    newcase['econ']['C_control'] = fixed
+    newcase['econ']['C_control_annual'] = annual
 
-    inps['case'+str(i+1)] = newinp
-
+    cases['case'+str(i+1)] = newcase
 
 filename = 'cases.json'
 with open(filename, 'w',encoding='utf-8') as f:
     json.dump(cases, f,ensure_ascii=False, indent=4)
     
 
-filename = 'econ_param.json'
-with open(filename, 'w',encoding='utf-8') as f:
-    json.dump(inps, f,ensure_ascii=False, indent=4) 
 
 
 

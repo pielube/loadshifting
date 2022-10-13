@@ -23,7 +23,7 @@ def simulate_scenarios(n_scen,conf):
     ----------
     n_scen : int
         Number of scenarios to generate
-    conf: general config dictionnary for the simulation. Must contain the keys 'dwelling','pv','ev','dhw'
+    conf: general config dictionnary for the simulation. Must contain the keys 'dwelling','dhw'
     Returns
     -------
     elec : numpy array, shape (n_scen, nminutes)

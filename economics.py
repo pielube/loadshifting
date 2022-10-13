@@ -16,7 +16,7 @@ memory = Memory(__location__ + '/cache/', verbose=1)
 
 
 
-def EconomicAnalysis(conf,E,new_PV = False):
+def EconomicAnalysis(conf,prices,E,new_PV = False):
     
     if new_PV:
         # PV investment cost - Analyzed case
@@ -67,9 +67,9 @@ def EconomicAnalysis(conf,E,new_PV = False):
         
     # Contributions of buying and selling energy to cash flows - Analyzed case
     
-    enpricekWh = conf['energyprice']
-    gridfeekWh = conf['gridprice']
-    enpricekWh_sell = conf['sellprice']
+    enpricekWh = prices['energy']
+    gridfeekWh = prices['grid']
+    enpricekWh_sell = prices['sell']
     prostax = conf['econ']['C_prosumertax']*min(conf['pv']['ppeak'],conf['pv']['inverter_pmax'])
     res = EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, E, prostax)
         
@@ -244,9 +244,9 @@ def EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, E, prostax):
     N = len(E['FromGrid'])
     
     if ts!= 1:
-        enpricekWh = scale_vector(enpricekWh,N,silent=False)
-        gridfeekWh = scale_vector(gridfeekWh,N,silent=False)
-        enpricekWh_sell = scale_vector(enpricekWh_sell,N,silent=False)
+        enpricekWh = scale_vector(enpricekWh,N,silent=True)
+        gridfeekWh = scale_vector(gridfeekWh,N,silent=True)
+        enpricekWh_sell = scale_vector(enpricekWh_sell,N,silent=True)
     
     CostBfG_energy = sum(E['FromGrid']*enpricekWh)*ts
     CostBfG_grid   = sum(E['FromGrid']*gridfeekWh)*ts

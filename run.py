@@ -3,54 +3,42 @@ import os
 import time
 import pandas as pd 
 from functions import WriteResToExcel
-from simulation import load_config,shift_load
-from inputs import input_general, input_elprices
-import openpyxl
+from simulation import shift_load
+import json
 
 start_time = time.time()
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-N = 10 # Number of stochastic simulations to be run for the demand curves
-# N = 1
+#N = 10 # Number of stochastic simulations to be run for the demand curves
 
-idx_casestobesim = [i for i in range(1)]
+
 # idx_casestobesim = [0]
 
-inputhpath = __location__ + '/inputs/'
-
-wb = openpyxl.load_workbook(inputhpath+'inputs.xlsx')
-ws1 = wb['inputs']
-ws2 = wb['elprices']
-
-input_general(ws1,inputhpath)
-input_elprices(ws2,inputhpath)
-      
+filename = __location__ + '/inputs/cases.json'
+cases = json.load(open(filename))
+idx_casestobesim = range(1,len(cases))   
+idx_casestobesim = [1]   
 
 for jjj in idx_casestobesim:
-    namecase = 'case'+str(jjj+1)
+    namecase = 'case'+str(jjj)
+    conf = cases[namecase]
     # namecase = 'default'
     
-    conf = load_config(namecase)
-    config,pvbatt_param,econ_param,inputs,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['housetype'],conf['N']
+    # load prices:
+    prices_filename = os.path.join(os.path.dirname(filename),conf['prices'])
+    prices = pd.read_csv(prices_filename,index_col=0)
 
-    outs = shift_load(config,pvbatt_param,econ_param,inputs,N)
+    results,demand_15min,demand_shifted,pflows = shift_load(conf,prices)
     
     """
     Saving results to Excel
     """   
-    house    = config['house']
-    
-    inputhpath = __location__ + '/inputs/' + econ_param['tariff'] + '.csv'
-    with open(inputhpath,'r') as f:
-        prices = pd.read_csv(f,index_col=0)
-            
-    enprices = prices['energy'].to_numpy() # €/kWh
-    gridfees = prices['grid'].to_numpy()   # €/kWh
+    house    = conf['dwelling']['type']
     
     # Saving results to excel
-    file = __location__ + '/simulations/test'+house+'.xlsx'
-    WriteResToExcel(file,config['sheet'],outs[0],econ_param,enprices,gridfees,config['row'])
+    file = __location__ + '/simulations/case_results.xlsx'
+    WriteResToExcel(file,conf['dwelling']['type'],results,conf)
 
 
 exectime = (time.time() - start_time)
