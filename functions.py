@@ -242,7 +242,7 @@ def HouseholdMembers(conf):
     return out
 
 
-def MostRepCurve(conf,demands,columns,yenprices,ygridfees,timestep):
+def MostRepCurve(conf,prices,demands,columns,timestep):
     
     """
     Choosing most representative curve among a list of demand curves
@@ -296,7 +296,7 @@ def MostRepCurve(conf,demands,columns,yenprices,ygridfees,timestep):
         E_ref['SC']           = np.zeros(len(date))
         E_ref['FromBattery']  = np.zeros(len(date))
         
-        out = EconomicAnalysis(conf,E)
+        out = EconomicAnalysis(conf,prices,E)
         results.append(out['ElBill'])
     
     meanelbill = mean(results)
@@ -880,7 +880,7 @@ def EVshift_tariffs(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewin
     return out
 
 
-def ResultsAnalysis(conf,pflows):
+def ResultsAnalysis(conf,prices,pflows):
     
     """
     Prosumpy run 1
@@ -919,7 +919,7 @@ def ResultsAnalysis(conf,pflows):
     Economic analysis
     """
     
-    res_EA = EconomicAnalysis(conf,E)
+    res_EA = EconomicAnalysis(conf,prices,E)
     
     """
     Outputs
@@ -931,9 +931,9 @@ def ResultsAnalysis(conf,pflows):
     
     # Yearly total electricity prices
     
-    yenprices  = conf['energyprice'].to_numpy()
-    ygridfees  = conf['gridprice'].to_numpy()
-    ysellprice = conf['sellprice'].to_numpy()
+    yenprices  = prices['energy'].to_numpy()
+    ygridfees  = prices['grid'].to_numpy()
+    ysellprice = prices['sell'].to_numpy()
     yprices    = yenprices + ygridfees
     
     out['PVCapacity']      = conf['pv']['ppeak']
@@ -1012,19 +1012,21 @@ def ResultsAnalysis(conf,pflows):
     return out
     
     
-def WriteResToExcel(file,sheet,results,econ_param,enprices,gridfees,row):
+def WriteResToExcel(file,sheet,results,conf):
+    
+    row = conf['row']
     
     df = pd.read_excel(file,sheet_name=sheet,header=0,index_col=0)
     
-    df.at[row,'Investment - Control system [€]']	        = econ_param['C_control_fix']
-    df.at[row,'Annual cost - Control system [€]']		    = econ_param['C_control_fix_annual']
+    df.at[row,'Investment - Control system [€]']	        = conf['econ']['C_control']
+    df.at[row,'Annual cost - Control system [€]']		    = conf['econ']['C_control_annual']
     df.at[row,'PV [kWp]']		                            = results['PVCapacity']
     df.at[row,'Inverter [kW]']		                        = results['InvCapacity']
     df.at[row,'Battery [kWh]']		                        = results['BatteryCapacity']
     df.at[row,'Investment - PV [€]']		                = results['CostPV']
     df.at[row,'Investment - Inverter [€]']		            = results['CostInverter']
     df.at[row,'Investment - Battery [€]']		            = results['CostBattery']
-    df.at[row,'Time-horizon [years]']		                = econ_param['time_horizon']
+    df.at[row,'Time-horizon [years]']		                = conf['econ']['time_horizon']
     df.at[row,'Energy price - Selling [€/kWh]']		        = results['sellprice']       
     df.at[row,'Energy price [0-6] [€/kWh]']		            = results['totenprice_00_06']
     df.at[row,'Energy price [6-11] [€/kWh]']		        = results['totenprice_06_11']

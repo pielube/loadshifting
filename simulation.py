@@ -137,7 +137,7 @@ def list_appliances(conf):
     
 
 @memory.cache
-def shift_load(conf):
+def shift_load(conf,prices):
     '''
     
     Parameters
@@ -178,8 +178,8 @@ def shift_load(conf):
     n15min = int(n1min/15)
     ts_15min = 0.25 # h
            
-    yenprices_15min = scale_vector(conf['energyprice'].to_numpy(),len(index15min)) # €/kWh
-    ygridfees_15min = scale_vector(conf['gridprice'].to_numpy(),len(index15min))  # €/kWh
+    yenprices_15min = scale_vector(prices['energy'].to_numpy(),len(index15min),silent=True) # €/kWh
+    ygridfees_15min = scale_vector(prices['grid'].to_numpy(),len(index15min),silent=True)  # €/kWh
     yprices_15min = yenprices_15min + ygridfees_15min  # €/kWh
     
     
@@ -187,7 +187,7 @@ def shift_load(conf):
     3) Most representative curve
     """
     
-    idx = MostRepCurve(conf,demands['results'],columns,yenprices_15min,ygridfees_15min,ts_15min)
+    idx = MostRepCurve(conf,prices,demands['results'],columns,ts_15min)
     
     # Inputs relative to the most representative curve:
     conf = demands['input_data'][idx]              # this overwrites the conf dictionnary passed as argument!!
@@ -707,18 +707,18 @@ def shift_load(conf):
     # TODO
     # - add how much energy has been shifted by each technology
     
-    outs = ResultsAnalysis(conf,pflows)
+    outs = ResultsAnalysis(conf,prices,pflows)
 
     return outs,demand_15min,demand_shifted,pflows
 
 
 if __name__ == '__main__':
     
-    conf = read_config(__location__ + '/inputs/config.xlsx')
+    conf,prices = read_config(__location__ + '/inputs/config.xlsx')
     
     # delete unnecessary entries:
     
-    results,demand_15min,demand_shifted,pflows = shift_load(conf)
+    results,demand_15min,demand_shifted,pflows = shift_load(conf,prices)
     
     print(json.dumps(results, indent=4))
     

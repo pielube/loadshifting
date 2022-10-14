@@ -1,0 +1,109 @@
+{
+     "ownership": {
+          "Hob": 0.751,
+          "Microwave": 0.9,
+          "PC": 0.8,
+          "TV1": 0.95,
+          "TumbleDryer": 0.6,
+          "DishWasher": 0.66,
+          "WashingMachine": 0.93,
+          "WasherDryer": 0.0,
+          "FridgeFreezer": 0.64,
+          "Refrigerator": 0.61,
+          "ChestFreezer": 0.56,
+          "UprightFreezer": 0.0
+     },
+     "sim": {
+          "ndays": 365,
+          "ts": 0.25,
+          "N": 1,
+          "year": 2015
+     },
+     "dwelling": {
+          "type": "1f",
+          "member1": null,
+          "member2": null,
+          "member3": null,
+          "member4": null,
+          "member5": null,
+          "washing_machine": true,
+          "tumble_dryer": true,
+          "dish_washer": true
+     },
+     "hp": {
+          "yesno": true,
+          "loadshift": true,
+          "automatic_sizing": true,
+          "pnom": 5000,
+          "set_point": 20,
+          "deadband": 2
+     },
+     "dhw": {
+          "yesno": true,
+          "loadshift": true,
+          "type": "ElectricBoiler",
+          "vol": 150,
+          "pnom": 2000,
+          "set_point": 60,
+          "tfaucet": 40,
+          "tcold": 10,
+          "hloss": 2
+     },
+     "ev": {
+          "yesno": true,
+          "loadshift": true
+     },
+     "pv": {
+          "yesno": true,
+          "automatic_sizing": true,
+          "ppeak": 5,
+          "lifetime": 30,
+          "inverter_lifetime": 15,
+          "losses": 0.13,
+          "tilt": 35,
+          "azimut": 0,
+          "inverter_automatic_sizing": true,
+          "plim_kva": 10,
+          "powerfactor": 0.9,
+          "inverter_pmax": NaN
+     },
+     "batt": {
+          "yesno": true,
+          "capacity": 14,
+          "pnom": 4,
+          "lifetime": 10,
+          "efficiency": 0.9
+     },
+     "econ": {
+          "start_year": 2023,
+          "time_horizon": 30,
+          "elpriceincrease": 0.02,
+          "wacc": 0.04,
+          "tariff": "net-metering",
+          "smart_meter": true,
+          "C_PV_fix": 10,
+          "C_PV_kW": 10,
+          "C_invert_share": 0.077,
+          "C_batt_fix": 10,
+          "C_batt_kWh": 10,
+          "C_OM_annual": 0,
+          "C_grid_fix_annual": 0,
+          "C_grid_kW_annual": 0,
+          "C_prosumertax": 88.81,
+          "C_control": 500,
+          "C_control_annual": 0
+     },
+     "cont": {
+          "wetapp": "automated",
+          "strategy": "self-consumption",
+          "thresholdprice": 0.3
+     },
+     "loc": {
+          "latitude": 50.6,
+          "longitude": 4.3,
+          "name": "Europe/Brussels",
+          "altitude": 20,
+          "timezone": "Etc/GMT-2"
+     },
+     "prices": "config_prices.csv"
+}
