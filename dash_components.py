@@ -31,7 +31,7 @@ household_components = [
                     options = [ {'label':'Charge déplaçable (automatique)', 'value': 'automated'}, 
                                {'label':'Charge déplaçable (manuel)', 'value': 'manual'}, 
                                {'label':'Charge non déplaçable', 'value': 'none'}],
-                    value = 'shiftable'),
+                    value = 'automated'),
 
 
 ]

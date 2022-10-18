@@ -5,7 +5,7 @@ import os,json
 from dash_components import household_components,heating_components,ev_components,pv_components
 import defaults
 from plots import make_demand_plot
-from simulation import shift_load,load_config,load_cases
+from simulation import shift_load,load_cases
 from readinputs import read_config
 
 __location__ = os.path.realpath(
@@ -397,23 +397,23 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
         
     # heat pump:
     conf['hp']['yesno'] = 'hp_in' in checklist_hp
-    conf['hp']['loadshift'] = 'hp_flex' not in checklist_hp
+    conf['hp']['loadshift'] = 'hp_flex' in checklist_hp
     conf['hp']['automatic_sizing'] = 'auto_hp' in yesno_hp
     if not conf['hp']['automatic_sizing']:
         conf['hp']['pnom'] = float(input_hp_power)
 
     # DHW:
-    conf['dhw']['yesno'] = 'dhw_in' in checklist_hp
-    conf['dhw']['loadshift'] = 'dhw_flex' not in checklist_hp
+    conf['dhw']['yesno'] = 'dhw_in' in checklist_dhw
+    conf['dhw']['loadshift'] = 'dhw_flex' in checklist_dhw
     conf['dhw']['vol'] = float(input_boiler_volume)
     conf['dhw']['set_point'] = float(input_boiler_temperature)
         
     # EV:
-    conf['ev']['yesno'] = 'ev_in' in checklist_hp
-    conf['ev']['loadshift'] = 'ev_flex' not in checklist_hp      
+    conf['ev']['yesno'] = 'ev_in' in checklist_ev
+    conf['ev']['loadshift'] = 'ev_flex' in checklist_ev      
         
     # PV:
-    conf['pv']['yesno'] = 'ev_in' in 'pv_in' in checklist_pv
+    conf['pv']['yesno'] = 'pv_in' in checklist_pv
     conf['pv']['automatic_sizing'] = 'auto_pv' in yesno_pv
     if not conf['pv']['automatic_sizing']:
         conf['pv']['ppeak'] = float(input_pv_power)
@@ -422,8 +422,6 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
     conf['batt']['yesno'] = 'bat_in' in checklist_bat
     conf['batt']['pnom'] =  float(input_bat_power)
     conf['batt']['capacity'] = float(input_bat_capacity)
-
-
 
 #%%  Callbacks (misc)
 

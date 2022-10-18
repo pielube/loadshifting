@@ -26,54 +26,6 @@ __location__ = os.path.realpath(
 from joblib import Memory
 memory = Memory(__location__ + '/cache/', verbose=defaults.verbose)
 
-def load_config(namecase,cf_cases='cases.json',cf_pvbatt = 'pvbatt_param.json',cf_econ='econ_param.json', cf_house='housetypes.json'):
-    '''
-    Load the config files for a specific simulation
-    
-    Parameters
-    ----------
-    namecase : str
-        case to be exctracted from the configuration (e.g. 'default')
-        
-    Returns
-    -------
-    dictionary with the main inputs   
-
-    '''
-    inputhpath = __location__ + '/inputs/'
-    out = {}
-    
-    out['namecase'] = namecase
-    out['N'] = 1 # Number of stochastic simulations to be run for the demand curves. # to be changed
-    
-    # Case description
-    with open(inputhpath + cf_cases,'r') as f:
-        cases = json.load(f)
-    
-    # PV and battery technology parameters
-    with open(inputhpath + cf_pvbatt,'r') as f:
-        pvbatt = json.load(f)
-    
-    # Economic parameters
-    with open(inputhpath + cf_econ,'r') as f:
-        econ_cases = json.load(f)
-    
-    # Parameters for the dwelling
-    with open(inputhpath + cf_house,'r') as f:
-        housetypes = json.load(f)    
-    
-    if defaults.verbose > 0:
-        print('###########################')
-        print('  Loading config: '+ namecase )
-        print('###########################')
-    
-    out['config'] = cases[namecase]
-    out['econ_param'] = econ_cases[namecase]
-    out['pvbatt_param'] = pvbatt[namecase]
-    out['housetype'] = housetypes[cases[namecase]['house']]
-        
-    return out
-
 def load_cases(cf_cases='cases.json'):
     '''
     Load the list of cases from the corresponding json file
@@ -278,6 +230,7 @@ def shift_load(conf,prices):
     """
     
     if not BattBool:
+        print('No battery!!')
         conf['batt']['capacity'] = 0. # kWh
     	   
     
@@ -701,7 +654,7 @@ def shift_load(conf,prices):
   
     
     """
-    9) Final analisys of the results (including economic analysis)
+    9) Final analysis of the results (including economic analysis)
     """
     
     # TODO
@@ -717,8 +670,11 @@ if __name__ == '__main__':
     conf,prices = read_config(__location__ + '/inputs/config.xlsx')
     
     # delete unnecessary entries:
-    
     results,demand_15min,demand_shifted,pflows = shift_load(conf,prices)
     
     print(json.dumps(results, indent=4))
     
+    # plotting the results
+    from plots import make_demand_plot
+    fig = make_demand_plot(demand_15min.index,demand_shifted,PV = pflows.pv,title='Consumption and generation')
+    fig.show()

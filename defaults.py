@@ -122,4 +122,9 @@ translate = {
 #Translate the loadprogen building type into the procebar building types:
 convert_building = {'1f':'Apartment','2f':'Terraced','3f':'Semi-detached','4f':'Freestanding'}
 
-    
+# colors for plotting:
+defaultcolors = {'StaticLoad':'#636EFA', 'WashingMachine':'#00CC96', 'TumbleDryer':'#AB63FA',
+                 'DishWasher':'#FFA15A','HeatPumpPower':'#19D3F3', 'DomesticHotWater':'#FF6692',
+                 'EVCharging':'#B6E880','BatteryConsumption':'#FF97FF'}
+
+# , '#FECB52'

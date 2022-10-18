@@ -7,6 +7,7 @@ Created on Wed Feb 23 16:29:18 2022
 """
 
 import plotly.graph_objects as go
+from defaults import defaultcolors
 
 
 def make_demand_plot(idx,data,PV = None,title='Consumption'):
@@ -55,6 +56,7 @@ def make_demand_plot(idx,data,PV = None,title='Consumption'):
             x = idx,
             y = data.loc[idx,key],
             stackgroup='one',
+            fillcolor = defaultcolors[key],
             mode='none'               # this remove the lines
            ))
     

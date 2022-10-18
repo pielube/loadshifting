@@ -1,14 +1,12 @@
 
 import random
-import datetime
-import sys
+import copy
 
 import numpy as np
 import pandas as pd
 from statistics import mean
 from itertools import chain
 
-from prosumpy import dispatch_max_sc
 from strobe.Data.Households import households
 from RC_BuildingSimulator import Zone
 
@@ -253,7 +251,7 @@ def MostRepCurve(conf,prices,demands,columns,timestep):
     # Input parameters required by economic analysis
     # PV and battery forced to be 0
     
-    conf2 = conf.copy()
+    conf2 = copy.deepcopy(conf)   # we need to make a deep copy of the nested disctionnary, or it will change the values. A shallow copy is not sufficient
     
     conf2['pv']['ppeak'] = 0.
     conf2['batt']['capacity'] = 0.
@@ -280,23 +278,14 @@ def MostRepCurve(conf,prices,demands,columns,timestep):
         demand = demand.drop(nye)
         demand = demand.iloc[:,0]
         
-        E = {}
-        E['ACGeneration'] = np.zeros(len(date)) 
-        E['Load']         = demand.to_numpy()
-        E['ToGrid']       = np.zeros(len(date)) 
-        E['FromGrid']     = demand.to_numpy() 
-        E['SC']           = np.zeros(len(date))
-        E['FromBattery']  = np.zeros(len(date)) 
+        pflows = {}
+        pflows['pv'] = np.zeros(len(date)) 
+        pflows['demand_noshift']         = demand.to_numpy()
+        pflows['togrid']       = np.zeros(len(date)) 
+        pflows['fromgrid']     = demand.to_numpy() 
+        pflows['demand_shifted']  = pflows['demand_noshift']
         
-        E_ref = {}
-        E_ref['ACGeneration'] = np.zeros(len(date))
-        E_ref['Load']         = demand.to_numpy()
-        E_ref['ToGrid']       = np.zeros(len(date))
-        E_ref['FromGrid']     = demand.to_numpy()
-        E_ref['SC']           = np.zeros(len(date))
-        E_ref['FromBattery']  = np.zeros(len(date))
-        
-        out = EconomicAnalysis(conf,prices,E)
+        out = EconomicAnalysis(conf,prices,pflows)
         results.append(out['ElBill'])
     
     meanelbill = mean(results)
@@ -898,28 +887,11 @@ def ResultsAnalysis(conf,prices,pflows):
     else:
         demand = pflows.demand_shifted_nobatt
     
-    param_tech = {'BatteryCapacity': 0.,
-                  'BatteryEfficiency': 1.,
-                  'MaxPower': 0.,
-                  'InverterEfficiency': 1.,
-                  'timestep': 0.25}
-    
-    res_pspy = dispatch_max_sc(pv,demand,param_tech,return_series=False)
-    
-    E = {}
-    
-    E['ACGeneration'] = pv.to_numpy()
-    E['Load']         = demand.to_numpy()
-    E['ToGrid']       = res_pspy['inv2grid'].to_numpy()
-    E['FromGrid']     = res_pspy['grid2load'].to_numpy()
-    E['SC']           = res_pspy['inv2load'].to_numpy()
-    # E['FromBattery'] = outputs['store2inv'] not used by economic analysis and would be all 0 considering how prosumpy has been used
-    
     """
     Economic analysis
     """
     
-    res_EA = EconomicAnalysis(conf,prices,E)
+    EA = EconomicAnalysis(conf,prices,pflows)
     
     """
     Outputs
@@ -940,48 +912,50 @@ def ResultsAnalysis(conf,prices,pflows):
     out['BatteryCapacity'] = conf['batt']['capacity']
     out['InvCapacity']     = conf['pv']['inverter_pmax']
     
-    out['CostPV']       = res_EA['PVInv']
-    out['CostBattery']  = res_EA['BatteryInv']
-    out['CostInverter'] = res_EA['InverterInv']
+    out['CostPV']       = EA['PVInv']
+    out['CostBattery']  = EA['BatteryInv']
+    out['CostInverter'] = EA['InverterInv']
     
     out['sellprice'] = ysellprice[0]
-    
-    out['totenprice_00_06'] = yprices[0]
-    out['totenprice_06_11'] = yprices[int(6/ts)]
-    out['totenprice_11_17'] = yprices[int(11/ts)]
-    out['totenprice_17_22'] = yprices[int(17/ts)]
-    out['totenprice_22_24'] = yprices[int(22/ts)]    
      
     out['peakdem'] = np.max(demand)
     
     out['cons_total'] = np.sum(demand)*ts
     #out['cons_total_incr'] = out['cons_total'] - np.sum(demand_ref)*ts
     out['cons_total_incr'] = 0
-    
-    idx = pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')
         
-    out['cons_00_06'] = np.sum(demand*np.where(idx.hour< 6,1,0))*ts
-    out['cons_06_11'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour, 6),np.less(idx.hour,11)),1,0))*ts
-    out['cons_11_17'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour,11),np.less(idx.hour,17)),1,0))*ts
-    out['cons_17_22'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*ts
-    out['cons_22_24'] = np.sum(demand*np.where(idx.hour>=22,1,0))*ts
+    # commenting the code below for now. How is that useful?
     
-    cons_00_06_ref = np.sum(demand_ref*np.where(idx.hour< 6,1,0))*ts
-    cons_06_11_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour, 6),np.less(idx.hour,11)),1,0))*ts
-    cons_11_17_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,11),np.less(idx.hour,17)),1,0))*ts
-    cons_17_22_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*ts
-    cons_22_24_ref = np.sum(demand_ref*np.where(idx.hour>=22,1,0))*ts 
+    #idx = pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')
+    # out['totenprice_00_06'] = yprices[0]
+    # out['totenprice_06_11'] = yprices[int(6/ts)]
+    # out['totenprice_11_17'] = yprices[int(11/ts)]
+    # out['totenprice_17_22'] = yprices[int(17/ts)]
+    # out['totenprice_22_24'] = yprices[int(22/ts)]        
     
-    out['cons_00_06_var'] = out['cons_00_06'] - cons_00_06_ref
-    out['cons_06_11_var'] = out['cons_06_11'] - cons_06_11_ref
-    out['cons_11_17_var'] = out['cons_11_17'] - cons_11_17_ref
-    out['cons_17_22_var'] = out['cons_17_22'] - cons_17_22_ref
-    out['cons_22_24_var'] = out['cons_22_24'] - cons_22_24_ref
+    # out['cons_00_06'] = np.sum(demand*np.where(idx.hour< 6,1,0))*ts
+    # out['cons_06_11'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour, 6),np.less(idx.hour,11)),1,0))*ts
+    # out['cons_11_17'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour,11),np.less(idx.hour,17)),1,0))*ts
+    # out['cons_17_22'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*ts
+    # out['cons_22_24'] = np.sum(demand*np.where(idx.hour>=22,1,0))*ts
+    
+    # cons_00_06_ref = np.sum(demand_ref*np.where(idx.hour< 6,1,0))*ts
+    # cons_06_11_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour, 6),np.less(idx.hour,11)),1,0))*ts
+    # cons_11_17_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,11),np.less(idx.hour,17)),1,0))*ts
+    # cons_17_22_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*ts
+    # cons_22_24_ref = np.sum(demand_ref*np.where(idx.hour>=22,1,0))*ts 
+    
+    # out['cons_00_06_var'] = out['cons_00_06'] - cons_00_06_ref
+    # out['cons_06_11_var'] = out['cons_06_11'] - cons_06_11_ref
+    # out['cons_11_17_var'] = out['cons_11_17'] - cons_11_17_ref
+    # out['cons_17_22_var'] = out['cons_17_22'] - cons_17_22_ref
+    # out['cons_22_24_var'] = out['cons_22_24'] - cons_22_24_ref
     
     out['el_prod']           = np.sum(pv)*ts
-    out['el_selfcons']       = np.sum(res_pspy['inv2load'])*ts
-    out['el_soldtogrid']     = np.sum(res_pspy['inv2grid'])*ts
-    out['el_boughtfromgrid'] = np.sum(res_pspy['grid2load'])*ts
+    SC = np.minimum(pflows.pv, pflows.demand_shifted)
+    out['el_selfcons']       = np.sum(SC)*ts
+    out['el_soldtogrid']     = np.sum(pflows['togrid'])*ts
+    out['el_boughtfromgrid'] = np.sum(pflows['fromgrid'])*ts
     
     out['selfsuffrate'] = out['el_selfcons']/out['cons_total']
     out['el_shifted'] = np.abs(pflows.demand_noshift-pflows.demand_shifted).sum()/2/4
@@ -992,21 +966,21 @@ def ResultsAnalysis(conf,prices,pflows):
     else:
         out['selfconsrate'] = out['el_selfcons']/out['el_prod']
     
-    out["EnSold"]     = res_EA["EnSold"]         
-    out["CostToSell"] = res_EA["CostToSell"]
-    out["TotalSell"]  = res_EA["TotalSell"] 
+    out["EnSold"]     = EA["EnSold"]         
+    out["CostToSell"] = EA["CostToSell"]
+    out["TotalSell"]  = EA["TotalSell"] 
     
-    out["EnBought"]  = res_EA["EnBought"] 
-    out["CostToBuy"] = res_EA["CostToBuy"]
-    out["TotalBuy"]  = res_EA["TotalBuy"]
+    out["EnBought"]  = EA["EnBought"] 
+    out["CostToBuy"] = EA["CostToBuy"]
+    out["TotalBuy"]  = EA["TotalBuy"]
     
-    out['el_netexpend'] = res_EA['ElBill']
+    out['el_netexpend'] = EA['ElBill']
     
-    out['el_costperkwh'] = res_EA['costpermwh']/1000.
+    out['el_costperkwh'] = EA['costpermwh']/1000.
     
-    out['PBP'] = res_EA['PBP']
-    out['NPV'] = res_EA['NPV']
-    out['PI']  = res_EA['PI']
+    out['PBP'] = EA['PBP']
+    out['NPV'] = EA['NPV']
+    out['PI']  = EA['PI']
     
     
     return out

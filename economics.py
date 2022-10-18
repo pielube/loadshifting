@@ -7,6 +7,7 @@ Created on Tue Jul 19 17:14:08 2022
 
 import numpy as np
 import numpy_financial as npf
+import pandas as pd
 import sys
 import os
 __location__ = os.path.realpath(
@@ -16,7 +17,7 @@ memory = Memory(__location__ + '/cache/', verbose=1)
 
 
 
-def EconomicAnalysis(conf,prices,E,new_PV = False):
+def EconomicAnalysis(conf,prices,pflows,new_PV = False):
     
     if new_PV:
         # PV investment cost - Analyzed case
@@ -55,9 +56,9 @@ def EconomicAnalysis(conf,prices,E,new_PV = False):
         CashFlows[iyear] = - Inv_Invert
     # Annual costs: grid fees
     if new_PV:
-        CashFlows[1:conf['econ']['time_horizon']+1] += - conf['econ']['C_grid_kW_annual'] * (max(E['FromGrid']) -  max(E['Load'])) 
+        CashFlows[1:conf['econ']['time_horizon']+1] += - conf['econ']['C_grid_kW_annual'] * (max(pflows['demand_noshift']) -  max(pflows['demand_shifted']))     # differance
     else:
-        CashFlows[1:conf['econ']['time_horizon']+1] += - conf['econ']['C_grid_kW_annual'] * (max(E['FromGrid']) -  max(E['Load']-E['ACGeneration'])) 
+        CashFlows[1:conf['econ']['time_horizon']+1] += - conf['econ']['C_grid_kW_annual'] * (max(pflows['demand_noshift']) -  max(pflows['demand_shifted']-pflows['pv'])) 
     
     # Annual costs: O&Ms
     CashFlows[1:conf['econ']['time_horizon']+1] += - conf['econ']['C_OM_annual'] * (Inv_PV + Inv_Batt) 
@@ -67,11 +68,11 @@ def EconomicAnalysis(conf,prices,E,new_PV = False):
         
     # Contributions of buying and selling energy to cash flows - Analyzed case
     
-    enpricekWh = prices['energy']
-    gridfeekWh = prices['grid']
-    enpricekWh_sell = prices['sell']
+    enpricekWh = prices['energy'].values
+    gridfeekWh = prices['grid'].values
+    enpricekWh_sell = prices['sell'].values
     prostax = conf['econ']['C_prosumertax']*min(conf['pv']['ppeak'],conf['pv']['inverter_pmax'])
-    res = EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, E, prostax)
+    res = EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, pflows, prostax)
         
     # Adding revenues and expenditures from buying and selling energy
     if conf['pv']['ppeak'] > 0 and conf['econ']['start_year'] < 2024 and not conf['econ']['smart_meter']:
@@ -145,7 +146,7 @@ def EconomicAnalysis(conf,prices,E,new_PV = False):
     # Annual investment costs  
            
     AnnualInvestment = NetSystemCost * CRF + \
-                       conf['econ']['C_grid_fix_annual'] + conf['econ']['C_grid_kW_annual'] * max(E['FromGrid']) + \
+                       conf['econ']['C_grid_fix_annual'] + conf['econ']['C_grid_kW_annual'] * max(pflows['fromgrid']) + \
                        conf['econ']['C_OM_annual'] * (Inv_PV + Inv_Batt) + \
                        conf['econ']['C_control_annual']
     
@@ -160,12 +161,12 @@ def EconomicAnalysis(conf,prices,E,new_PV = False):
         ECost = (ECost_pre2030*yearspre2030 + ECost*(conf['econ']['time_horizon']-yearspre2030)) / conf['econ']['time_horizon']
  
     # LCOE equivalent, electricity price per MWhh
-    ElPriceAvg = (ECost / sum(E['Load']*conf['sim']['ts']))*1000. # eur/MWh
+    ElPriceAvg = (ECost / sum(pflows['demand_shifted']*conf['sim']['ts']))*1000. # eur/MWh
     
     # Grid cost component of the final energy price
     # TODO average pre post 2030
     # revise what this actually is
-    ElPriceAvg_grid = 0./sum(E['Load']*conf['sim']['ts'])*1000 # eur/MWh
+    ElPriceAvg_grid = 0./sum(pflows['demand_shifted']*conf['sim']['ts'])*1000 # eur/MWh
 
     out = {}
 
@@ -185,7 +186,7 @@ def EconomicAnalysis(conf,prices,E,new_PV = False):
     out["TotalBuy"]  = res['CostBfG_energy'] + res['CostBfG_grid']
     
     out['ElBill'] = res['IncomeStG'] - res['CostStG'] - (res['CostBfG_energy'] + res['CostBfG_grid']) - \
-                    conf['econ']['C_grid_fix_annual'] + conf['econ']['C_grid_kW_annual'] * max(E['FromGrid']) - \
+                    conf['econ']['C_grid_fix_annual'] + conf['econ']['C_grid_kW_annual'] * max(pflows['fromgrid']) - \
                     conf['econ']['C_OM_annual'] * (Inv_PV + Inv_Batt) - \
                     conf['econ']['C_control_annual']
 
@@ -201,7 +202,7 @@ def EconomicAnalysis(conf,prices,E,new_PV = False):
 
 def scale_vector(vec_in,N,silent=False):
     ''' 
-    Function that scales a numpy vector or Pandas Series to the desired length
+    Function that scales a numpy vector to the desired length
     
     :param vec_in: Input vector
     :param N: Length of the output vector
@@ -238,18 +239,25 @@ def scale_vector(vec_in,N,silent=False):
     return vec_out  
 
 
-def EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, E, prostax):
+def EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, pflows, prostax):
     
     ts = conf['sim']['ts']
-    N = len(E['FromGrid'])
+    N = len(pflows['demand_noshift'])
+    
+    if isinstance(enpricekWh,pd.Series):
+        enpricekWh = enpricekWh.values
+    if isinstance(gridfeekWh,pd.Series):
+        enpricekWh = gridfeekWh.values
+    if isinstance(enpricekWh_sell,pd.Series):
+        enpricekWh = enpricekWh_sell.values
     
     if ts!= 1:
         enpricekWh = scale_vector(enpricekWh,N,silent=True)
         gridfeekWh = scale_vector(gridfeekWh,N,silent=True)
         enpricekWh_sell = scale_vector(enpricekWh_sell,N,silent=True)
     
-    CostBfG_energy = sum(E['FromGrid']*enpricekWh)*ts
-    CostBfG_grid   = sum(E['FromGrid']*gridfeekWh)*ts
+    CostBfG_energy = sum(pflows['fromgrid']*enpricekWh)*ts
+    CostBfG_grid   = sum(pflows['fromgrid']*gridfeekWh)*ts
     
     # Selling
     
@@ -265,7 +273,7 @@ def EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, E, prostax):
                 
                 if conf['econ']['tariff'] == 'net-metering':
                     
-                    IncomeStG_pre2030 = sum(E['ToGrid']*(enpricekWh + gridfeekWh))*ts
+                    IncomeStG_pre2030 = sum(pflows['togrid']*(enpricekWh + gridfeekWh))*ts
                     CostStG_pre2030   = prostax
                     
                 elif conf['econ']['tariff'] == 'bi-directional':
@@ -281,7 +289,7 @@ def EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, E, prostax):
                 # Selling  
                 # post 2030
                 # prosumers forced to install smart meter
-                IncomeStG = sum(E['ToGrid']*enpricekWh_sell)*ts
+                IncomeStG = sum(pflows['togrid']*enpricekWh_sell)*ts
                 CostStG   = 0 # min(sum(E['ToGrid']*gridfeekWh)*ts, prostax)
 
                 
@@ -289,7 +297,7 @@ def EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, E, prostax):
                 
                 # Selling
                 # no distinction between pre and post 2030
-                IncomeStG = sum(E['ToGrid']*enpricekWh_sell)*ts
+                IncomeStG = sum(pflows['togrid']*enpricekWh_sell)*ts
                 CostStG   = 0 # min(sum(E['ToGrid']*gridfeekWh)*ts, prostax)
                 IncomeStG_pre2030 = None
                 CostStG_pre2030 = None
@@ -300,7 +308,7 @@ def EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, E, prostax):
                 sys.exit('Error: meter type specified does not exist')
                 
         else: # PV installed after 2024 => # no distinctions to be made before and after 2030
-            IncomeStG = sum(E['ToGrid']*enpricekWh_sell)*ts
+            IncomeStG = sum(pflows['togrid']*enpricekWh_sell)*ts
             CostStG   = 0 # min(sum(E['ToGrid']*gridfeekWh)*ts, prostax)
             IncomeStG_pre2030 = None
             CostStG_pre2030 = None
