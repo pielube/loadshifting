@@ -41,7 +41,7 @@ def read_json(filename):
 
 def read_config(filename):
     '''
-    Function that read the json config file for the load-shifting library
+    Function that read the excel config file for the load-shifting library
     Parameters
     ----------
     filename : string

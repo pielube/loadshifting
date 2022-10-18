@@ -1,4 +1,4 @@
-from dash import Dash, dcc, html, Input, Output, State, callback
+from dash import Dash, dcc, html, Input, Output, State, callback,ctx
 import dash_bootstrap_components as dbc
 import os,json
 
@@ -6,6 +6,7 @@ from dash_components import household_components,heating_components,ev_component
 import defaults
 from plots import make_demand_plot
 from simulation import shift_load,load_config,load_cases
+from readinputs import read_config
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -15,11 +16,12 @@ __location__ = os.path.realpath(
 app = Dash(__name__, external_stylesheets=[dbc.themes.MINTY], title="Load Shifting")
 server = app.server
 
-import dash_ace
 from flask_cors import CORS
 CORS(server)
 
-conf = load_config('default')
+config_path = os.path.join(__location__,'inputs/config.xlsx')
+
+conf = read_config(config_path)
 
 url_bar_and_content_div = html.Div([
     dcc.Location(id='url', refresh=False),
@@ -126,7 +128,7 @@ main_page=dbc.Container(
                 
                 dbc.Button(
                     "Stratégie de pilotage",
-                    id="control_strategy"
+                    id="coordinates_button"
                 ),
                 dbc.Collapse(
                     dbc.Card(
@@ -196,24 +198,9 @@ editor_page = html.Div([
                                  
                                  """),
     
-                    dash_ace.DashAceEditor(
-                        id='config_text',
-                        value=json.dumps(conf, indent=4),
-                        theme='github',
-                        mode='python',
-                        tabSize=1,
-                    ),
-                    
-                    html.Br(),
-                    dbc.Button(
-                    "Enregistrer sous",
-                    id="save_config"
-                    ),
                     html.Br(),
                     dcc.Input(id='scenario_name', type='text',value='Mon Scenario'),
                     html.Br(),
-                    html.Div(id="save_ok", children=''),
-                    html.Hr(),
                     
                     dcc.Link('Retour à la page principale', href='/'),
                     
@@ -242,29 +229,6 @@ def display_page(pathname):
     else:
         return main_page                 
 
-
-#%% callbacks for the editor page           
-
-# callback to save a new scenario and add it to the drowpdown list:
-@callback(Output('save_ok', 'children'),
-#          Output('dropdown_cases','options'),
-              [Input('save_config', 'n_clicks')],
-              [State("config_text", "value"),
-               State('scenario_name', 'value')], prevent_initial_call=True)
-def save_case(n_clicks,config,scenario_name):
-    conf = json.loads(config)
-    try: 
-        conf = json.loads(config)
-        scenario_name = 'Custom - ' + scenario_name
-        with open(__location__ + '/scenarios/'+scenario_name + '.json', 'w') as outfile:
-            json.dump(conf, outfile)
-        out= 'Scenario successfully saved in ' + 'scenarios/'+scenario_name + '.json'
-    except Exception as e:
-        out= 'Invalid configuration format. Error Message: ' + e
-        print(out)    
-        
-    return out   #,[ {'label': 'Non prédéfini', 'value': 'default'} ] + [ {'label':x, 'value': x} for x in load_cases()]
-
                      
                      
 #%%  Callbacks for menu expansion on the main page
@@ -283,63 +247,107 @@ def refresh_dropdown_cases(n_clicks):
 ### Callback to make household menu expand
 @callback(
     Output("household_collapse", "is_open"),
-    [Input("household_button", "n_clicks")],
+    [Input("household_button", "n_clicks"),
+     Input('dropdown_cases','value')],
     [State("household_collapse", "is_open")]
 )
-def toggle_household_collapse(n_clicks, is_open):
-    if n_clicks:
-        return not is_open
-    return is_open                     
-                     
- 
-### Callback to make household menu expand
+def toggle_household_collapse(n_clicks, dropdown_value, is_open):
+    if ctx.triggered_id == "household_button":
+        if dropdown_value == 'default':
+            if n_clicks:
+                return not is_open
+            return is_open       
+        else:
+            return False
+    else:
+        if dropdown_value == 'default':
+            return is_open
+        else:
+            return False
+        
+### Callback to make heating menu expand
 @callback(
     Output("heating_collapse", "is_open"),
-    [Input("heating_button", "n_clicks")],
+    [Input("heating_button", "n_clicks"),
+     Input('dropdown_cases','value')],
     [State("heating_collapse", "is_open")]
 )
-def toggle_heating_collapse(n_clicks, is_open):
-    if n_clicks:
-        return not is_open
-    return is_open    
-               
-
-
-### Callback to make EV parameters menu expand
+def toggle_heating_collapse(n_clicks, dropdown_value, is_open):
+    if ctx.triggered_id == "heating_button":
+        if dropdown_value == 'default':
+            if n_clicks:
+                return not is_open
+            return is_open       
+        else:
+            return False
+    else:
+        if dropdown_value == 'default':
+            return is_open
+        else:
+            return False
+        
+### Callback to make ev menu expand
 @callback(
     Output("ev_collapse", "is_open"),
-    [Input("ev_button", "n_clicks")],
+    [Input("ev_button", "n_clicks"),
+     Input('dropdown_cases','value')],
     [State("ev_collapse", "is_open")]
 )
-def toggle_ev_collapse(n_clicks, is_open):
-    if n_clicks:
-        return not is_open
-    return is_open
+def toggle_ev_collapse(n_clicks, dropdown_value, is_open):
+    if ctx.triggered_id == "ev_button":
+        if dropdown_value == 'default':
+            if n_clicks:
+                return not is_open
+            return is_open       
+        else:
+            return False
+    else:
+        if dropdown_value == 'default':
+            return is_open
+        else:
+            return False
 
-
-### Callback to make EV parameters menu expand
+### Callback to make pv menu expand
 @callback(
     Output("pv_collapse", "is_open"),
-    [Input("pv_button", "n_clicks")],
+    [Input("pv_button", "n_clicks"),
+     Input('dropdown_cases','value')],
     [State("pv_collapse", "is_open")]
 )
-def toggle_pv_collapse(n_clicks, is_open):
-    if n_clicks:
-        return not is_open
-    return is_open
-
-
+def toggle_pv_collapse(n_clicks, dropdown_value, is_open):
+    if ctx.triggered_id == "pv_button":
+        if dropdown_value == 'default':
+            if n_clicks:
+                return not is_open
+            return is_open       
+        else:
+            return False
+    else:
+        if dropdown_value == 'default':
+            return is_open
+        else:
+            return False                     
 
 ### Callback to make coordinates menu expand
 @callback(
     Output("coordinates_collapse", "is_open"),
-    [Input("coordinates_button", "n_clicks")],
+    [Input("coordinates_button", "n_clicks"),
+     Input('dropdown_cases','value')],
     [State("coordinates_collapse", "is_open")]
 )
-def toggle_coordinates_collapse(n_clicks, is_open):
-    if n_clicks:
-        return not is_open
-    return is_open
+def toggle_coordinates_collapse(n_clicks, dropdown_value, is_open):
+    if ctx.triggered_id == "coordinates_button":
+        if dropdown_value == 'default':
+            if n_clicks:
+                return not is_open
+            return is_open       
+        else:
+            return False
+    else:
+        if dropdown_value == 'default':
+            return is_open
+        else:
+            return False
 
 
 #%%  Callbacks for activation/deactivation of specific inputs
@@ -374,94 +382,47 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
 
     
     #house type:
-    if dropdown_house != conf['config']['house']:
-        conf['config']['house'] = dropdown_house
+    conf['dwelling']['type'] = dropdown_house
     
     #wet appliances:
-    apps = {'td':'TumbleDryer','wm':'WashingMachine','dw':'DishWasher'}
+    apps = {'td':'tumble_dryer','wm':'washing_machine','dw':'dish_washer'}
     for key in apps:
-        if key in checklist_apps and apps[key] not in conf['config']['columns']:
-            conf['config']['columns'].append(apps[key])
-        elif key not in checklist_apps and apps[key] in conf['config']['columns']:
-            conf['config']['columns'].remove(apps[key])
-        if dropdown_flex_appliances=='shiftable':
-            if key in checklist_apps and apps[key] not in conf['config']['TechsShift']:
-                conf['config']['TechsShift'].append(apps[key]) 
-            elif key not in checklist_apps and apps[key] in conf['config']['TechsShift']:
-                conf['config']['TechsShift'].remove(apps[key])
+        if key in checklist_apps:
+            conf['dwelling'][key] = True
         else:
-            if key in conf['config']['TechsShift']:
-                conf['config']['TechsShift'].remove(apps[key])
+            conf['dwelling'][key] = False
+    
+    # type of control for the wet appliances:
+    conf['cont']['wetapp'] = dropdown_flex_appliances
         
-    # heat pumps:
-    if 'hp_in' in checklist_hp and "HeatPumpPower" not in conf['config']['columns']:
-        conf['config']['columns'].append("HeatPumpPower")
-    elif 'hp_in' not in checklist_hp and "HeatPumpPower" in conf['config']['columns']:
-        conf['config']['columns'].remove("HeatPumpPower")
-    if 'hp_flex' in checklist_hp and "HeatPumpPower" not in conf['config']['TechsShift']:
-        conf['config']['TechsShift'].append("HeatPumpPower")
-    elif 'hp_flex' not in checklist_hp and "HeatPumpPower" in conf['config']['TechsShift']:
-        conf['config']['TechsShift'].remove("HeatPumpPower")
-    if "HeatPumpPower" not in conf['config']['columns'] and "HeatPumpPower" in conf['config']['TechsShift']:
-        conf['config']['TechsShift'].remove("HeatPumpPower")
-    if 'auto_hp' in yesno_hp and conf['housetype']['HP']['HeatPumpThermalPower'] is not None:
-        conf['housetype']['HP']['HeatPumpThermalPower'] = None
-    elif 'auto_hp' not in yesno_hp:
-        conf['housetype']['HP']['HeatPumpThermalPower']= float(input_hp_power)
-        
+    # heat pump:
+    conf['hp']['yesno'] = 'hp_in' in checklist_hp
+    conf['hp']['loadshift'] = 'hp_flex' not in checklist_hp
+    conf['hp']['automatic_sizing'] = 'auto_hp' in yesno_hp
+    if not conf['hp']['automatic_sizing']:
+        conf['hp']['pnom'] = float(input_hp_power)
+
     # DHW:
-    if 'dhw_in' in checklist_dhw and "DomesticHotWater" not in conf['config']['columns']:
-        conf['config']['columns'].append("DomesticHotWater")
-    elif 'dhw_in' not in checklist_dhw and "DomesticHotWater" in conf['config']['columns']:
-        conf['config']['columns'].remove("DomesticHotWater")
-    if 'dhw_flex' in checklist_dhw and "DomesticHotWater" not in conf['config']['TechsShift']:
-        conf['config']['TechsShift'].append("DomesticHotWater")
-    elif 'dhw_flex' not in checklist_dhw and "DomesticHotWater" in conf['config']['TechsShift']:
-        conf['config']['TechsShift'].remove("DomesticHotWater")
-    if "DomesticHotWater" not in conf['config']['columns'] and "DomesticHotWater" in conf['config']['TechsShift']:
-        conf['config']['TechsShift'].remove("DomesticHotWater")
-    if input_boiler_volume != conf['housetype']['DHW']['Vcyl']:
-        conf['housetype']['DHW']['Vcyl'] = float(input_boiler_volume)
-    if input_boiler_temperature != conf['housetype']['DHW']['Ttarget']:
-        conf['housetype']['DHW']['Ttarget'] = float(input_boiler_temperature)
+    conf['dhw']['yesno'] = 'dhw_in' in checklist_hp
+    conf['dhw']['loadshift'] = 'dhw_flex' not in checklist_hp
+    conf['dhw']['vol'] = float(input_boiler_volume)
+    conf['dhw']['set_point'] = float(input_boiler_temperature)
         
     # EV:
-    if 'ev_in' in checklist_ev and "EVCharging" not in conf['config']['columns']:
-        conf['config']['columns'].append("EVCharging")
-    elif 'ev_in' not in checklist_ev and "EVCharging" in conf['config']['columns']:
-        conf['config']['columns'].remove("EVCharging")
-    if 'ev_flex' in checklist_ev and "EVCharging" not in conf['config']['TechsShift']:
-        conf['config']['TechsShift'].append("EVCharging")
-    elif 'ev_flex' not in checklist_ev and "EVCharging" in conf['config']['TechsShift']:
-        conf['config']['TechsShift'].remove("EVCharging")
-    if "EVCharging" not in conf['config']['columns'] and "EVCharging" in conf['config']['TechsShift']:
-        conf['config']['TechsShift'].remove("EVCharging")
+    conf['ev']['yesno'] = 'ev_in' in checklist_hp
+    conf['ev']['loadshift'] = 'ev_flex' not in checklist_hp      
         
-    #PV
-    if 'pv_in' in checklist_pv and not conf['config']['PresenceOfPV']:
-        conf['config']['PresenceOfPV'] = True
-    elif 'pv_in' not in checklist_pv and conf['config']['PresenceOfPV']:
-        conf['config']['PresenceOfPV'] = False
-        
-    if 'auto_pv' in yesno_pv and not conf['pvbatt_param']['pv']['AutomaticSizing']:
-        conf['pvbatt_param']['pv']['AutomaticSizing'] = True
-    if 'auto_pv' not in yesno_pv and conf['pvbatt_param']['pv']['AutomaticSizing']:
-        conf['pvbatt_param']['pv']['AutomaticSizing'] = False
-    if not conf['pvbatt_param']['pv']['AutomaticSizing']:
-        if input_pv_power != conf['pvbatt_param']['pv']['Ppeak']:
-            conf['pvbatt_param']['pv']['Ppeak'] = float(input_pv_power)
-        
-    #Battery
-    if 'bat_in' in checklist_bat and not conf['config']['PresenceOfBattery']:
-        conf['config']['PresenceOfBattery'] = True
-    elif 'bat_in' not in checklist_bat and conf['config']['PresenceOfBattery']:
-        conf['config']['PresenceOfBattery'] = False
-        
-    if input_bat_power != conf['pvbatt_param']['battery']['MaxPower']:
-        conf['pvbatt_param']['battery']['MaxPower'] = float(input_bat_power)
-    if input_bat_capacity != conf['pvbatt_param']['battery']['BatteryCapacity']:
-        conf['pvbatt_param']['battery']['BatteryCapacity'] = float(input_bat_capacity)
+    # PV:
+    conf['pv']['yesno'] = 'ev_in' in 'pv_in' in checklist_pv
+    conf['pv']['automatic_sizing'] = 'auto_pv' in yesno_pv
+    if not conf['pv']['automatic_sizing']:
+        conf['pv']['ppeak'] = float(input_pv_power)
     
+    # Battery:
+    conf['batt']['yesno'] = 'bat_in' in checklist_bat
+    conf['batt']['pnom'] =  float(input_bat_power)
+    conf['batt']['capacity'] = float(input_bat_capacity)
+
 
 
 #%%  Callbacks (misc)
@@ -518,12 +479,12 @@ def display_graph(n_clicks,week,
     States are used as parameters but do not trigger a callback
     '''
         
-    conf = load_config('default')
+    conf,prices = read_config(config_path)
     update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,checklist_hp,yesno_hp,input_hp_power,
                   checklist_dhw,input_boiler_volume,input_boiler_temperature,checklist_ev,checklist_pv,yesno_pv,
                   input_pv_power,checklist_bat,input_bat_capacity,input_bat_power)
 
-    results,demand_15min,demand_shifted,pflows = shift_load(conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['tariffs'],conf['housetype'],conf['N'])
+    results,demand_15min,demand_shifted,pflows = shift_load(conf,prices)
     
     if defaults.verbose > 0:
         print('Main results: \n' + json.dumps(results, indent=4))

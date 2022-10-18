@@ -28,8 +28,9 @@ household_components = [
 
     html.Div(id='text_flex_appliances', children='Participation des électrodomestiques'),
     dcc.Dropdown( id = 'dropdown_flex_appliances',
-                    options = [ {'label':'Charge déplaçable', 'value': 'shiftable'}, 
-                               {'label':'Charge non déplaçable', 'value': 'non-shiftable'}],
+                    options = [ {'label':'Charge déplaçable (automatique)', 'value': 'automated'}, 
+                               {'label':'Charge déplaçable (manuel)', 'value': 'manual'}, 
+                               {'label':'Charge non déplaçable', 'value': 'none'}],
                     value = 'shiftable'),
 
 
@@ -105,7 +106,6 @@ pv_components = [
                     value=['pv_in'],
                     labelStyle={'display': 'block'}
                 ),      
-    html.Div(id='text_pv_power', children='Puissance crète (kWp):'),
     dcc.Checklist(
                     id = 'yesno_pv',
                     options=[
@@ -113,7 +113,8 @@ pv_components = [
                     ],
                     value=['auto_pv'],
                     labelStyle={'display': 'block'}
-                ),     
+                ),    
+    html.Div(id='text_pv_power', children='Puissance crète (kWp):'),
     html.Div(dcc.Input(id='input_pv_power', type='text',value=defaults.pv_power,disabled=True)),
     html.Hr(),
     
