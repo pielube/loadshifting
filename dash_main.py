@@ -4,7 +4,7 @@ import os,json
 
 from dash_components import household_components,heating_components,ev_components,pv_components
 import defaults
-from plots import make_demand_plot
+from plots import make_demand_plot,make_pflow_plot
 from simulation import shift_load,load_cases
 from readinputs import read_config
 
@@ -175,6 +175,7 @@ main_page=dbc.Container(
             dbc.Col([
                 dcc.Graph(id='display1', style={'height': '50vh'}),
                 dcc.Graph(id='display2', style={'height': '50vh'}),
+                dcc.Graph(id='display3', style={'height': '50vh'}),
                 dcc.Markdown(id='results',children="##### Résultats de simulation")
             ], width=9, align="start"),
         ]),
@@ -454,6 +455,7 @@ statelist = ['dropdown_house','checklist_apps','dropdown_flex_appliances','check
 @callback(
     Output("display1", "figure"),
     Output("display2", "figure"),
+    Output("display3", "figure"),
     Output("week", "disabled"),
     Output("simulation_output", "children"),
     Output("results", "children"),
@@ -502,6 +504,7 @@ def display_graph(n_clicks,week,
     """    
     fig = make_demand_plot(idx,demand_15min,PV = pv,title='Consommation sans déplacement de charge')
     fig2 = make_demand_plot(idx,demand_shifted,PV = pv,title='Consommation avec déplacement de charge')
+    fig3 = make_pflow_plot(idx,pflows)
 
     """
     Text output
@@ -539,7 +542,7 @@ def display_graph(n_clicks,week,
     maintext = "Facture d'électricité: {:.2f} EUR/an".format(-results['el_netexpend'])
     totext = "\n \n".join(totext)
 
-    return fig,fig2,False,maintext,totext,''     # Number of returns must be equal to the number of outputs
+    return fig,fig2,fig3,False,maintext,totext,''     # Number of returns must be equal to the number of outputs
     
 
 

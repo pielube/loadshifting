@@ -642,15 +642,20 @@ def shift_load(conf,prices):
         # The discharge of the battery is considered as a negative load:
         demand_shifted['BatteryGeneration'] = np.minimum(0,pflows.pv - dispatch_bat['inv2load'] - dispatch_bat['inv2grid'])
         
+        pflows['demand_shifted'] = demand_shifted.sum(axis=1)
         # Saving demand profile considering also battery shifting
         pflows['fromgrid'] = pd.Series(data=dispatch_bat['grid2load'],index=index15min) # kW
         pflows['togrid'] = pd.Series(data=dispatch_bat['inv2grid'],index=index15min) # kW
-        
-        pflows['demand_shifted'] = demand_shifted.sum(axis=1)
+        pflows['BatteryConsumption'] = demand_shifted['BatteryConsumption']
+        pflows['BatteryGeneration'] = demand_shifted['BatteryGeneration']
         
     else:
-        
-         pflows['demand_shifted'] = pflows['demand_shifted_nobatt']
+        pflows['demand_shifted'] = pflows['demand_shifted_nobatt']
+        pflows['fromgrid'] = np.maximum(0,pflows['demand_shifted_nobatt'] - pflows('pv'))
+        pflows['togrid'] = np.maximum(0,-pflows['demand_shifted_nobatt'] + pflows('pv'))
+        pflows['BatteryConsumption'] = pd.Series(0,index=index15min)
+        pflows['BatteryGeneration'] = pd.Series(0,index=index15min)    
+
   
     
     """
@@ -675,6 +680,14 @@ if __name__ == '__main__':
     print(json.dumps(results, indent=4))
     
     # plotting the results
-    from plots import make_demand_plot
-    fig = make_demand_plot(demand_15min.index,demand_shifted,PV = pflows.pv,title='Consumption and generation')
+    from plots import make_demand_plot, make_pflow_plot
+    # fig = make_demand_plot(demand_15min.index,demand_shifted,PV = pflows.pv,title='Consumption and generation')
+    # fig.show()
+    fig = make_pflow_plot(demand_15min.index,pflows)
     fig.show()
+    
+    
+    
+    
+    
+    
