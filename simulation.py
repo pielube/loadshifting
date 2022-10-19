@@ -672,7 +672,7 @@ def shift_load(conf,prices):
 
 if __name__ == '__main__':
     
-    conf,prices = read_config(__location__ + '/inputs/config.xlsx')
+    conf,prices,config_full = read_config(__location__ + '/inputs/config.xlsx')
     
     # delete unnecessary entries:
     results,demand_15min,demand_shifted,pflows = shift_load(conf,prices)

@@ -21,8 +21,6 @@ CORS(server)
 
 config_path = os.path.join(__location__,'inputs/config.xlsx')
 
-conf = read_config(config_path)
-
 url_bar_and_content_div = html.Div([
     dcc.Location(id='url', refresh=False),
     html.Div(id='page-content')])
@@ -163,7 +161,6 @@ main_page=dbc.Container(
                 html.Br(),
                 html.Div(id="text_inputs_changed", children=''),
                 html.Hr(),
-                dcc.Markdown("##### Résultats de simulation"),
                 dcc.Loading(
                     id="loading-1",
                     type="default",
@@ -176,7 +173,10 @@ main_page=dbc.Container(
                 dcc.Graph(id='display1', style={'height': '50vh'}),
                 dcc.Graph(id='display2', style={'height': '50vh'}),
                 dcc.Graph(id='display3', style={'height': '50vh'}),
-                dcc.Markdown(id='results',children="##### Résultats de simulation")
+                dcc.Markdown(id='results',children="### Résultats de simulation"),
+                html.Br(),
+                dcc.Markdown(id='titre1',children="### Inputs utilisés:"),
+                html.Div(id='results2',children='')
             ], width=9, align="start"),
         ]),
         html.Hr(),
@@ -200,7 +200,7 @@ editor_page = html.Div([
                                  """),
     
                     html.Br(),
-                    dcc.Input(id='scenario_name', type='text',value='Mon Scenario'),
+                    html.Div(id="table-container", children=''),
                     html.Br(),
                     
                     dcc.Link('Retour à la page principale', href='/'),
@@ -425,12 +425,24 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
     conf['batt']['capacity'] = float(input_bat_capacity)
 
 #%%  Callbacks (misc)
-
-
-
-def make_table(dataframe):
+def make_table(conf,config_full):
+    '''
+    build a dash table from the configuration dataframe
+    '''
+    # update the config_full dataframe for the boolean variables:
+    for key1 in conf:
+        for key2 in conf[key1]:
+            varname = key1 + '_' + key2
+            if varname in config_full.index:
+                if isinstance(conf[key1][key2],bool):
+                    if conf[key1][key2]:
+                        config_full.loc[varname,'Valeur'] = 'Oui'
+                    else:
+                        config_full.loc[varname,'Valeur'] = 'Non'
+                else:
+                    config_full.loc[varname,'Valeur'] = conf[key1][key2]    
     return dbc.Table.from_dataframe(
-        dataframe,
+        config_full,
         bordered=True,
         hover=True,
         responsive=True,
@@ -440,9 +452,6 @@ def make_table(dataframe):
         }
     )
 
-
-last_analyze_timestamp = None
-n_clicks_last = 0
 
 #%% The callback to the main simulation
 
@@ -459,7 +468,7 @@ statelist = ['dropdown_house','checklist_apps','dropdown_flex_appliances','check
     Output("week", "disabled"),
     Output("simulation_output", "children"),
     Output("results", "children"),
-    Output("text_inputs_changed", "children"),
+    Output("results2", "children"),
 #    Output("coordinates_output", "children"),
     [
         Input('analyze', 'n_clicks'),
@@ -479,10 +488,13 @@ def display_graph(n_clicks,week,
     States are used as parameters but do not trigger a callback
     '''
         
-    conf,prices = read_config(config_path)
+    conf,prices,config_full = read_config(config_path)
     update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,checklist_hp,yesno_hp,input_hp_power,
                   checklist_dhw,input_boiler_volume,input_boiler_temperature,checklist_ev,checklist_pv,yesno_pv,
                   input_pv_power,checklist_bat,input_bat_capacity,input_bat_power)
+    
+    # make a table with all simulation inputs:
+    inputs_table = make_table(conf,config_full)
 
     results,demand_15min,demand_shifted,pflows = shift_load(conf,prices)
     
@@ -542,7 +554,7 @@ def display_graph(n_clicks,week,
     maintext = "Facture d'électricité: {:.2f} EUR/an".format(-results['el_netexpend'])
     totext = "\n \n".join(totext)
 
-    return fig,fig2,fig3,False,maintext,totext,''     # Number of returns must be equal to the number of outputs
+    return fig,fig2,fig3,False,maintext,totext,inputs_table    # Number of returns must be equal to the number of outputs
     
 
 

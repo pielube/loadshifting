@@ -123,8 +123,17 @@ translate = {
 convert_building = {'1f':'Apartment','2f':'Terraced','3f':'Semi-detached','4f':'Freestanding'}
 
 # colors for plotting:
-defaultcolors = {'StaticLoad':'#636EFA', 'WashingMachine':'#00CC96', 'TumbleDryer':'#AB63FA',
+
+defaultcolors1 = {'StaticLoad':'#636EFA', 'WashingMachine':'#00CC96', 'TumbleDryer':'#AB63FA',
                  'DishWasher':'#FFA15A','HeatPumpPower':'#19D3F3', 'DomesticHotWater':'#FF6692',
                  'EVCharging':'#B6E880','BatteryConsumption':'#FF97FF'}
 
-# , '#FECB52'
+defaultcolors = {'StaticLoad':'#7fe5ca', 
+                 'WashingMachine':'#ffb2c8', 
+                 'TumbleDryer':'#d5b0fc',
+                 'DishWasher':'#ffd0ac',
+                 'HeatPumpPower':'#daf3bf', 
+                 'DomesticHotWater':'#8be9f9',
+                 'EVCharging':'#ffcbff',
+                 'BatteryConsumption':'#b0b6fc',
+                 'PVGeneration': '#ffffbe'}

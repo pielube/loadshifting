@@ -82,7 +82,7 @@ def make_pflow_plot(idx,pflows,title='Power flows'):
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
-         name = 'PV geneartion',
+         name = 'PV Generation',
          x = idx,
          y = pflows.loc[idx,'pv'],
          stackgroup='one',

@@ -102,14 +102,14 @@ def read_config(filename):
         subset.index = [x[n:] for x in subset.index]
         out[prefix] = subset.to_dict()
     
-    return out,prices
+    return out,prices,config_full
 
 
 if __name__ == '__main__':
     
     # load the new, all-included config file:
     filename = 'inputs/config.xlsx'
-    conf,prices = read_config(filename)
+    conf,prices,config_full = read_config(filename)
     
     # write to json/csv input format:
     filename_csv = filename[:-5] + '_prices.csv'
