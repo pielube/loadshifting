@@ -3,3 +3,4 @@ cache/*
 simulations/*
 scenarios/*
 /profiler.Result
+*.xlsx\#
