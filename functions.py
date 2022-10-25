@@ -10,7 +10,7 @@ from itertools import chain
 from strobe.Data.Households import households
 from RC_BuildingSimulator import Zone
 
-from economics import EconomicAnalysis
+from economics import EconomicAnalysis,CashFlows,FinancialMetrics
 import defaults
 
 
@@ -870,179 +870,139 @@ def EVshift_tariffs(yprices_1min,pricelim,arrive,leave,starts,ends,idx_athomewin
 
 
 def ResultsAnalysis(conf,prices,pflows):
-    
-    """
-    Prosumpy run 1
-    Running prosumpy to get SC and SSR and energy fluxes for economic analysis
-    All shifting must have already been modelled, including battery
-    param_tech is hence defined here and battery forced to be 0
-    """
-    
-    pv,demand_ref = pflows.pv,pflows.demand_noshift
+    '''
+    Function that analyses the results from the load shifting library 
+    The results are input through the pflows dataframe
+    the function returns some important energy and economic indicators
+    '''
     
     ts = conf['sim']['ts']
     
-    if conf['batt']['capacity'] > 0:
-        demand = pflows.demand_shifted
-    else:
-        demand = pflows.demand_shifted_nobatt
-    
-    """
-    Economic analysis
-    """
-    
-    EA = EconomicAnalysis(conf,prices,pflows)
-    
-    """
-    Outputs
-    """
-    
-    # Preparing function outputs
-    
-    out = {}
-    
-    # Yearly total electricity prices
-    
-    yenprices  = prices['energy'].to_numpy()
-    ygridfees  = prices['grid'].to_numpy()
-    ysellprice = prices['sell'].to_numpy()
-    yprices    = yenprices + ygridfees
-    
-    out['PVCapacity']      = conf['pv']['ppeak']
-    out['BatteryCapacity'] = conf['batt']['capacity']
-    out['InvCapacity']     = conf['pv']['inverter_pmax']
-    
-    out['CostPV']       = EA['PVInv']
-    out['CostBattery']  = EA['BatteryInv']
-    out['CostInverter'] = EA['InverterInv']
-    
-    out['sellprice'] = ysellprice[0]
-     
-    out['peakdem'] = np.max(demand)
-    
-    out['cons_total'] = np.sum(demand)*ts
-    #out['cons_total_incr'] = out['cons_total'] - np.sum(demand_ref)*ts
-    out['cons_total_incr'] = 0
-        
-    # commenting the code below for now. How is that useful?
-    
-    #idx = pd.date_range(start='2015-01-01',end='2015-12-31 23:45:00',freq='15T')
-    # out['totenprice_00_06'] = yprices[0]
-    # out['totenprice_06_11'] = yprices[int(6/ts)]
-    # out['totenprice_11_17'] = yprices[int(11/ts)]
-    # out['totenprice_17_22'] = yprices[int(17/ts)]
-    # out['totenprice_22_24'] = yprices[int(22/ts)]        
-    
-    # out['cons_00_06'] = np.sum(demand*np.where(idx.hour< 6,1,0))*ts
-    # out['cons_06_11'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour, 6),np.less(idx.hour,11)),1,0))*ts
-    # out['cons_11_17'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour,11),np.less(idx.hour,17)),1,0))*ts
-    # out['cons_17_22'] = np.sum(demand*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*ts
-    # out['cons_22_24'] = np.sum(demand*np.where(idx.hour>=22,1,0))*ts
-    
-    # cons_00_06_ref = np.sum(demand_ref*np.where(idx.hour< 6,1,0))*ts
-    # cons_06_11_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour, 6),np.less(idx.hour,11)),1,0))*ts
-    # cons_11_17_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,11),np.less(idx.hour,17)),1,0))*ts
-    # cons_17_22_ref = np.sum(demand_ref*np.where(np.logical_and(np.greater_equal(idx.hour,17),np.less(idx.hour,22)),1,0))*ts
-    # cons_22_24_ref = np.sum(demand_ref*np.where(idx.hour>=22,1,0))*ts 
-    
-    # out['cons_00_06_var'] = out['cons_00_06'] - cons_00_06_ref
-    # out['cons_06_11_var'] = out['cons_06_11'] - cons_06_11_ref
-    # out['cons_11_17_var'] = out['cons_11_17'] - cons_11_17_ref
-    # out['cons_17_22_var'] = out['cons_17_22'] - cons_17_22_ref
-    # out['cons_22_24_var'] = out['cons_22_24'] - cons_22_24_ref
-    
-    out['el_prod']           = np.sum(pv)*ts
+    demand_tot = pflows['demand_noshift'].sum() * ts
     SC = np.minimum(pflows.pv, pflows.demand_shifted)
-    out['el_selfcons']       = np.sum(SC)*ts
-    out['el_soldtogrid']     = np.sum(pflows['togrid'])*ts
-    out['el_boughtfromgrid'] = np.sum(pflows['fromgrid'])*ts
     
-    out['selfsuffrate'] = out['el_selfcons']/out['cons_total']
-    out['el_shifted'] = np.abs(pflows.demand_noshift-pflows.demand_shifted).sum()/2/4
-    out['losses'] = (pflows.demand_shifted.sum() - pflows.demand_noshift.sum())/4
+    CF= CashFlows(conf,prices,pflows['fromgrid'],pflows['togrid'])
     
-    if out['el_prod'] == 0:
-        out['selfconsrate'] = 0
+    import copy
+    # case 0: without PV, battery or load shifting
+    conf_0 = copy.deepcopy(conf)
+    conf_0['pv']['yesno'] = False
+    conf_0['pv']['ppeak'] = 0
+    conf_0['batt']['yesno'] = False
+    conf_0['batt']['capacity'] = 0
+    conf_0['cont']['wetapp'] = 'none'
+    conf_0['ev']['loadshift'] = False
+    conf_0['hp']['loadshift'] = False
+    conf_0['dhw']['loadshift'] = False
+    CF_0 = CashFlows(conf_0,prices,pflows['demand_noshift'],pd.Series(0,index=pflows['demand_noshift'].index))
+    
+    # case1: with PV, without battery and without load shifting
+    conf_1 = copy.deepcopy(conf)
+    if not conf_1['pv']['yesno']:
+        CF_1 = CF_0
     else:
-        out['selfconsrate'] = out['el_selfcons']/out['el_prod']
+        conf_1['batt']['yesno'] = False
+        conf_1['batt']['capacity'] = 0
+        conf_1['cont']['wetapp'] = 'none'
+        conf_1['ev']['loadshift'] = False
+        conf_1['hp']['loadshift'] = False
+        conf_1['dhw']['loadshift'] = False
+        CF_1 = CashFlows(conf_1,prices,np.maximum(0,pflows['demand_noshift']-pflows['pv']),np.maximum(0,pflows['pv'] - pflows['demand_noshift']))
+        
+    # case2: with PV, with load shifting, without battery
+    conf_2 = copy.deepcopy(conf)
+    conf_2['batt']['yesno'] = False
+    conf_2['batt']['capacity'] = 0   
+    CF_2 = CashFlows(conf_2,prices,np.maximum(0,pflows['demand_shifted_nobatt']-pflows['pv']),np.maximum(0,pflows['pv'] - pflows['demand_shifted_nobatt']))
     
-    out["EnSold"]     = EA["EnSold"]         
-    out["CostToSell"] = EA["CostToSell"]
-    out["TotalSell"]  = EA["TotalSell"] 
+    # case3: with PV, with battery, without load shifting
+    conf_3 = copy.deepcopy(conf)
+    conf_3['cont']['wetapp'] = 'none'
+    conf_3['ev']['loadshift'] = False
+    conf_3['hp']['loadshift'] = False
+    conf_3['dhw']['loadshift'] = False
+    CF_3 = CashFlows(conf_3,prices,np.maximum(0,pflows['demand_noshift']-pflows['pv'] - pflows['BatteryGeneration']),np.maximum(0,pflows['pv'] - pflows['demand_noshift'] - pflows['BatteryConsumption']))
     
-    out["EnBought"]  = EA["EnBought"] 
-    out["CostToBuy"] = EA["CostToBuy"]
-    out["TotalBuy"]  = EA["TotalBuy"]
+    econ = pd.DataFrame()
+    # profitability of adding a PV installation to the household:
+    out = FinancialMetrics(conf['econ']['wacc'],CF_1.CashFlows - CF_0.CashFlows)
+    econ['PV installation'] = pd.Series(out)
     
-    out['el_netexpend'] = EA['ElBill']
+    # profitability of adding load shifting to the household with PV:
+    out = FinancialMetrics(conf['econ']['wacc'],CF_2.CashFlows - CF_1.CashFlows)
+    econ['Adding load-shifting to existing PV'] = pd.Series(out)
     
-    out['el_costperkwh'] = EA['costpermwh']/1000.
+    # profitability of adding a battery to the household with PV:
+    out = FinancialMetrics(conf['econ']['wacc'],CF_3.CashFlows - CF_1.CashFlows)
+    econ['Adding a battery to existing PV'] = pd.Series(out)
     
-    out['PBP'] = EA['PBP']
-    out['NPV'] = EA['NPV']
-    out['PI']  = EA['PI']
-    
-    
-    return out
-    
-    
-def WriteResToExcel(file,sheet,results,conf):
-    
-    row = conf['row']
-    
-    df = pd.read_excel(file,sheet_name=sheet,header=0,index_col=0)
-    
-    df.at[row,'Investment - Control system [€]']	        = conf['econ']['C_control']
-    df.at[row,'Annual cost - Control system [€]']		    = conf['econ']['C_control_annual']
-    df.at[row,'PV [kWp]']		                            = results['PVCapacity']
-    df.at[row,'Inverter [kW]']		                        = results['InvCapacity']
-    df.at[row,'Battery [kWh]']		                        = results['BatteryCapacity']
-    df.at[row,'Investment - PV [€]']		                = results['CostPV']
-    df.at[row,'Investment - Inverter [€]']		            = results['CostInverter']
-    df.at[row,'Investment - Battery [€]']		            = results['CostBattery']
-    df.at[row,'Time-horizon [years]']		                = conf['econ']['time_horizon']
-    df.at[row,'Energy price - Selling [€/kWh]']		        = results['sellprice']       
-    df.at[row,'Energy price [0-6] [€/kWh]']		            = results['totenprice_00_06']
-    df.at[row,'Energy price [6-11] [€/kWh]']		        = results['totenprice_06_11']
-    df.at[row,'Energy price [11-17] [€/kWh]']		        = results['totenprice_11_17']
-    df.at[row,'Energy price [17-22] [€/kWh]']		        = results['totenprice_17_22']
-    df.at[row,'Energy price [22-00] [€/kWh]']		        = results['totenprice_22_24']
-    df.at[row,'Power consumption max [kW]']		            = results['peakdem']
-    df.at[row,'Total consumption [kWh]']		            = results['cons_total']
-    df.at[row,'Total consumption increase [kWh]']		    = results['cons_total_incr']
-    df.at[row,'Energy produced [kWh]'] 		                = results['el_prod']
-    df.at[row,'Energy self-consumed [kWh]'] 		        = results['el_selfcons']
-    df.at[row,'Energy sold [kWh]'] 		                    = results['el_soldtogrid']
-    df.at[row,'Energy bought [kWh]'] 		                = results['el_boughtfromgrid']
-    df.at[row,'Energy consumption [0-6] [kWh]']             = results['cons_00_06']
-    df.at[row,'Energy consumption [6-11] [kWh]']            = results['cons_06_11']
-    df.at[row,'Energy consumption [11-17] [kWh]']           = results['cons_11_17']
-    df.at[row,'Energy consumption [17-22] [kWh]']           = results['cons_17_22']
-    df.at[row,'Energy consumption [22-00] [kWh]']           = results['cons_22_24']
-    df.at[row,'Energy consumption variation [0-6] [kWh]']   = results['cons_00_06_var']
-    df.at[row,'Energy consumption variation [6-11] [kWh]']  = results['cons_06_11_var']
-    df.at[row,'Energy consumption variation [11-17] [kWh]'] = results['cons_11_17_var']
-    df.at[row,'Energy consumption variation [17-22] [kWh]'] = results['cons_17_22_var']
-    df.at[row,'Energy consumption variation [22-00] [kWh]'] = results['cons_22_24_var']
-    df.at[row,'Self-sufficiency ratio [%]']		            = results['selfsuffrate']
-    df.at[row,'Self-consumption ratio [%]']		            = results['selfconsrate']
-    df.at[row,'Energy consumption shifted [kWh]']		    = results['el_shifted']
-    df.at[row,'Energy sold - Revenue [€]']		            = results['EnSold']
-    df.at[row,'Energy sold - Grid fees [€]']		        = results['CostToSell']
-    df.at[row,'Energy sold - Net revenue [€]']		        = results['TotalSell']
-    df.at[row,'Energy bought - Energy expenditure [€]']	    = results['EnBought']
-    df.at[row,'Energy bought - Grid fees [€]']		        = results['CostToBuy']
-    df.at[row,'Energy bought - Total expenditure [€]']	    = results['TotalBuy']
-    df.at[row,'Energy net expenditure [€]']		            = results['el_netexpend']
-    df.at[row,'Average electricity cost [€/kWh]']		    = results['el_costperkwh']
-    df.at[row,'PBP [years]']		                        = results['PBP']
-    df.at[row,'NPV [€]']		                            = results['NPV']
-    df.at[row,'PI [-]']		                                = results['PI']
-    df.at[row,'PBP ref case PV [years]']		            = 0
-    df.at[row,'NPV ref case PV [€]']		                = 0
-    df.at[row,'PI ref case PV [-]']		                    = 0
+    # profitability of the overall system compared to a household without PV:
+    out = FinancialMetrics(conf['econ']['wacc'],CF.CashFlows - CF_0.CashFlows)
+    econ['Full system (PV+batt+control)'] = pd.Series(out)        
 
-    df.to_excel(file,sheet_name=sheet)
+    cases = {'case0':'No PV, no shifting',
+             'case1':'With PV, no shifting',
+             'case2':'With PV, load shifting, no battery', 
+             'case3':'With PV, battery, no load shifting', 
+             'case4':'PV, battery and Load shifting'}
+    
+    results = pd.DataFrame(columns=['Description','Valeur'])
+
+    annuity_factor = conf['econ']['wacc'] / ( 1 - (1+conf['econ']['wacc'])**(-conf['econ']['time_horizon']))
+    NPV = FinancialMetrics(conf['econ']['wacc'],CF['CashFlows'])['NPV']
+    results.loc['LCOE','Valeur'] = NPV/(demand_tot/annuity_factor)            # to be checked
+    results.loc['LCOE','Description'] = "Coût actualisé de l'électricité (LCOE, en €/MWh)"
+    results.loc['peakdem','Valeur'] = np.max(pflows['demand_noshift'] )       
+    results.loc['peakdem','Description'] = "Demande maximale (kW)"    
+    results.loc['annual_load','Valeur'] = demand_tot
+    results.loc['annual_load','Description'] = "Demande annuelle (kWh)"        
+    results.loc['PVCapacity','Valeur'] = conf['pv']['ppeak']
+    results.loc['PVCapacity','Description'] = "Puissance crète du système PV (kWc)"     
+    results.loc['el_prod','Valeur'] = pflows.pv.sum()*ts
+    results.loc['el_prod','Description'] = "Electricité produite (kWh)"  
+    results.loc['el_selfcons','Valeur'] = SC.sum() * ts
+    results.loc['el_selfcons','Description'] = "Electricité autoconsommée (kWh)"  
+    results.loc['el_soldtogrid','Valeur'] = pflows['togrid'].sum() * ts
+    results.loc['el_soldtogrid','Description'] = "Electricité reinjectée sur le réseau (kWh)"  
+    results.loc['el_boughtfromgrid','Valeur'] = pflows['fromgrid'].sum() * ts
+    results.loc['el_boughtfromgrid','Description'] = "Electricité achetée au réseau (kWh)"  
+    results.loc['selfsuffrate','Valeur'] = results.loc['el_selfcons','Valeur']/demand_tot
+    results.loc['selfsuffrate','Description'] = "SSR"  
+    if results.loc['el_prod','Valeur'] == 0:
+        results.loc['selfconsrate','Valeur'] = 0
+    else:
+        results.loc['selfconsrate','Valeur'] = results.loc['el_selfcons','Valeur']/results.loc['el_prod','Valeur']
+    results.loc['selfconsrate','Description'] = "SCR"  
+    results.loc['el_shifted','Valeur'] = np.abs(pflows.demand_noshift-pflows.demand_shifted).sum()/2 * ts
+    results.loc['el_shifted','Description'] = "Quantité de charge déplacée (kWh)"  
+    results.loc['losses','Valeur'] = (pflows.demand_shifted.sum() - pflows.demand_noshift.sum()) * ts
+    results.loc['losses','Description'] = "Pertes énergétiques liées au déplacement de charge (kWh)"  
+    
+    results.loc['inv_PV','Valeur'] = -CF.loc[0,'Inv_PV'] - CF.loc[1,'Inv_Invert']
+    results.loc['inv_PV','Description'] = "Coût d'investissement - Système PV (€)"      
+    results.loc['inv_batt','Valeur'] = -CF.loc[0,'Inv_Batt'] 
+    results.loc['inv_batt','Description'] = "Coût d'investissement - Batterie (€)"      
+    results.loc['inv_cont','Valeur'] = -CF.loc[0,'Inv_Control'] 
+    results.loc['inv_cont','Description'] = "Coût d'investissement - Système de pilotage (€)"       
+    
+    results.loc['el_bill','Valeur'] = -CF.loc[1,'CostBfG'] - CF.loc[1,'IncomeStG'] - CF.loc[1,'CostStG']
+    results.loc['el_bill','Description'] = "Facture annuelle nette d'électricité (€)"         
+    results.loc['el_stg','Valeur'] = CF.loc[1,'IncomeStG'] 
+    results.loc['el_stg','Description'] = "Bénéfices annuels de la revente au réseau (€)"       
+    
+    results.loc['pbp_pv','Valeur'] = econ.loc['PBP','PV installation']
+    results.loc['pbp_pv','Description'] = "Temps de retour du système PV seul (années)"        
+    results.loc['pbp_batt','Valeur'] = econ.loc['PBP','Adding a battery to existing PV']
+    results.loc['pbp_batt','Description'] = "Temps de retour de l'ajout d'une batterie au PV (années)"   
+    results.loc['pbp_cont','Valeur'] = econ.loc['PBP','Adding load-shifting to existing PV']
+    results.loc['pbp_cont','Description'] = "Temps de retour de l'ajout du pilotage/déplacement de charge au PV (années)"  
+    results.loc['pbp_all','Valeur'] = econ.loc['PBP','Full system (PV+batt+control)']
+    results.loc['pbp_all','Description'] = "Temps de retour de système complet (avec PV, batterie et pilotage si définis) (années)"      
+
+    
+    
+    return results, econ
+
     
 def scale_vector(vec_in,N,silent=False):
     ''' 

@@ -2,7 +2,6 @@
 import os
 import time
 import pandas as pd 
-from functions import WriteResToExcel
 from simulation import shift_load
 import json
 
@@ -38,7 +37,8 @@ for jjj in idx_casestobesim:
     
     # Saving results to excel
     file = __location__ + '/simulations/case_results.xlsx'
-    WriteResToExcel(file,conf['dwelling']['type'],results,conf)
+    with pd.ExcelWriter(file, engine='openpyxl', mode='a',if_sheet_exists='replace') as writer:  
+        results.to_excel(writer, sheet_name=namecase)
 
 
 exectime = (time.time() - start_time)

@@ -10,10 +10,9 @@ import os
 import numpy as np
 import pandas as pd
 import json
-import time
 from prosumpy import dispatch_max_sc,print_analysis
 from functions import HPSizing,COP_deltaT
-from functions import scale_vector,MostRepCurve,DHWShiftTariffs,HouseHeating,EVshift_PV,EVshift_tariffs,ResultsAnalysis,WriteResToExcel,load_climate_data
+from functions import scale_vector,MostRepCurve,DHWShiftTariffs,HouseHeating,EVshift_PV,EVshift_tariffs,ResultsAnalysis,load_climate_data
 from readinputs import read_config
 from functions import shift_appliance,scale_timeseries
 from pv import pvgis_hist
@@ -665,9 +664,9 @@ def shift_load(conf,prices):
     # TODO
     # - add how much energy has been shifted by each technology
     
-    outs = ResultsAnalysis(conf,prices,pflows)
+    results,econ = ResultsAnalysis(conf,prices,pflows)
 
-    return outs,demand_15min,demand_shifted,pflows
+    return results,demand_15min,demand_shifted,pflows
 
 
 if __name__ == '__main__':
@@ -677,17 +676,15 @@ if __name__ == '__main__':
     # delete unnecessary entries:
     results,demand_15min,demand_shifted,pflows = shift_load(conf,prices)
     
-    print(json.dumps(results, indent=4))
+    print(results)
     
     # plotting the results
-    from plots import make_demand_plot, make_pflow_plot
+    #from plots import make_demand_plot, make_pflow_plot
     # fig = make_demand_plot(demand_15min.index,demand_shifted,PV = pflows.pv,title='Consumption and generation')
     # fig.show()
-    fig = make_pflow_plot(demand_15min.index,pflows)
-    fig.show()
-    
-    
-    
+    #fig2 = make_pflow_plot(demand_15min.index,pflows)
+    #fig2.show()
+ 
     
     
     

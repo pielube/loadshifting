@@ -173,7 +173,8 @@ main_page=dbc.Container(
                 dcc.Graph(id='display1', style={'height': '50vh'}),
                 dcc.Graph(id='display2', style={'height': '50vh'}),
                 dcc.Graph(id='display3', style={'height': '50vh'}),
-                dcc.Markdown(id='results',children="### Résultats de simulation"),
+                dcc.Markdown(id='titre0',children="### Résultats de simulation"),
+                html.Div(id='results',children=''),
                 html.Br(),
                 dcc.Markdown(id='titre1',children="### Inputs utilisés:"),
                 html.Div(id='results2',children='')
@@ -427,7 +428,8 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
 #%%  Callbacks (misc)
 def make_table(conf,config_full):
     '''
-    build a dash table from the configuration dataframe
+    build a dash table from the configuration dataframe with the simulation
+    inputs
     '''
     # update the config_full dataframe for the boolean variables:
     for key1 in conf:
@@ -447,9 +449,7 @@ def make_table(conf,config_full):
         hover=True,
         responsive=True,
         striped=True,
-        style={
-
-        }
+        style={}
     )
 
 
@@ -498,9 +498,6 @@ def display_graph(n_clicks,week,
 
     results,demand_15min,demand_shifted,pflows = shift_load(conf,prices)
     
-    if defaults.verbose > 0:
-        print('Main results: \n' + json.dumps(results, indent=4))
-    
     if 'pv' in pflows and not (pflows['pv']==0).all():
         pv = pflows['pv']
     else:
@@ -522,39 +519,43 @@ def display_graph(n_clicks,week,
     Text output
     """   
     # first check that all results are numerical
-    for key in results:
-        try:
-            aa = ("test{:.2f}".format(results[key]))
-        except:
-            results[key] = -99999
+    results.fillna(-99999,inplace=True)
     
     totext = []
     totext.append('### Résultats de simulation')
     totext.append('#### Installation')
-    totext.append("Système PV: {:.2f} kWc".format(results['PVCapacity']))
-    totext.append("Batterie: {:.2f} kWh".format(results['BatteryCapacity']))
-    totext.append("Demande maximale: {:.2f} kW".format(results['peakdem']))
-    totext.append("Consommation totale: {:.0f} kWh".format(results['cons_total']))
-    totext.append("Electricité produite: {:.0f} kWh".format(results['el_prod']))
-    totext.append("Electricité autoconsommée: {:.0f} kWh".format(results['el_selfcons']))
-    totext.append("Electricité achetée au réseau: {:.0f} kWh".format(results['el_boughtfromgrid']))
-    totext.append("SSR: {:.1f} %".format(results['selfsuffrate']*100))
-    totext.append("SCR: {:.1f} %".format(results['selfconsrate']*100))
-    totext.append("Quantité de charge déplacée: {:.0f} kWh".format(results['el_shifted']))
+    totext.append("Système PV: {:.2f} kWc".format(results['Valeur']['PVCapacity']))
+    totext.append("Demande maximale: {:.2f} kW".format(results['Valeur']['peakdem']))
+    totext.append("Consommation totale: {:.0f} kWh".format(results['Valeur']['annual_load']))
+    totext.append("Electricité produite: {:.0f} kWh".format(results['Valeur']['el_prod']))
+    totext.append("Electricité autoconsommée: {:.0f} kWh".format(results['Valeur']['el_selfcons']))
+    totext.append("Electricité achetée au réseau: {:.0f} kWh".format(results['Valeur']['el_boughtfromgrid']))
+    totext.append("SSR: {:.1f} %".format(results['Valeur']['selfsuffrate']*100))
+    totext.append("SCR: {:.1f} %".format(results['Valeur']['selfconsrate']*100))
+    totext.append("Quantité de charge déplacée: {:.0f} kWh".format(results['Valeur']['el_shifted']))
     totext.append('#### Paramètres économiques')
-    totext.append("Bénéfices de la revente au réseau: {:.0f} €".format(results['TotalSell']))
-    totext.append("Coût total d'achat au réseau: {:.0f} €".format(results['TotalBuy']))
-    totext.append("LCOE: {:.0f} €/MWh".format(results['el_costperkwh']*1000))
-    totext.append("Temps de retour sur investissement: {:.1f} ans".format(results['PBP']))
-    totext.append("**Facture d'électricité: {:.2f} EUR/an**".format(-results['el_netexpend']))
+    totext.append("LCOE: {:.0f} €/MWh".format(results['Valeur']['LCOE']*1000))
+    totext.append("Temps de retour sur investissement: {:.1f} ans".format(results['Valeur']['pbp_all']))
+    totext.append("**Facture d'électricité: {:.2f} EUR/an**".format(results['Valeur']['el_bill']))
+    totext.append("Bénéfices de la revente au réseau: {:.0f} €".format(results['Valeur']['el_stg']))
     
     # for key in results:
     #     totext.append(key + ": " + str(results[key])) 
         
-    maintext = "Facture d'électricité: {:.2f} EUR/an".format(-results['el_netexpend'])
-    totext = "\n \n".join(totext)
+    maintext = "Facture d'électricité: {:.2f} EUR/an".format(results['Valeur']['el_bill'])
+    if defaults.verbose > 0:
+        for txt in totext:
+            print(txt)
+    
+    results_table = dbc.Table.from_dataframe(
+        results,
+        bordered=True,
+        hover=True,
+        responsive=True,
+        striped=True,
+        style={} )
 
-    return fig,fig2,fig3,False,maintext,totext,inputs_table    # Number of returns must be equal to the number of outputs
+    return fig,fig2,fig3,False,maintext,results_table,inputs_table    # Number of returns must be equal to the number of outputs
     
 
 
