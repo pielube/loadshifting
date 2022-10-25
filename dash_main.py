@@ -1,6 +1,6 @@
 from dash import Dash, dcc, html, Input, Output, State, callback,ctx
 import dash_bootstrap_components as dbc
-import os,json
+import os
 
 from dash_components import household_components,heating_components,ev_components,pv_components
 import defaults
@@ -380,6 +380,7 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
     conf['batt']['yesno'] = 'bat_in' in checklist_bat
     conf['batt']['pnom'] =  float(input_bat_power)
     conf['batt']['capacity'] = float(input_bat_capacity)
+    
 
 #%%  Callbacks (misc)
 def make_table(conf,config_full):

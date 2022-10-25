@@ -11,9 +11,6 @@ __location__ = os.path.realpath(
 
 #N = 10 # Number of stochastic simulations to be run for the demand curves
 
-
-# idx_casestobesim = [0]
-
 filename = __location__ + '/inputs/cases.json'
 cases = json.load(open(filename))
 idx_casestobesim = range(1,len(cases))   
@@ -29,11 +26,6 @@ for jjj in idx_casestobesim:
     prices = pd.read_csv(prices_filename,index_col=0)
 
     results,demand_15min,demand_shifted,pflows = shift_load(conf,prices)
-    
-    """
-    Saving results to Excel
-    """   
-    house    = conf['dwelling']['type']
     
     # Saving results to excel
     file = __location__ + '/simulations/case_results.xlsx'

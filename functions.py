@@ -10,7 +10,7 @@ from itertools import chain
 from strobe.Data.Households import households
 from RC_BuildingSimulator import Zone
 
-from economics import EconomicAnalysis,CashFlows,FinancialMetrics
+from economics import CashFlows,FinancialMetrics
 import defaults
 
 
@@ -21,11 +21,6 @@ __location__ = os.path.realpath(
 from joblib import Memory
 memory = Memory(__location__ + '/cache/', verbose=defaults.verbose)
 
-
-
-# TODO
-# - add description of all functions
-# - comment all functions
 
 def read_sheet(file,sheet):
     '''
@@ -238,61 +233,6 @@ def HouseholdMembers(conf):
             out.append(random.choice(adults))
     
     return out
-
-
-def MostRepCurve(conf,prices,demands,columns,timestep):
-    
-    """
-    Choosing most representative curve among a list of demand curves
-    based on electricity bill buying all electricity from grid
-    hence wiithout PV or batteries
-    """
-    
-    # Input parameters required by economic analysis
-    # PV and battery forced to be 0
-    
-    conf2 = copy.deepcopy(conf)   # we need to make a deep copy of the nested disctionnary, or it will change the values. A shallow copy is not sufficient
-    
-    conf2['pv']['ppeak'] = 0.
-    conf2['batt']['capacity'] = 0.
-    conf2['inverter_pmax'] = 0.
-    conf2['sim']['ts'] = 0.25
-    
-    results = []
-    
-    pv = np.zeros(int((len(demands[0])-1)/15))
-    date = pd.date_range(start='2015-01-01 00:00:00',end='2015-12-31 23:45:00',freq='15Min')
-    pv = pd.DataFrame(data=pv,index=date)
-    pv = pv.iloc[:,0]
-    
-    for ii in range(len(demands)):
-        
-        demand = demands[ii][columns]
-        demand = demand.sum(axis=1)
-        demand = demand/1000. # W to kW
-        demand = demand.to_frame()
-        demand = demand.resample('15Min').mean() # resampling at 15 min
-        demand.index = pd.to_datetime(demand.index)
-        year = demand.index.year[0] # extracting ref year used in the simulation
-        nye = pd.Timestamp(str(year+1)+'-01-01 00:00:00') # remove last row if is from next year
-        demand = demand.drop(nye)
-        demand = demand.iloc[:,0]
-        
-        pflows = {}
-        pflows['pv'] = np.zeros(len(date)) 
-        pflows['demand_noshift']         = demand.to_numpy()
-        pflows['togrid']       = np.zeros(len(date)) 
-        pflows['fromgrid']     = demand.to_numpy() 
-        pflows['demand_shifted']  = pflows['demand_noshift']
-        
-        out = EconomicAnalysis(conf,prices,pflows)
-        results.append(out['ElBill'])
-    
-    meanelbill = mean(results)
-    var = results-meanelbill
-    index = min(range(len(var)), key=var.__getitem__)
-        
-    return index
 
 
 def AdmTimeWinShift(app,admtimewin,probshift):
@@ -879,7 +819,7 @@ def ResultsAnalysis(conf,prices,pflows):
     ts = conf['sim']['ts']
     
     demand_tot = pflows['demand_noshift'].sum() * ts
-    SC = np.minimum(pflows.pv, pflows.demand_shifted)
+    SC = np.minimum(pflows['pv'], pflows['demand_shifted'])
     
     CF= CashFlows(conf,prices,pflows['fromgrid'],pflows['togrid'])
     
@@ -939,12 +879,6 @@ def ResultsAnalysis(conf,prices,pflows):
     # profitability of the overall system compared to a household without PV:
     out = FinancialMetrics(conf['econ']['wacc'],CF.CashFlows - CF_0.CashFlows)
     econ['Full system (PV+batt+control)'] = pd.Series(out)        
-
-    cases = {'case0':'No PV, no shifting',
-             'case1':'With PV, no shifting',
-             'case2':'With PV, load shifting, no battery', 
-             'case3':'With PV, battery, no load shifting', 
-             'case4':'PV, battery and Load shifting'}
     
     results = pd.DataFrame(columns=['Description','Valeur'])
 
@@ -1040,14 +974,62 @@ def scale_vector(vec_in,N,silent=False):
             vec_out = np.interp(np.linspace(start=0,stop=N_in,num=N),range(N_in),vec_in)
     return vec_out  
 
-if __name__ == "__main__":
-    
-    # """
-    # Testing functions
-    # """
 
-    test = HouseholdMembers(['FTE','FTE'])
-    print(test)
+def MostRepCurve(conf,prices,demands,columns,timestep):
     
-
+    """
+    Choosing most representative curve among a list of demand curves
+    based on electricity bill buying all electricity from grid
+    hence wiithout PV or batteries
+    """
+    
+    # Input parameters required by economic analysis
+    # PV and battery forced to be 0
+    
+    conf2 = copy.deepcopy(conf)   # we need to make a deep copy of the nested disctionnary, or it will change the values. A shallow copy is not sufficient
+    
+    conf2['pv']['ppeak'] = 0.
+    conf2['batt']['capacity'] = 0.
+    conf2['inverter_pmax'] = 0.
+    conf2['sim']['ts'] = 0.25
+    
+    results = []
+    
+    pv = np.zeros(int((len(demands[0])-1)/15))
+    date = pd.date_range(start='2015-01-01 00:00:00',end='2015-12-31 23:45:00',freq='15Min')
+    pv = pd.DataFrame(data=pv,index=date)
+    pv = pv.iloc[:,0]
+    
+    for ii in range(len(demands)):
         
+        demand = demands[ii][columns]
+        demand = demand.sum(axis=1)
+        demand = demand/1000. # W to kW
+        demand = demand.to_frame()
+        demand = demand.resample('15Min').mean() # resampling at 15 min
+        demand.index = pd.to_datetime(demand.index)
+        year = demand.index.year[0] # extracting ref year used in the simulation
+        nye = pd.Timestamp(str(year+1)+'-01-01 00:00:00') # remove last row if is from next year
+        demand = demand.drop(nye)
+        demand = demand.iloc[:,0]
+        
+        pflows = pd.DataFrame(index=pv.index)
+        pflows['pv'] = np.zeros(len(date)) 
+        pflows['demand_noshift']         = demand.to_numpy()
+        pflows['togrid']       = np.zeros(len(date)) 
+        pflows['fromgrid']     = demand.to_numpy() 
+        pflows['demand_shifted']  = pflows['demand_noshift']
+        pflows['demand_shifted_nobatt'] = pflows['demand_noshift']
+        pflows['BatteryGeneration'] = 0
+        pflows['BatteryConsumption'] = 0
+        
+        out,econ = ResultsAnalysis(conf,prices,pflows)
+        results.append(out['Valeur']['el_bill'])
+    
+    meanelbill = mean(results)
+    var = results-meanelbill
+    index = min(range(len(var)), key=var.__getitem__)
+        
+    return index
+
+

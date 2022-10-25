@@ -650,8 +650,8 @@ def shift_load(conf,prices):
         
     else:
         pflows['demand_shifted'] = pflows['demand_shifted_nobatt']
-        pflows['fromgrid'] = np.maximum(0,pflows['demand_shifted_nobatt'] - pflows('pv'))
-        pflows['togrid'] = np.maximum(0,-pflows['demand_shifted_nobatt'] + pflows('pv'))
+        pflows['fromgrid'] = np.maximum(0,pflows['demand_shifted_nobatt'] - pflows['pv'])
+        pflows['togrid'] = np.maximum(0,-pflows['demand_shifted_nobatt'] + pflows['pv'])
         pflows['BatteryConsumption'] = pd.Series(0,index=index15min)
         pflows['BatteryGeneration'] = pd.Series(0,index=index15min)    
 
