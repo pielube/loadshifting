@@ -534,7 +534,7 @@ def display_graph(n_clicks,week,
     totext.append("SCR: {:.1f} %".format(results['Valeur']['selfconsrate']*100))
     totext.append("Quantité de charge déplacée: {:.0f} kWh".format(results['Valeur']['el_shifted']))
     totext.append('#### Paramètres économiques')
-    totext.append("LCOE: {:.0f} €/MWh".format(results['Valeur']['LCOE']*1000))
+    totext.append("LCOE: {:.0f} €/MWh".format(results['Valeur']['LCOE']))
     totext.append("Temps de retour sur investissement: {:.1f} ans".format(results['Valeur']['pbp_all']))
     totext.append("**Facture d'électricité: {:.2f} EUR/an**".format(results['Valeur']['el_bill']))
     totext.append("Bénéfices de la revente au réseau: {:.0f} €".format(results['Valeur']['el_stg']))

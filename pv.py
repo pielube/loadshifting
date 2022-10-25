@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pvlib
 import defaults
+import sys
 
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -149,7 +150,7 @@ def pvgis_hist(inputs,loc):
         'location': tuple latitude,longitude,name,altitude,timezone
         'Ppeak': float peak DC power [kWp]
         'year': int year used for output data and to get data from PVGIS if TMY = False
-        'losses': float losses in cables, power inverters, dirt (sometimes snow), over the years loss of power [%]
+        'losses': float losses in cables, power inverters, dirt (sometimes snow), over the years loss of power [0-1]
         'tilt':  float surface tilt [deg]
         'azimuth': float azimuth angle 0 = south, 180 = north [deg]
         'TMY': bool true if data of TMY is to be used
@@ -170,6 +171,9 @@ def pvgis_hist(inputs,loc):
     azimuth = inputs['azimut']
     tmybool = True
     
+    if losses > 1:
+        sys.exit('PV losses must be between 0 and 1')
+    
     index60min = pd.date_range(start=str(year)+'-01-01 00:00:00',end=str(year)+'-12-31 23:00:00',freq='60T')
     index15min = pd.date_range(start=str(year)+'-01-01 00:00:00',end=str(year)+'-12-31 23:45:00',freq='15T')
     
@@ -183,7 +187,7 @@ def pvgis_hist(inputs,loc):
     
     # Actual production calculation (extract all available data points)
     # NB here azimuth 0 = south 180 = north
-    res = pvlib.iotools.get_pvgis_hourly(latitude,longitude,surface_tilt=tilt,surface_azimuth=azimuth,pvcalculation=True,peakpower=peakp,loss=losses)
+    res = pvlib.iotools.get_pvgis_hourly(latitude,longitude,surface_tilt=tilt,surface_azimuth=azimuth,pvcalculation=True,peakpower=peakp,loss=losses*100)
     
     # Index to select TMY relevant data points
     pv = res[0]['P']
@@ -233,7 +237,7 @@ if __name__ == "__main__":
     
     inp_save = {'location':coordinates,
                 'Ppeak': 1.0,
-                'losses': 14.,
+                'losses': 0.14,
                 'tilt':35.,
                 'azimuth':0,
                 'year':2015,

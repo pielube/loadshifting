@@ -950,7 +950,7 @@ def ResultsAnalysis(conf,prices,pflows):
 
     annuity_factor = conf['econ']['wacc'] / ( 1 - (1+conf['econ']['wacc'])**(-conf['econ']['time_horizon']))
     NPV = FinancialMetrics(conf['econ']['wacc'],CF['CashFlows'])['NPV']
-    results.loc['LCOE','Valeur'] = NPV/(demand_tot/annuity_factor)            # to be checked
+    results.loc['LCOE','Valeur'] = -NPV/(demand_tot/annuity_factor) * 1000           # to be checked
     results.loc['LCOE','Description'] = "Coût actualisé de l'électricité (LCOE, en €/MWh)"
     results.loc['peakdem','Valeur'] = np.max(pflows['demand_noshift'] )       
     results.loc['peakdem','Description'] = "Demande maximale (kW)"    
@@ -998,8 +998,6 @@ def ResultsAnalysis(conf,prices,pflows):
     results.loc['pbp_cont','Description'] = "Temps de retour de l'ajout du pilotage/déplacement de charge au PV (années)"  
     results.loc['pbp_all','Valeur'] = econ.loc['PBP','Full system (PV+batt+control)']
     results.loc['pbp_all','Description'] = "Temps de retour de système complet (avec PV, batterie et pilotage si définis) (années)"      
-
-    
     
     return results, econ
 
