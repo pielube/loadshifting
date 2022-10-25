@@ -25,7 +25,7 @@ url_bar_and_content_div = html.Div([
     dcc.Location(id='url', refresh=False),
     html.Div(id='page-content')])
 
-main_page=dbc.Container(
+app.layout = dbc.Container(
     [
         dbc.Row([
             dbc.Col([
@@ -56,7 +56,6 @@ main_page=dbc.Container(
                     id="refresh_cases"
                 )
             ], width=True),
-            dbc.Col([dcc.Link('Editeur de scénarios', href='/editor')], width=True),
         ], align="end"),
         
         
@@ -187,51 +186,8 @@ main_page=dbc.Container(
     ],
     fluid=True
 )
-                     
-editor_page = html.Div([
-                    dcc.Markdown("""
-                                 ### Editeur de configuration
                                  
-                                 Cet editeur permet de modifier la configuration par défaut. 
-                                 
-                                 Attention, ces paramètres sont écrasés par les options de l'écran principal.                                 
-                                 Par example, si la batterie est désactivée dans l'écran principal, le paramètre 
-                                 BatteryCapacity sera mis à zero, quelle que soit sa valeur dans l'éditeur.
-                                 
-                                 """),
-    
-                    html.Br(),
-                    html.Div(id="table-container", children=''),
-                    html.Br(),
-                    
-                    dcc.Link('Retour à la page principale', href='/'),
-                    
-                    html.Br(),
-                    html.Hr()
-
-                ]),                
-            
-#%% Callbacks for the multi-page design
-#Definition of the main layout:
-app.layout = url_bar_and_content_div
-
-# "complete" layout
-app.validation_layout = html.Div([
-    url_bar_and_content_div,
-    main_page,
-    editor_page
-])                                 
-                                 
-# callback to open the right page depending on the url:
-@callback(Output('page-content', 'children'),
-              [Input('url', 'pathname')])
-def display_page(pathname):
-    if pathname=='/editor/' or pathname=='/editor':
-        return editor_page
-    else:
-        return main_page                 
-
-                     
+             
                      
 #%%  Callbacks for menu expansion on the main page
   
