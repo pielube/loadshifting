@@ -919,7 +919,7 @@ def ResultsAnalysis(conf,prices,pflows):
     results.loc['inv_cont','Valeur'] = -CF.loc[0,'Inv_Control'] 
     results.loc['inv_cont','Description'] = "Coût d'investissement - Système de pilotage (€)"       
     
-    results.loc['el_bill','Valeur'] = -CF.loc[1,'CostBfG'] - CF.loc[1,'IncomeStG'] - CF.loc[1,'CostStG']
+    results.loc['el_bill','Valeur'] = -CF.loc[1,'CostBfG'] - CF.loc[1,'IncomeStG']
     results.loc['el_bill','Description'] = "Facture annuelle nette d'électricité (€)"         
     results.loc['el_stg','Valeur'] = CF.loc[1,'IncomeStG'] 
     results.loc['el_stg','Description'] = "Bénéfices annuels de la revente au réseau (€)"       

@@ -81,27 +81,26 @@ def CashFlows(conf,prices,fromgrid,togrid):
     enpricekWh = prices['energy'].values
     gridfeekWh = prices['grid'].values
     enpricekWh_sell = prices['sell'].values
+    
+    # Prosumer tax
     prostax = conf['econ']['C_prosumertax']*min(conf['pv']['ppeak'],conf['pv']['inverter_pmax'])
-    res = EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, fromgrid, togrid, prostax)
-        
+    
+    # Capacity tariff
+    start = 305 # November 1st 
+    end   =  90 # March 31st
+    a = fromgrid[np.r_[0:end*24*4-1,(start-1)*24*4-1:365*24*4-1]]-10
+    capterm = np.sum(np.trunc(a[a>0])+1)*conf['econ']['C_capacitytariff']
+    
+    res = EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, fromgrid, togrid, prostax, capterm)
+    
     # Adding revenues and expenditures from buying and selling energy
-    if conf['pv']['ppeak'] > 0 and conf['econ']['start_year'] < 2024 and not conf['econ']['smart_meter']:
-        
-        end2030 = 2030-conf['econ']['start_year']
-        
-        for i in range(1,end2030+1): # up to 2030
-            CF.loc[i,'IncomeStG'] = res['IncomeStG_pre2030']  *(1+conf['econ']['elpriceincrease'])**(i-1)
-            CF.loc[i,'CostStG'] = - res['CostStG_pre2030']  *(1+conf['econ']['elpriceincrease'])**(i-1)
-            CF.loc[i,'CostBfG'] = (- res['CostBfG_energy'] - res['CostBfG_grid']) *(1+conf['econ']['elpriceincrease'])**(i-1)
-        for i in range(end2030+2,conf['econ']['time_horizon']+1): # after 2030
-            CF.loc[i,'IncomeStG'] = res['IncomeStG']  *(1+conf['econ']['elpriceincrease'])**(i-1)
-            CF.loc[i,'CostStG'] = - res['CostStG']  *(1+conf['econ']['elpriceincrease'])**(i-1)
-            CF.loc[i,'CostBfG'] = (- res['CostBfG_energy'] - res['CostBfG_grid']) *(1+conf['econ']['elpriceincrease'])**(i-1)    
-    else:
-        for i in range(1,conf['econ']['time_horizon']+1): # whole time horizon, no distinction in 2030
-            CF.loc[i,'IncomeStG'] = res['IncomeStG']  *(1+conf['econ']['elpriceincrease'])**(i-1)
-            CF.loc[i,'CostStG'] = - res['CostStG']  *(1+conf['econ']['elpriceincrease'])**(i-1)
-            CF.loc[i,'CostBfG'] = (- res['CostBfG_energy'] - res['CostBfG_grid']) *(1+conf['econ']['elpriceincrease'])**(i-1)  
+    end2030 = 2030 - conf['econ']['start_year']
+    for i in range(1,end2030+1):
+        CF.loc[i,'IncomeStG'] = res['pre2030']['IncomeStG']*(1+conf['econ']['elpriceincrease'])**(i-1)
+        CF.loc[i,'CostBfG'] = (- res['pre2030']['CostBfG_energy'] - res['pre2030']['CostBfG_grid'])*(1+conf['econ']['elpriceincrease'])**(i-1)
+    for i in range(end2030+2,conf['econ']['time_horizon']+1):
+        CF.loc[i,'IncomeStG'] = res['post2030']['IncomeStG']*(1+conf['econ']['elpriceincrease'])**(i-1)
+        CF.loc[i,'CostBfG'] = (- res['post2030']['CostBfG_energy'] - res['post2030']['CostBfG_grid'])*(1+conf['econ']['elpriceincrease'])**(i-1)
 
     CF.fillna(0,inplace=True)
     CF['CashFlows'] = CF.sum(axis=1)
@@ -199,11 +198,41 @@ def scale_vector(vec_in,N,silent=False):
 
 
 
-def EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, fromgrid,togrid, prostax):
+def EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, fromgrid, togrid, prostax, capterm):
     '''
-    Function that provides a dictionary with the tarifs pre and post 2030 depending
-    on the selected tarification scheme
+    Function to calculate annual energy expenditure, proportional grid fees and income from selling energy
+    based on: type of meter (analogue, smart_r1, smart_r1), PV (yes/no), tariff (mono, bi, multi) and
+    installation year (pre/post 2024).
+    
+    Cases are defined based on Energie Commune's requests.
+    
+    Parameters
+    ----------
+    conf : dict
+        Dictionary with all variables describing the case studied.
+    enpricekWh : numpy array
+        Array with energy prices for the whole year.
+    gridfeekWh : numpy array
+        Array with proportiona grid fees for the whole year.
+    enpricekWh_sell : numpy array
+        Array with energy selling price for the whole year.
+    E : dict
+        Dictionary with energy balances
+    prostax : float
+        Prosumer tax.
+    capterm : float
+        Capacity term.
+
+    Returns
+    -------
+    out : dict
+        Dictionary with annual energy expenditure, grid fees for pre and post 2030.
     '''
+    
+    out = {}
+    
+    out['pre2030'] = {}
+    out['post2030'] = {}
     
     ts = conf['sim']['ts']
     N = len(fromgrid)
@@ -220,77 +249,142 @@ def EnergyBuyAndSell(conf,enpricekWh, gridfeekWh, enpricekWh_sell, fromgrid,togr
         gridfeekWh = scale_vector(gridfeekWh,N,silent=True)
         enpricekWh_sell = scale_vector(enpricekWh_sell,N,silent=True)
     
-    CostBfG_energy = sum(fromgrid*enpricekWh)*ts
-    CostBfG_grid   = sum(fromgrid*gridfeekWh)*ts
     
-    # Selling
-    
-    if conf['pv']['ppeak'] > 0: # prosumers
+    if conf['econ']['meter'] in ['analogue']: # Analogue meter
         
-        if conf['econ']['start_year'] < 2024: # PV installed before 2024
-            # distinction to be made before and after 2030 when selling
+        if conf['pv']['yesno']: # Yes PV
             
-            if not conf['econ']['smart_meter']:
-                # Selling
-                # pre 2030
-                # cash flow depends on tariff type
+            if conf['econ']['start_year'] >= 2024:
                 
-                if conf['econ']['tariff'] == 'net-metering':
+                print('Error: No analogue meters with PV installastions after 2024')
+                sys.exit('Error: No analogue meters with PV installastions after 2024')
+            
+            if conf['econ']['tariff'] in ['mono','bi']:                
+
+                # Net metering and prosumer tax
+                out['pre2030']['CostBfG_energy'] = sum((fromgrid-togrid)*enpricekWh)*ts
+                out['pre2030']['CostBfG_grid']   = sum((fromgrid-togrid)*gridfeekWh)*ts + prostax
+                out['pre2030']['IncomeStG']      = 0.
+                
+                # Gross metering
+                out['post2030']['CostBfG_energy'] = sum(fromgrid*enpricekWh)*ts
+                out['post2030']['CostBfG_grid']   = min(sum(fromgrid*gridfeekWh)*ts,out['pre2030']['CostBfG_grid'])
+                out['post2030']['IncomeStG']      = 0.
+                
+
+            elif conf['econ']['tariff'] in ['multi']:
+                
+                print('Error: No multi tariff with analogue meters')
+                sys.exit('Error: No multi tariff with analogue meters')
+                
+            else:
+                
+                print('Error: Wrong tariff name')
+                sys.exit('Error: Wrong tariff name')
+                
+        else: # No PV
+            
+            if conf['econ']['tariff'] in ['mono','bi']:
+                
+                # Gross metering (Net = Gross since no PV)
+                out['pre2030']['CostBfG_energy'] = sum(fromgrid*enpricekWh)*ts
+                out['pre2030']['CostBfG_grid']   = sum(fromgrid*gridfeekWh)*ts
+                out['pre2030']['IncomeStG']      = 0.
+                
+                # No changes after 2030
+                out['post2030']['CostBfG_energy'] = out['pre2030']['CostBfG_energy']
+                out['post2030']['CostBfG_grid']   = out['pre2030']['CostBfG_grid']
+                out['post2030']['IncomeStG']      = out['pre2030']['IncomeStG']
+                
+            elif conf['econ']['tariff'] in ['multi']:
+                
+                print('Error: No multi tariff with analogue meters')
+                sys.exit('Error: No multi tariff with analogue meters')
+                
+            else:
+                
+                print('Error: Wrong tariff name')
+                sys.exit('Error: Wrong tariff name')
+                
+    if conf['econ']['meter'] in ['smart_r1']:
+        
+        if conf['pv']['yesno']: # Yes PV
+            
+            if conf['econ']['tariff'] in ['mono','bi','multi']:
+                
+                if conf['econ']['start_year'] < 2024:
                     
-                    IncomeStG_pre2030 = sum(togrid*(enpricekWh + gridfeekWh))*ts
-                    CostStG_pre2030   = prostax
+                    # Net metering and prosumer tax
+                    out['pre2030']['CostBfG_energy'] = sum((fromgrid-togrid)*enpricekWh)*ts
+                    out['pre2030']['CostBfG_grid']   = sum((fromgrid-togrid)*gridfeekWh)*ts + prostax
+                    out['pre2030']['IncomeStG']      = 0.
                     
-                elif conf['econ']['tariff'] == 'bi-directional':
-                    
-                    print('Error: multi price tariff requires smart meter')
-                    sys.exit('Error: multi price tariff requires smart meter')
+                    # Gross metering
+                    out['post2030']['CostBfG_energy'] = sum(fromgrid*enpricekWh)*ts
+                    out['post2030']['CostBfG_grid']   = min(sum(fromgrid*gridfeekWh)*ts,out['pre2030']['CostBfG_grid'])
+                    out['post2030']['IncomeStG']      = 0.
                     
                 else:
                     
-                    print('Error: tariff type specified does not exist')
-                    sys.exit('Error: tariff type specified does not exist')
-                 
-                # Selling  
-                # post 2030
-                # prosumers forced to install smart meter
-                IncomeStG = sum(togrid*enpricekWh_sell)*ts
-                CostStG   = 0 # min(sum(E['ToGrid']*gridfeekWh)*ts, prostax)
+                    # Gross metering 
+                    out['pre2030']['CostBfG_energy'] = sum(fromgrid*enpricekWh)*ts
+                    out['pre2030']['CostBfG_grid']   = min(sum(fromgrid*gridfeekWh)*ts,out['pre2030']['CostBfG_grid'])
+                    out['pre2030']['IncomeStG']      = 0.
+                    
+                    # No changes after 2030
+                    out['post2030']['CostBfG_energy'] = out['pre2030']['CostBfG_energy']
+                    out['post2030']['CostBfG_grid']   = out['pre2030']['CostBfG_grid']
+                    out['post2030']['IncomeStG']      = out['pre2030']['IncomeStG']
+                
+            else:
+                
+                print('Error: Wrong tariff name')
+                sys.exit('Error: Wrong tariff name')
+                
+        else: # No PV
 
+            if conf['econ']['tariff'] in ['mono','bi','multi']:
                 
-            elif conf['econ']['tariff']:
+                # Gross metering
+                out['pre2030']['CostBfG_energy'] = sum(fromgrid*enpricekWh)*ts
+                out['pre2030']['CostBfG_grid']   = sum(fromgrid*gridfeekWh)*ts
+                out['pre2030']['IncomeStG']      = 0.
                 
-                # Selling
-                # no distinction between pre and post 2030
-                IncomeStG = sum(togrid*enpricekWh_sell)*ts
-                CostStG   = 0 # min(sum(E['ToGrid']*gridfeekWh)*ts, prostax)
-                IncomeStG_pre2030 = None
-                CostStG_pre2030 = None
-                
+                # No changes after 2030
+                out['post2030']['CostBfG_energy'] = out['pre2030']['CostBfG_energy']
+                out['post2030']['CostBfG_grid']   = out['pre2030']['CostBfG_grid']
+                out['post2030']['IncomeStG']      = out['pre2030']['IncomeStG']
             
             else:
-                print('Error: meter type specified does not exist')
-                sys.exit('Error: meter type specified does not exist')
                 
-        else: # PV installed after 2024 => # no distinctions to be made before and after 2030
-            IncomeStG = sum(togrid*enpricekWh_sell)*ts
-            CostStG   = 0 # min(sum(E['ToGrid']*gridfeekWh)*ts, prostax)
-            IncomeStG_pre2030 = None
-            CostStG_pre2030 = None
-    
-    else: # consumers (no PV installed)
-    
-        IncomeStG = 0
-        CostStG   = 0
-        IncomeStG_pre2030 = None
-        CostStG_pre2030 = None
-               
-    out = {}
+                print('Error: Wrong tariff name')
+                sys.exit('Error: Wrong tariff name')
+                
+    if conf['econ']['meter'] in ['smart_r3']:
+        
+        # No need to distinguish between with or without PV
+        # If no PV togrid is all 0 and IncomeStG will be 0 accordingly
+            
+        if conf['econ']['tariff'] in ['mono','bi']:
+            
+            print('Error: No mono or bi tariffs with R3')
+            sys.exit('Error: No mono or bi tariffs with R3')
 
-    out['CostBfG_energy']    = CostBfG_energy 
-    out['CostBfG_grid']      = CostBfG_grid     
-    out['IncomeStG']         = IncomeStG 
-    out['CostStG']           = CostStG 
-    out['IncomeStG_pre2030'] = IncomeStG_pre2030 
-    out['CostStG_pre2030']   = CostStG_pre2030
+        elif conf['econ']['tariff'] == 'multi':
+            
+            # Gross metering and capacity term
+            out['pre2030']['CostBfG_energy'] = sum(fromgrid*enpricekWh)*ts
+            out['pre2030']['CostBfG_grid']   = sum(fromgrid*gridfeekWh)*ts + capterm
+            out['pre2030']['IncomeStG']      = sum(togrid*enpricekWh_sell)*ts
+
+            # No changes after 2030
+            out['post2030']['CostBfG_energy'] = out['pre2030']['CostBfG_energy']
+            out['post2030']['CostBfG_grid']   = out['pre2030']['CostBfG_grid']
+            out['post2030']['IncomeStG']      = out['pre2030']['IncomeStG']              
+
+        else:
+            
+            print('Error: Wrong tariff name')
+            sys.exit('Error: Wrong tariff name')
     
     return out

@@ -80,7 +80,7 @@ def read_config(filename):
     config = config_full['Valeur']
     # Transform selected string variables to boolean:
     for x in ['dwelling_washing_machine','dwelling_tumble_dryer','dwelling_dish_washer','hp_yesno','hp_loadshift','hp_automatic_sizing',
-              'dhw_yesno','dhw_loadshift','ev_yesno','ev_loadshift','pv_yesno','pv_automatic_sizing','batt_yesno','econ_smart_meter',
+              'dhw_yesno','dhw_loadshift','ev_yesno','ev_loadshift','pv_yesno','pv_automatic_sizing','batt_yesno',
               'pv_inverter_automatic_sizing']:
         if config[x] in ['Oui','Yes','yes']:
             config[x] = True
