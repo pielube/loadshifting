@@ -65,7 +65,7 @@
           "inverter_automatic_sizing": true,
           "plim_kva": 10,
           "powerfactor": 0.9,
-          "inverter_pmax": NaN
+          "inverter_pmax": 5
      },
      "batt": {
           "yesno": true,
@@ -79,19 +79,20 @@
           "time_horizon": 30,
           "elpriceincrease": 0.02,
           "wacc": 0.04,
-          "tariff": "net-metering",
-          "smart_meter": true,
-          "C_PV_fix": 10,
-          "C_PV_kW": 10,
+          "tariff": "multi",
+          "meter": "smart_r3",
+          "C_PV_fix": 0,
+          "C_PV_kW": 1300,
           "C_invert_share": 0.077,
-          "C_batt_fix": 10,
-          "C_batt_kWh": 10,
+          "C_batt_fix": 0,
+          "C_batt_kWh": 600,
           "C_OM_annual": 0,
           "C_grid_fix_annual": 0,
           "C_grid_kW_annual": 0,
           "C_prosumertax": 88.81,
           "C_control": 500,
-          "C_control_annual": 0
+          "C_control_annual": 0,
+          "C_capacitytariff": 0.4
      },
      "cont": {
           "wetapp": "automated",
