@@ -678,6 +678,10 @@ if __name__ == '__main__':
     
     print(results)
     
+    file = __location__ + '/simulations/case_results.xlsx'
+    with pd.ExcelWriter(file, engine='openpyxl', mode='a',if_sheet_exists='replace') as writer:  
+        results.to_excel(writer, sheet_name='test')
+    
     # plotting the results
     #from plots import make_demand_plot, make_pflow_plot
     # fig = make_demand_plot(demand_15min.index,demand_shifted,PV = pflows.pv,title='Consumption and generation')

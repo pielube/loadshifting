@@ -41,13 +41,19 @@ def CashFlows(conf,prices,fromgrid,togrid):
     CF = pd.DataFrame(index=range(Nyears))
     
     # PV investment cost:
-    CF.loc[0,'Inv_PV'] = - (conf['econ']['C_PV_fix'] + conf['econ']['C_PV_kW'] * conf['pv']['ppeak'])
+    if conf['pv']['ppeak'] == 0:
+        CF.loc[0,'Inv_PV'] = 0
+    else:
+        CF.loc[0,'Inv_PV'] = - (conf['econ']['C_PV_fix'] + conf['econ']['C_PV_kW'] * conf['pv']['ppeak'])
         
-    # Inverter investment cost 
+    # Inverter investment cost
     CF.loc[0,'Inv_Invert'] =  conf['econ']['C_invert_share']*CF.loc[0,'Inv_PV']
 
     # Battery investment cost 
-    CF.loc[0,'Inv_Batt'] = - (conf['econ']['C_batt_fix'] + conf['econ']['C_batt_kWh'] * conf['batt']['capacity'])
+    if conf['batt']['capacity'] == 0:
+        CF.loc[0,'Inv_Batt'] = 0
+    else:
+        CF.loc[0,'Inv_Batt'] = - (conf['econ']['C_batt_fix'] + conf['econ']['C_batt_kWh'] * conf['batt']['capacity'])
     
     # Control system investment cost. A specific control is needed is appliances are automatically shifted, or if the EV, HP or DWH are shiftable
     control_needed = (conf['cont']['wetapp'] == 'automated') or conf['ev']['loadshift'] or conf['hp']['loadshift'] or conf['dhw']['loadshift']
