@@ -8,6 +8,7 @@ Created on Sat Feb 19 18:52:07 2022
 
 import json
 import pandas as pd
+import copy
 
 filename = r'casesmatrix.xlsx'
 sheet = ['Matrix']
@@ -99,11 +100,11 @@ default = {'batt': {'capacity': 14,
  'sim': {'N': 10, 'ndays': 365, 'ts': 0.25, 'year': 2015}}
 
 cases ={}
-cases['default'] = default
+cases['default'] = copy.deepcopy(default)
 
 for i in range(83):
     
-    newcase = default.copy()
+    newcase = copy.deepcopy(default)
     
     newcase['dwelling']['type'] = str(data['facades'][i])+'f'
     newcase['row'] = i
@@ -111,6 +112,7 @@ for i in range(83):
     columns = []
     if data['static'][i] == 1:
         columns.append('StaticLoad')
+    
     if data['wetapp'][i] == 1:
         newcase['dwelling']['washing_machine'] = True
         newcase['dwelling']['dish_washer'] = True
@@ -118,7 +120,8 @@ for i in range(83):
     else:
         newcase['dwelling']['washing_machine'] = False
         newcase['dwelling']['dish_washer'] = False
-        newcase['dwelling']['tumble_dryer'] = False        
+        newcase['dwelling']['tumble_dryer'] = False 
+        
     if data['dhw'][i] == 1:
         newcase['dhw']['yesno'] = True
     else:
@@ -151,15 +154,16 @@ for i in range(83):
         newcase['ev']['loadshift'] = True
     else:
         newcase['ev']['loadshift'] = False
-
+        
     if data['pv'][i] == 1:
         newcase['pv']['yesno'] =True
     else:
         newcase['pv']['yesno'] =False
-    if data['battery'][i] ==1:
+        
+    if data['battery'][i] == 1:
         newcase['batt']['yesno'] =True
     else:
-        newcase['batt']['yesno'] =True
+        newcase['batt']['yesno'] =False
 
     # compute the cost of the control system:    
     fixed = 0
@@ -168,11 +172,6 @@ for i in range(83):
     if newcase['cont']['wetapp']:
         fixed += 50.
         newcase['cont']['thresholdprice'] = 0.2
-
-    aa = data['dhw_shift'][i] == 1
-    bb = data['househeat_shift'][i] == 1
-    cc = data['ev_shift'][i] == 1
-    dd = data['battery'][i] == 1
     
     if newcase['dhw']['loadshift'] or newcase['hp']['loadshift'] or newcase['ev']['loadshift'] or newcase['batt']['yesno']:
         fixed += 500.
@@ -180,30 +179,9 @@ for i in range(83):
     
     newcase['econ']['C_control'] = fixed
     newcase['econ']['C_control_annual'] = annual
-
+    
     cases['case'+str(i+1)] = newcase
-
+    
 filename = 'cases.json'
 with open(filename, 'w',encoding='utf-8') as f:
     json.dump(cases, f,ensure_ascii=False, indent=4)
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
