@@ -482,6 +482,13 @@ def shift_load(conf,prices):
         
         # Occupancy of the main driver profile
         # 1 at home (active or inactive) 0 not at home
+        
+        # TODO
+        # Remove this patch and fix the issue
+        # Happened once: MD index was higher than N of columns in occupancy
+        if conf['members'].index(MD) > len(demands['occupancy'][idx].columns)-1:
+            MD = conf['members'][0]
+        
         occ_10min_MD = demands['occupancy'][idx].iloc[:,conf['members'].index(MD)][:-1]
         occ_10min_MD = pd.Series(data=np.where(occ_10min_MD<3,1,0),index=index10min)
         occ_1min_MD  = occ_10min_MD.reindex(index1min,method='pad').to_numpy()
