@@ -173,20 +173,13 @@ def compute_demand(conf,thermal_parameters=None):
 
 
 if __name__ == "__main__":
-    """
-    Testing the main function and saving the results
-    """
-    conf = read_config('inputs/config.xlsx')
-    names = ['4f']# ['1f','2f','4f']
     
-    for name in names:            # For each house type
-        
-        """
-        Loading inputs
-        """
-        conf['config']['dwelling_type'] = name
+    conf,prices,config_full = read_config(__location__ + '/inputs/config.xlsx')
+    # conf['members'] = ['FTE','Unemployed']
+    conf['dwelling']['member1'] = 'FTE'
+    conf['dwelling']['member2'] = 'Unemployed'
+    out = compute_demand(conf)
       
-        out = compute_demand(conf)   
 
 
 
