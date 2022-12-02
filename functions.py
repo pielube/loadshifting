@@ -141,7 +141,10 @@ def ProcebarExtractor(buildtype,wellinsulated):
     Awalls    = df5[heatedareas1].loc['Awall'].sum()  # m2
     Aroof     = df5[heatedareas1].loc['Aroof'].sum()  # m2
     Afloor    = df5[heatedareas1].loc['Afloor'].sum() # m2
+    Afloor_heated    = df4.loc[heatedareas2,'Floor area [m2]'].sum()   
     Ainternal = df5[heatedareas1].loc['Aint'].sum()   # m2
+    
+    Afloor_tot = df3.iloc[0,0] # m2
     
     volume = df4['Volume [m3]'].loc[heatedareas2].sum() # m3
     
@@ -169,6 +172,8 @@ def ProcebarExtractor(buildtype,wellinsulated):
         'Aglazed': Awindows,
         'Aopaque': Awalls,
         'Afloor': Afloor,
+        'Afloor_heated': Afloor_heated,
+        'Afloor_tot':Afloor_tot,
         'volume': volume,
         'Atotal': Atotal,
         'Uwalls': Uwalls,
@@ -177,7 +182,8 @@ def ProcebarExtractor(buildtype,wellinsulated):
         'ACH_infl': ACH_infl,
         'VentEff': VentEff,
         'Ctot': Ctot,
-        'Uavg': Uavg
+        'Uavg': Uavg,
+        'ref_procebar':rowgeom
         }
     
     return outputs
@@ -1031,5 +1037,22 @@ def MostRepCurve(conf,prices,demands,columns,timestep):
     index = min(range(len(var)), key=var.__getitem__)
         
     return index
+
+
+if __name__ == "__main__":
+    """
+    Testing the main functions
+    """
+    conf,prices,config_full = read_config('inputs/config.xlsx')
+    names = ['4f']# ['1f','2f','4f']
+    
+    for name in names:            # For each house type
+        
+        """
+        Loading inputs
+        """
+        conf['dwelling']['type'] = name
+      
+        out = compute_demand(conf)   
 
 

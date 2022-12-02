@@ -15,7 +15,7 @@ __location__ = os.path.realpath(
 
 memory = Memory(__location__ + '/cache/', verbose=defaults.verbose)
 
-@memory.cache
+#@memory.cache
 def compute_demand(conf,thermal_parameters=None):
     '''
     Function that generates the stochastic time series for
@@ -176,17 +176,31 @@ if __name__ == "__main__":
     """
     Testing the main function and saving the results
     """
-    conf = read_config('inputs/config.xlsx')
-    names = ['4f']# ['1f','2f','4f']
+    conf,prices,config_full = read_config('inputs/config.xlsx')
     
-    for name in names:            # For each house type
-        
-        """
-        Loading inputs
-        """
-        conf['config']['dwelling_type'] = name
-      
-        out = compute_demand(conf)   
+    thermal_parameters = {
+    "Aglazed": 9.5,
+    "Aopaque": 56.3,
+    "Afloor": 45.8,
+    "Afloor_heated": 86.375,
+    "Afloor_tot": 173.25,
+    "volume": 241.22,
+    "Atotal": 206.1,
+    "Uwalls": 0.6,
+    "Uwindows": 2.75,
+    "ACH_vent": 0.5,
+    "ACH_infl": 0.0,
+    "VentEff": 0.0,
+    "Ctot": 7575133.244280521,
+    "Uavg": 0.8852885443583118,
+    "ref_procebar": 202
+}
+    
+    out = compute_demand(conf,thermal_parameters=None)
+    
+    # Heat pump consumption:
+    E_hp = out['results'][0]['HeatPumpPower'].sum()/(60*1000)
+    print('Heat pump consumption: ' + str(E_hp) + ' kWh')
 
 
 
