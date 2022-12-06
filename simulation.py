@@ -195,7 +195,7 @@ def shift_load(conf,prices):
         else:
             pvpeak = conf['pv']['ppeak']
             
-        if conf['pv']['automatic_sizing']:
+        if conf['pv']['inverter_automatic_sizing']:
             inv_lim = conf['pv']['plim_kva'] * conf['pv']['powerfactor'] # kW max inv power
             invpeak = min(pvpeak/1.2,inv_lim)
         else:
