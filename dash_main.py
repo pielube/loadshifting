@@ -342,13 +342,17 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
     #house type:
     conf['dwelling']['type'] = dropdown_house
     
+    # updating the predefined demand curves:
+    if 'predefined' in conf['sim'] and conf['sim']['predefined'] == True:
+        conf['load_demands'] = __location__ +  "/inputs/loads_" + str(conf['dwelling']['type']) + ".pkl"
+    
     #wet appliances:
     apps = {'td':'tumble_dryer','wm':'washing_machine','dw':'dish_washer'}
     for key in apps:
         if key in checklist_apps:
-            conf['dwelling'][key] = True
+            conf['dwelling'][apps[key]] = True
         else:
-            conf['dwelling'][key] = False
+            conf['dwelling'][apps[key]] = False
     
     # type of control for the wet appliances:
     conf['cont']['wetapp'] = dropdown_flex_appliances
@@ -380,6 +384,7 @@ def update_config(conf,dropdown_house,checklist_apps,dropdown_flex_appliances,ch
     conf['batt']['yesno'] = 'bat_in' in checklist_bat
     conf['batt']['pnom'] =  float(input_bat_power)
     conf['batt']['capacity'] = float(input_bat_capacity)
+
     
 
 #%%  Callbacks (misc)
@@ -520,7 +525,7 @@ def display_graph(n_clicks,week,
 #%%
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)
 
 
 
