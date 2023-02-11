@@ -17,6 +17,7 @@
           "ndays": 365,
           "ts": 0.25,
           "N": 1,
+          "predefined": true,
           "year": 2015
      },
      "dwelling": {
@@ -106,5 +107,6 @@
           "altitude": 20,
           "timezone": "Etc/GMT-2"
      },
+     "load_demands": "/home/sylvain/svn/loadshifting/inputs/loads_1f.pkl",
      "prices": "config_prices.csv"
 }

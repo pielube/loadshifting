@@ -453,7 +453,7 @@ def display_graph(n_clicks,week,
     # make a table with all simulation inputs:
     inputs_table = make_table(conf,config_full)
 
-    results,demand_15min,demand_shifted,pflows = shift_load(conf,prices)
+    results,demand_15min,demand_shifted,pflows,input_data = shift_load(conf,prices)
     
     if 'pv' in pflows and not (pflows['pv']==0).all():
         pv = pflows['pv']
@@ -520,7 +520,7 @@ def display_graph(n_clicks,week,
 #%%
 
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)
 
 
 

@@ -46,7 +46,7 @@ def Stochastic_Process_Mobility(inputfile, country, year, full_year):
     '''
     for prof_i in range(num_profiles_sim): #the whole code is repeated for each profile that needs to be generated
         Tot_Classes = np.zeros(1440) #initialise an empty daily profile that will be filled with the sum of the hourly profiles of each User instance
-        Tot_Usage = np.zeros(1440) #initialise an empty daily usage profile that will be filled with the sum of the hourly usage of each User instance
+        Tot_Usage = np.zeros(1440) #initialise an emptyStochastic_Process_Mobility daily usage profile that will be filled with the sum of the hourly usage of each User instance
         Profile_dict = {}
         Usage_dict = {}
         for Us in User_list: #iterates for each User instance (i.e. for each user class)
@@ -112,7 +112,7 @@ def Stochastic_Process_Mobility(inputfile, country, year, full_year):
                     random_var_d = random.uniform((1-App.r_d),(1+App.r_d))
 
                     rand_dist = round(random.uniform(App.dist_tot,int(App.dist_tot*random_var_d))) 
-                    
+
                     App.vel = App.func_dist/App.func_cycle * 60 
                     
                     rand_vel = np.maximum(20, round(random.uniform(App.vel,int(App.vel*random_var_v)))) #average velocity of the trip, minimum value is 20 km/h to get reasonable values from the power curve
@@ -326,6 +326,6 @@ def Stochastic_Process_Mobility(inputfile, country, year, full_year):
             Usage.append(Tot_Usage)#appends the total usage to the list that will contain all the generated profiles
 #            Usage_user.append(Usage_dict)
 
-            print(f'Profile {prof_i - dummy_days +1}/{num_profiles_user} completed') #screen update about progress of computation
+            #print(f'Profile {prof_i - dummy_days +1}/{num_profiles_user} completed') #screen update about progress of computation
     
     return(Profile, Usage, User_list, Profile_user, dummy_days)

@@ -258,7 +258,7 @@ def temp_import(country, year, inputfile_temp = r"..\database\temp_ninja_pop.csv
     hours = pd.period_range(start=str(year-1) + '-01-01', end=str(year+1) + '-12-31 23:00', freq='H')
     temp_profile.set_index(hours, inplace = True)
     
-    temp_profile = temp_profile.resample('T', closed='right').pad()
+    temp_profile = temp_profile.resample('T', closed='right').ffill()
     
     return temp_profile
 

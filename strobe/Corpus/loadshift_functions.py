@@ -116,8 +116,8 @@ def simulate_scenarios(n_scen,conf):
         
         # Annual load from appliances
         E_app = int(np.sum(family.P)/60/1000)
-        print(' - Receptacle load (including lighting) is %s kWh' % str(E_app))
-        textoutput.append(' - Receptacle (plugs + lighting) load is %s kWh' % str(E_app))
+        print(' - Total load (including lighting and appliances but no DWH, EVs and HPs) is %s kWh' % str(E_app))
+        textoutput.append(' - Total load (including lighting and appliances but no DWH, EVs and HPs) is %s kWh' % str(E_app))
         
         # Annual load from washing machine
         E_wm = int(np.sum(family.Pwm)/60/1000)
@@ -152,14 +152,6 @@ def simulate_scenarios(n_scen,conf):
             E_eb = 0
             print(' - Domestic hot water electricity consumption: ',E_eb,' kWh')
             textoutput.append(' - Domestic hot water electricity consumption: ' + str(E_eb) +' kWh')
-        
-
-        """
-        Total electricity demand
-        """
-        E_total = E_app + E_wm + E_td + E_dw + E_eb
-        print(' - Total annual load: ',E_total,' kWh')
-        textoutput.append(' - Total annual load: ' + str(E_total) + ' kWh')   
         
 
     result={
@@ -226,7 +218,7 @@ def DomesticHotWater(config_dhw,mDHW,Tamb,Tbath):
     phi_a = np.zeros(np.size(mDHW))
     
     # Inizialization
-    Tcyl = 60. + random.random()*2. #°C
+    Tcyl = 60. 
     m_hot = mDHW * (Tfaucet-Tcw)/(Ttarget-Tcw) # DHW is used at Tfaucet which is obtained mixing water from boiler and acqueduct
     resV = m_hot / 1000. / 60. # from l/min to m3/s
     resM = resV * 1000.       # from m3/s to kg/s

@@ -20,8 +20,13 @@ def MainDriver(members):
 def EVCharging(conf,occupancy):
 
     MD = MainDriver(conf['members'])
-    MDathome = occupancy[conf['members'].index(MD)]
     
+    if isinstance(occupancy,list):
+        MDathome = occupancy[conf['members'].index(MD)]
+    else:
+        occupancy.columns = range(len(occupancy.columns))
+        MDathome = occupancy[conf['members'].index(MD)]
+        
     ndays = conf['sim']['ndays']
     nminutes = ndays * 1440 + 1 
     MDathome_min = np.zeros(nminutes)

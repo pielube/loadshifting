@@ -87,7 +87,7 @@ def list_appliances(conf):
     return techs,techshift
     
 
-@memory.cache
+#@memory.cache
 def shift_load(conf,prices):
     '''
     
@@ -96,10 +96,6 @@ def shift_load(conf,prices):
     conf : dict
         Pre-defined simulation case to be simulated.
 
-    Returns
-    -------
-    outs : dict
-        Main simulation results.
 
     '''
 
@@ -673,7 +669,7 @@ def shift_load(conf,prices):
     
     results,econ = ResultsAnalysis(conf,prices,pflows)
 
-    return results,demand_15min,demand_shifted,pflows
+    return results,demand_15min,demand_shifted,pflows,conf
 
 
 if __name__ == '__main__':
@@ -681,7 +677,7 @@ if __name__ == '__main__':
     conf,prices,config_full = read_config(__location__ + '/inputs/config.xlsx')
     
     # delete unnecessary entries:
-    results,demand_15min,demand_shifted,pflows = shift_load(conf,prices)
+    results,demand_15min,demand_shifted,pflows,input_data = shift_load(conf,prices)
     
     print(results)
     

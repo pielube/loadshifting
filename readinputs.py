@@ -12,7 +12,7 @@ def read_sheet(file,sheet):
     '''
     function that reads one sheet of the excel config file and outputs it in a dataframe
     '''
-    raw = pd.read_excel(file,sheet_name=sheet)
+    raw = pd.read_excel(file,sheet_name=sheet,engine='openpyxl')
     raw.rename(columns={ raw.columns[0]: "varname" }, inplace = True)
     raw = raw.loc[raw['varname'].notna(),:]
     raw.index = raw['varname']
@@ -81,7 +81,7 @@ def read_config(filename):
     # Transform selected string variables to boolean:
     for x in ['dwelling_washing_machine','dwelling_tumble_dryer','dwelling_dish_washer','hp_yesno','hp_loadshift','hp_automatic_sizing',
               'dhw_yesno','dhw_loadshift','ev_yesno','ev_loadshift','pv_yesno','pv_automatic_sizing','batt_yesno',
-              'pv_inverter_automatic_sizing']:
+              'pv_inverter_automatic_sizing','sim_predefined']:
         if config[x] in ['Oui','Yes','yes']:
             config[x] = True
         else:
@@ -94,13 +94,17 @@ def read_config(filename):
     # Add the reference weather-year if not present:
     if 'sim_year' not in config:
         config['sim_year'] = defaults.year
-       
+        
     # write the configuration into sub-dictionnaries
     for prefix in ['sim','dwelling','hp','dhw','ev','pv','batt','econ','cont','loc']:
         subset = config[[x.startswith(prefix + '_') for x in config.index]]
         n = len(prefix)+1
         subset.index = [x[n:] for x in subset.index]
         out[prefix] = subset.to_dict()
+        
+    # hard coding the predefined demand curves:
+    if 'sim_predefined' in config and config['sim_predefined'] == True:
+        out['load_demands'] = __location__ +  "/inputs/loads_" + str(config['dwelling_type']) + ".pkl"
     
     return out,prices,config_full
 

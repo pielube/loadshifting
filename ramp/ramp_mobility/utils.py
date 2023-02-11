@@ -29,7 +29,7 @@ def charge_prob_const(SOC):
 
 def SOC_initial_f(SOC_max, SOC_min, SOC_initial):
     
-    SOC_i = np.random.rand()*(SOC_max-SOC_min) + SOC_min
+    SOC_i = 0.5*(SOC_max-SOC_min) + SOC_min
     
     return SOC_i
 

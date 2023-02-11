@@ -32,7 +32,7 @@ heatseas_st = 244
 heatseas_end = 151
 
 # Heat pump sizing (TODO: define this)
-fracmaxP = 0.8
+fracmaxP = 1
 
 #PV 
 pv_power = 4.5  #kWp

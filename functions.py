@@ -83,11 +83,11 @@ def ProcebarExtractor(buildtype,wellinsulated):
     # Getting random (weighted) house thermal parameters
     # Getting corresponding reference geometry
                 
-    filename1 = __location__ + '/inputs/Building_Stock_arboresence_SG_130118_EME.xls'
+    filename1 = __location__ + '/inputs/Building_Stock_arboresence_SG_130118_EME.xlsx'
     sheets1 = ['Freestanding','Semi-detached','Terraced','Apartment']
 
     buildtype = defaults.convert_building[buildtype]
-    data1 = pd.read_excel (filename1,sheet_name=sheets1,header=0)
+    data1 = pd.read_excel (filename1,sheet_name=sheets1,header=0,engine='openpyxl')
         
     df = data1[buildtype]
     df.columns = df.columns.str.rstrip()
@@ -103,14 +103,15 @@ def ProcebarExtractor(buildtype,wellinsulated):
     rndrow = df["Occurence"].sample(1,weights=df["Occurence"])
     rowind = rndrow.index.values[0]
     rowgeom = df.iloc[rowind]['Geometry reference']
+    print('Selected geometry:' + str(rowgeom))
     
     # Opening geometry excel file
     # Getting geometry parameters based on reference geometry just obtained
     
-    filename2 = __location__ + '/inputs/Arborescence_geometry_SG_130118.xls'
+    filename2 = __location__ + '/inputs/Arborescence_geometry_SG_130118.xlsx'
     sheets2 = [101,102,103,104,201,202,203,204,301,302,303,304,401,402,403,404]
     sheets2 = [str(i) for i in sheets2]
-    data2 = pd.read_excel (filename2,sheet_name=sheets2)
+    data2 = pd.read_excel (filename2,sheet_name=sheets2,engine='openpyxl')
     
     df2 = data2[str(rowgeom)]
     
@@ -496,6 +497,7 @@ def HPSizing(config_envelope,fracmaxP,T_in=21,T_amb=-10):
     QheatHP = UA*(T_in-T_amb) + 1200*b_ek*room_vol*(ach_tot/3600)*(T_in-T_amb)
     # Fraction of heat demand to be considered for sizing
     QheatHP = QheatHP*fracmaxP
+    print('Selected Heat Pumps Capacity: ' + str(QheatHP/1000) + ' kWh_th')
         
     return QheatHP
 

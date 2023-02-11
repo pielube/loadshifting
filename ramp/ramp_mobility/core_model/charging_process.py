@@ -299,7 +299,7 @@ def Charging_Process(Profiles_user, User_list, country, year, dummy_days, residu
                 # plug_in_user[Us.user_name].append(plug_in)
 
         num_us = num_us + Us.num_users
-        print(f'Charging Profile of "{Us.user_name}" user completed ({num_us}/{tot_users})') #screen update about progress of computation
+        #print(f'Charging Profile of "{Us.user_name}" user completed ({num_us}/{tot_users})') #screen update about progress of computation
     
     Charging_profile = Charging_profile[dummy_minutes:-dummy_minutes]
     # en_sys_tot = en_sys_tot[dummy_minutes:-dummy_minutes]
